@@ -1,12 +1,12 @@
 <template>
   <div class="sidebar">
+    <!-- 侧边栏内容 -->
     <ul>
-      <li><router-link to="/home">首页</router-link></li>
-      <li><router-link to="/about">关于</router-link></li>
-      <li><router-link to="/contact">联系我们</router-link></li>
+      <li>菜单项 1</li>
+      <li>菜单项 2</li>
+      <li>菜单项 3</li>
     </ul>
   </div>
-
 </template>
 
 <script>
@@ -17,15 +17,19 @@ export default {
 
 <style scoped>
 .sidebar {
-  width: 200px;
-  height: 100vh;
-  background-color: green;
-  position: fixed;
-  top: 0;
+  background-color: #f4f4f4;
+  height: 100vh; /* 100% of the viewport height */
+  width: 200px; /* Adjust as needed */
+  position: fixed; /* Or absolute based on your layout needs */
   left: 0;
-  float: left;
+  top: 0;
 }
-.sidebar a.router-link-active {
-  font-size: xxx-large /* 高亮当前激活的链接 */
+.sidebar ul {
+  list-style-type: none;
+  padding: 0;
+}
+.sidebar li {
+  padding: 15px;
+  border-bottom: 1px solid #ddd;
 }
 </style>

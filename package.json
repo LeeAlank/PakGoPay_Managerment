@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "vite-plugin-svg-icons": "^2.0.1",
     "vue-router": "^4.6.3"
   }
 }

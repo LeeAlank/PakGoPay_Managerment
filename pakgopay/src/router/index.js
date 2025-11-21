@@ -1,35 +1,77 @@
 import { createRouter, createWebHistory } from "vue-router"
-import WELCOME from "@/components/First.vue"
-import HOME from "@/App.vue"
-import ABOUT from "@/components/ABOUT.vue"
+import PakGoPay from "../components/PakGoPay.vue"
+import ABOUT from "../components/ABOUT.vue"
+import LOGIN from "../views/login/Login.vue"
+import HOME from "../views/Home.vue"
 
 const router = createRouter({
     history: createWebHistory(),
     routes: [
         {
-            path: "/welcome",
-            name: "welcome",
-            meta: {
-                keepAlive: false
-            },
-            component: WELCOME
-        },
-        {
             path: "/",
-            name: "home",
+            name: "default",
             meta: {
                 keepAlive: false
             },
-            component: HOME
+            redirect: "/web/login"
         },
         {
-            path: "/about",
-            name: "About",
+            path: "/login",
+            name: "default",
             meta: {
                 keepAlive: false
             },
-            component: ABOUT
-        }
+            redirect: "/web/login"
+        },
+        {
+            path: "/web/login",
+            name: "login",
+            meta: {
+                needLogin: false,
+                title: "Login",
+            },
+            component: LOGIN
+        },
+        {
+            path: '/web/pakGoPay',
+            name: "pakGoPay",
+            component: PakGoPay,
+            meta: {
+                needLogin: true,
+                title: "Pak GoPay",
+            },
+            children: [
+                {
+                    path: "/welcome",
+                    name: "welcome",
+                    meta: {
+                        keepAlive: false,
+                        needLogin: true,
+                        title: "Welcome",
+                    },
+                    component: PakGoPay
+                },
+                {
+                    path: "/about",
+                    name: "About",
+                    meta: {
+                        keepAlive: false,
+                        needLogin: true,
+                        title: '游戏'
+                    },
+                    component: ABOUT
+                },
+                {
+                    path: "/home",
+                    name: "home",
+                    meta: {
+                        needLogin: false,
+                        title: "首页",
+                    },
+                    component: HOME
+                },
+            ]
+        },
     ]
 
 })

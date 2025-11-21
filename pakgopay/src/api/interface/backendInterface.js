@@ -27,3 +27,17 @@ export async function heart() {
         }
     })
 }
+
+/**
+ * 加载菜单
+ * @returns {Promise<void>}
+ */
+export async function menu() {
+    return service({
+        url: '/api/pakGoPay/server/menu',
+        method: "GET",
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        }
+    })
+}

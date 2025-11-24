@@ -1,12 +1,22 @@
 import { createRouter, createWebHistory } from "vue-router"
-import PakGoPay from "../components/PakGoPay.vue"
+import PAKGOPAY from "../components/PakGoPay.vue"
 import ABOUT from "../components/ABOUT.vue"
 import LOGIN from "../views/login/Login.vue"
 import HOME from "../views/Home.vue"
+import MerchantReport from "@/views/pages/MerchantReport.vue";
 
 const router = createRouter({
     history: createWebHistory(),
     routes: [
+        {
+            path: "/web/pakGoPay/MerchantReport",
+            name: "MerchantReport",
+            meta: {
+                needLogin: true,
+                title: "商户报表",
+            },
+            component: MerchantReport
+        },
         {
             path: "/",
             name: "default",
@@ -29,13 +39,14 @@ const router = createRouter({
             meta: {
                 needLogin: false,
                 title: "Login",
+                showBar: true
             },
             component: LOGIN
         },
         {
             path: '/web/pakGoPay',
             name: "pakGoPay",
-            component: PakGoPay,
+            component: PAKGOPAY,
             meta: {
                 needLogin: true,
                 title: "Pak GoPay",
@@ -49,7 +60,7 @@ const router = createRouter({
                         needLogin: true,
                         title: "Welcome",
                     },
-                    component: PakGoPay
+                    component: PAKGOPAY
                 },
                 {
                     path: "/about",

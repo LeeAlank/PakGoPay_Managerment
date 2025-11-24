@@ -1,14 +1,6 @@
 <template>
-  <div id="app" class="layout">
-    <UserInfoBar />
-    <div class="content">
-      <Sidebar />
-      <div class="main-content">
-        <!-- 主内容区域 -->
-        <h2>主内容区</h2>
-        <p>这里是主要内容。</p>
-      </div>
-    </div>
+  <div class="content">
+    这是欢迎页
   </div>
 </template>
 
@@ -40,9 +32,10 @@ export default {
     async heartBeat() {
       await heart().then(res => {
         if(res.data !== 'success') {
-
+          console.info("重新登陆")
           localStorage.removeItem("token");
           localStorage.removeItem("userInfo");
+          localStorage.removeItem("menu")
           router.push("/web/login");
         }
       });
@@ -56,14 +49,5 @@ export default {
 </script>
 
 <style>
-#app {
-  display: flex; /* 使用flex布局 */
-  flex-direction: column;
-}
-.content {
-  display: flex;
-  margin-left: 195px; /* 根据侧边栏宽度调整 */
-  border: solid 1px black;
-  height: 85vh;
-}
+
 </style>

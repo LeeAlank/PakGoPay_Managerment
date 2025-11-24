@@ -1,50 +1,55 @@
 <template>
   <div class="sidebar">
-<!--    <ul>
-      <li v-for="item in menuItems" :key="item.path">
-&lt;!&ndash;        <router-link :to="item.path">{{ item.title }}</router-link>&ndash;&gt;
-        <Menu v-if="item.children && item.children.length > 0" :menuItems="item.children" />
-      </li>
-    </ul>-->
     <!-- 侧边栏内容 -->
-    <ul>
-      <li v-for="item in menuItems" :key="item.menuId">
-          {{ item.menuName }}
-        <ul v-if="item.children">
-          <li v-for="child in item.children" :key="child.menuId">
-            {{ child.menuName }}
+   <ul>
+
+      <li v-for="item in menuItems" :key="item.menuId" @click="showItems(item)">{{item.menuName}}
+        <ul v-if="item.showItem" :key="item.menuId">
+          <li v-for="child in item.children" :key="child.menuId" @click.stop="">
+            <router-link class="menuRouter" :to="child.path.indexOf('MerchantReport')>0?child.path:''">{{child.menuName}}</router-link>
           </li>
         </ul>
       </li>
-    </ul>
-    <ul>
-      <li>菜单项 1</li>
-      <li>菜单项 2</li>
-      <li>菜单项 3</li>
-    </ul>
+   </ul>
   </div>
 </template>
 
 <script>
 import {menu} from "@/api/interface/backendInterface.js";
+
 export default {
   name: 'Sidebar',
   data() {
     return {
-      menuItems: []
+      menuItems: JSON.parse(localStorage.getItem("menu"))
     }
   },
-  created() {
-    this.queryMenus()
+  mounted() {
+    if(localStorage.getItem('menu') === null) {
+      this.fetchMenu()
+    } else {
+      this.menuItems = JSON.parse(localStorage.getItem("menu"))
+    }
   },
   methods: {
-    async queryMenus() {
+    async fetchMenu() {
       try {
-        const response = await menu();
-        this.menuItems = JSON.parse(response.data.data);
+        await menu().then(res => {
+          if (res.status === 200) {
+            this.menuItems = JSON.parse(res.data.data)
+            localStorage.setItem('menu', JSON.stringify(this.menuItems))
+          }
+        })
       } catch (error) {
-        console.error(error);
+        console.error(error)
       }
+    },
+    showItems(item) {
+      item.showItem = (item.showItem == true) ? false : true
+      localStorage.setItem('menu',JSON.stringify(this.menuItems))
+    },
+    testButton() {
+      alert("嘿嘿嘿")
     }
   }
 }
@@ -52,9 +57,9 @@ export default {
 
 <style scoped>
 .sidebar {
-  background-color: #f4f4f4;
+  background-color: darkslategrey;
   height: 100vh; /* 100% of the viewport height */
-  width: 200px; /* Adjust as needed */
+  width: 23vh; /* Adjust as needed */
   position: fixed; /* Or absolute based on your layout needs */
   left: 0;
   top: 0;
@@ -62,9 +67,17 @@ export default {
 .sidebar ul {
   list-style-type: none;
   padding: 0;
+  color: #f2f2f2;
 }
 .sidebar li {
-  padding: 15px;
-  border-bottom: 1px solid #ddd;
+  padding: 10px;
+  color: #f2f2f2;
 }
+
+.menuRouter {
+  text-decoration: none;
+  color: #f2f2f2;
+}
+
+
 </style>

@@ -23,6 +23,7 @@ export default defineConfig({
     server: {
         host: 'localhost',
         port: 5173,
+        url: '/web/login',
         open: true,
         proxy: {
             "/api": {

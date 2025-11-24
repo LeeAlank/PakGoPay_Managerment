@@ -1,4 +1,5 @@
 import service from '../axios.js'
+import router from "@/router/index.js";
 
 export async function LoginBack(loginFormData) {
     console.info('请求组装的token',localStorage.getItem('token'));
@@ -28,16 +29,18 @@ export async function heart() {
     })
 }
 
-/**
- * 加载菜单
- * @returns {Promise<void>}
- */
 export async function menu() {
     return service({
         url: '/api/pakGoPay/server/menu',
-        method: "GET",
+        method: 'GET',
         headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
     })
+}
+
+export async function logOut() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("menu")
+    await router.push("/web/login");
 }

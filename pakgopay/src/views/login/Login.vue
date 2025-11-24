@@ -636,10 +636,10 @@ import router from "@/router/index.js";
                 localStorage.setItem("userInfo", response.data.data.split("&&")[1]);
                 localStorage.setItem("token", response.data.data.split("&&")[0]);
                 console.info('拿到token了----',response);
-                router.push("/web/pakGoPay")
+                router.push("/web/pakGoPay");
            }
         })
-    }
+    },
     }
   }
 </script>

@@ -1,5 +1,6 @@
 <script>
-import {logOut} from "@/api/interface/backendInterface.js";
+import {heart, logOut} from "@/api/interface/backendInterface.js";
+import router from "@/router/index.js";
 export default {
   name: 'Topbar',
   data() {
@@ -9,9 +10,21 @@ export default {
   },
   mounted() {
     this.username = localStorage.getItem("userInfo");
+    this.heartBeat();
   },
   methods: {
-    logOut
+    logOut,
+    async heartBeat() {
+      await heart().then(res => {
+        if(res.data !== 'success') {
+          console.info("重新登陆")
+          localStorage.removeItem("token");
+          localStorage.removeItem("userInfo");
+          localStorage.removeItem("menu")
+          router.push("/web/login");
+        }
+      });
+    },
 
   },
 }
@@ -38,18 +51,19 @@ export default {
 
 
 <style scoped>
-.topbar {
+/*.topbar {
   color: black;
-  padding: 0;
+  padding-top: 0;
+  padding-bottom: 5px;
   text-align: center;
   height: 10%;
   border: solid 1px black;
-  margin: 0;
+  margin-bottom: 10px;
   top: 0;
-  left: 10%;
+  left: 8%;
   position: fixed;
-  width: 89%;
-}
+  width: 92%;
+}*/
 
 .userInfo {
   top: 10px;

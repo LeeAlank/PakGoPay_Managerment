@@ -3,14 +3,13 @@ import Sidebar from "@/components/Sidebar.vue";
 import UserInfoBar from "@/components/TopBar.vue";
 </script>
 
-<template id="app">
-  <UserInfoBar v-if="!$route.meta.showBar"/>
-  <Sidebar v-if="!$route.meta.showBar"/>
-  <div v-if="!$route.meta.showBar" class="content" style="margin:0;">
-    <router-view></router-view>
-  </div>
-  <div v-if="$route.meta.showBar" style="margin:0;">
-    <router-view></router-view>
+<template>
+  <div id="app" :class="[!$route.meta.showBar ? 'layout' :'']">
+    <UserInfoBar :class="[!$route.meta.showBar ? 'userInfo':'']" v-if="!$route.meta.showBar"/>
+    <Sidebar class="sidebar" v-if="!$route.meta.showBar"/>
+    <div :class="[!$route.meta.showBar ? 'content':'beforeContent']">
+      <router-view></router-view>
+    </div>
   </div>
 </template>
 <script>
@@ -52,5 +51,52 @@ import UserInfoBar from "@/components/TopBar.vue";
 }*/
 #app {
   position: fixed;
+  background-color: #F3F3F3;
 }
+.layout {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  padding: 0;
+}
+.userInfo {
+  color: black;
+  padding-top: 0;
+  padding-bottom: 5px;
+  text-align: center;
+  height: 7%;
+  margin-bottom: 10px;
+  top: 1%;
+  left: 10.9%;
+  position: fixed;
+  width: 89%;
+  background-color: white;
+  /*background-color: seagreen;*/
+  /*border-radius: 30px;*/
+}
+.sidebar {
+  position: fixed;
+  top: 1%;
+  left: 0.8%;
+  width: 10%;
+  padding: 0;
+  height: 98%;
+  /**border-radius: 30px;*/
+}
+.beforeContent {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background-color: white;
+}
+.content {
+  position: fixed;
+  top: 12%;
+  width: 88.8%;
+  left: 11.1%;
+  height: 86%;
+  /*border-radius: 30px;*/
+  background-color: white;
+}
+
 </style>

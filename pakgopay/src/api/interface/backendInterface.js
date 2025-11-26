@@ -44,3 +44,13 @@ export async function logOut() {
     localStorage.removeItem("menu")
     await router.push("/web/login");
 }
+
+export async function getQrCode(username) {
+    return service({
+        url: '/api/pakGoPay/server/Login/getCode',
+        method: 'GET',
+        params: {
+            username: username,
+        }
+    })
+}

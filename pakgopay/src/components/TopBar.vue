@@ -8,7 +8,11 @@ export default {
       username: "",
     }
   },
+  created() {
+    this.username = localStorage.getItem("userInfo");
+  },
   mounted() {
+
     this.username = localStorage.getItem("userInfo");
     this.heartBeat();
   },
@@ -35,7 +39,8 @@ export default {
     <!-- 顶部栏内容 -->
     <div class="userInfo" >
       <div v-if="username">
-        你好,{{username}}
+        <el-avatar style="font-size: 30px;color: black;background-color: #4f6f6f;height:30px;width:30px;border-radius: 30px">{{username.charAt(0)}}</el-avatar>
+        {{username}}
       </div>
       <div v-else>
         请登陆

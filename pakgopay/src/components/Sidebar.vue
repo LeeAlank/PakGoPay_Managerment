@@ -48,7 +48,7 @@ export default {
     async fetchMenu() {
       try {
         await menu().then(res => {
-          if (res.status === 200) {
+          if (res.status === 200 && res.data.data) {
             this.menuItems = JSON.parse(res.data.data)
             localStorage.setItem('menu', JSON.stringify(this.menuItems))
           }
@@ -84,6 +84,7 @@ export default {
   height: 100%;
   padding: 2px;
   width: 100%;
+  cursor: pointer;
 }
 
 .menuRouter {
@@ -97,7 +98,7 @@ export default {
 }
 
 .selectedClass {
-  background-color: #667eea;
+  background-color: #001529;
   color: #f2f2f2;
   margin: 0;
 }

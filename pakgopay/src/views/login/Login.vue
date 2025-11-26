@@ -11,6 +11,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
  * false 显示注册表单
  */
 import { ref, reactive } from 'vue'
+import Modal from "@/components/Modal.vue";
 
 /**
  * 控制显示登录还是注册
@@ -24,9 +25,10 @@ const isLogin = ref(true)
  */
 const loginForm = reactive({
   userId: '',
-  username: '',    // 用户名
+  userName: '',    // 用户名
   password: '',    // 密码
-  remember: false  // 是否记住我
+  remember: false, // 是否记住我
+  code: ''
 })
 
 const registerForm = reactive({
@@ -60,10 +62,8 @@ const handleRegister = () => {
 <template>
   <!-- 最外层容器：占满整个屏幕 -->
   <div class="auth-container">
-
     <!-- 卡片容器：白色半透明的玻璃卡片 -->
     <div class="auth-card">
-
       <!-- 标题：根据模式显示不同文字 -->
       <h1 class="title">
         {{ isLogin ? 'Welcome Back' : 'Create Account' }}
@@ -87,11 +87,12 @@ const handleRegister = () => {
 
             <!-- 输入框 -->
             <input
-                v-model="loginForm.username"
+                v-model="loginForm.userName"
                 type="text"
                 placeholder="input username or email address"
                 class="form-input"
                 autocomplete="loginForm.username"
+                :style="firstInput"
             />
           </div>
 
@@ -108,9 +109,28 @@ const handleRegister = () => {
                 placeholder="please input password"
                 class="form-input"
                 autocomplete="loginForm.password"
+                :style="secondInput"
             />
           </div>
+          <!-- 密码输入框 -->
+          <div class="form-item">
+            <label class="form-label">
+              <SvgIcon name="pass"/>
+              Verification Code
+            </label>
+              <input
+                  v-model="loginForm.code"
+                  type="text"
+                  placeholder="please input verification code"
+                  class="form-input"
+                  autocomplete="loginForm.code"
+                  :style="thirdInput"
+              />
+          </div>
 
+          <Modal :isVisible="!isQrCode" @close="showModal = false; isQrCode = true" :imgUrl="qrCodeUrl">
+<!--            <img v-show="!isQrCode" alt="#" :src="qrCodeUrl" style="text-align: center"/>-->
+          </Modal>
           <!-- 选项行：记住我 + 忘记密码 -->
           <div class="form-options">
             <!-- 记住我 -->
@@ -123,6 +143,8 @@ const handleRegister = () => {
               <span>remember me</span>
             </label>
 
+            <input style="background-color: transparent;box-shadow: none;color: white;border:white;text-decoration: underline;cursor: pointer;" type="button" @click="getQrCodes(loginForm.userName)" value="haven't code? click here" />
+
             <!-- 忘记密码链接 -->
             <a href="#" class="forgot-link">forgot password？</a>
           </div>
@@ -132,6 +154,7 @@ const handleRegister = () => {
             <SvgIcon name="submitBtn"/>
             Login Now
           </button>
+<!--          <button class="submit-btn" @click="getQrCodes(loginForm.username)" type="button">扫码登录</button>-->
         </div>
         <div v-if="!isLogin">
           <div class="form-item">
@@ -206,7 +229,7 @@ const handleRegister = () => {
 
         </div>
       </form>
-
+      <canvas ref="canvas" width="300" height="300"></canvas>
       <!-- 底部切换按钮 -->
       <div class="toggle-mode">
         <span>{{ isLogin ? 'no account？' : 'have account？' }}</span>
@@ -607,39 +630,95 @@ const handleRegister = () => {
 </style>
 <script>
 
-import {LoginBack} from "@/api/interface/backendInterface.js";
-import service from "@/api/axios.js";
+import {getQrCode, LoginBack} from "@/api/interface/backendInterface.js";
 import router from "@/router/index.js";
+import Modal from "@/components/Modal.vue"
+import {ElMessage} from "element-plus";
+import {ElNotification} from "element-plus";
+
   export default {
     name: "Login",
     data() {
       return {
         data: null,
+        isQrCode: true,
+        qrCodeUrl:'',
+        showModal: false,
+        firstInput: "",
+        secondInput: "",
+        thirdInput: "",
       };
+    },
+    components: {
+      Modal
     },
     mounted() {
       //this.login();
   },
+    computed: {
+
+    },
     methods: {
     async login(loginForm) {
-      /*try {
-        //const response = await LoginBack()
-        const response = await service.get("/api/pakGoPay/server/login").then((response) => {
-          console.info(response);
-        })
-      } catch (error) {
-        console.info("error axios data",error);
-      }*/
+      if (!loginForm.userName) {
+        this.firstInput = "border: solid 1px red;"
+        return;
+        }
+      if (!loginForm.password) {
+        this.secondInput = "border: solid 1px red;"
+        return;
+      }
+      if (!loginForm.code) {
+        this.thirdInput = "border: solid 1px red;"
+        return;
+      }
+      this.firstInput = "border: none";
+      this.secondInput = "border: none";
+      this.thirdInput = "border: none";
         await LoginBack(loginForm).then((response) => {
-          console.info("respose----",response);
-           if (response.status === 200) {
-                localStorage.setItem("userInfo", response.data.data.split("&&")[1]);
-                localStorage.setItem("token", response.data.data.split("&&")[0]);
-                console.info('拿到token了----',response);
-                router.push("/web/pakGoPay");
+          console.log("login response----",response);
+           if (response.status === 200 && response.data.data) {
+             try {
+               console.info("Login successfull set userinfo");
+               localStorage.setItem("userInfo", response.data.data.split("&&")[1]);
+               localStorage.setItem("token", response.data.data.split("&&")[0]);
+               router.push("/web/pakGoPay");
+             } catch (e) {
+               console.error(e)
+             }
+           } else {
+             ElMessage.error(response.data.message);
            }
         })
     },
+    getQrCodes(username) {
+      if (!username) {
+        alert("please enter username");
+        return;
+      }
+         getQrCode(username).then(res => {
+           if (res.status === 200 && res.data.code !== 0) {
+             ElMessage({
+               message: res.data.message,
+               type: "warning",
+               showClose: true,
+             })
+            /* this.$notify({
+               icon: "info",
+               title: "Notice",
+               message: res.data.message,
+             })*/
+             console.error("ssss----",res.data);
+             return;
+           }
+           this.isQrCode = false;
+           try {
+             this.qrCodeUrl = 'data:image/png;base64,'+res.data.data;
+           } catch (error) {
+             console.log(error);
+           }
+         })
+      },
     }
   }
 </script>

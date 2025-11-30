@@ -22,7 +22,6 @@
           </ul>
         </li>
       </ul>
-    <button @click="changeCollapse()">折叠</button>
     </div>
 </template>
 
@@ -31,12 +30,15 @@ import {menu} from "@/api/interface/backendInterface.js";
 import SvgIcon from "@/components/SvgIcon/index.vue";
 
 export default {
+  props: [
+    'collapse'
+  ],
   name: 'Sidebar',
   components: {SvgIcon},
   data() {
     return {
       menuItems: JSON.parse(localStorage.getItem("menu")),
-      collapse: false,
+      /*collapse: false,*/
     }
   },
   mounted() {

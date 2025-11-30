@@ -31,7 +31,7 @@ export default {
   <div class="toolbar">
     <form class="toolform">
       <div style="display:flex;justify-content: right;">
-        <div v-on:click="exportMerchantInfo" style="display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;border:solid 1px #6495ed;">
+        <div v-on:click="exportMerchantInfo" style="display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;border:solid 1px #6495ed;border-radius: 10px;">
           <div style="display: flex; flex-direction: row;justify-content: center;width: 90px;align-items: center;">
             <SvgIcon height="20px" width="20px" name="filter"/>筛选
           </div>
@@ -202,6 +202,7 @@ export default {
   .el-select .el-input_icon {
     font-size: 20px;
     transform: scale(1.5);
+    border: 0;
   }
   .statistics-form{
     margin-left: 2%;

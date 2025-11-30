@@ -3,6 +3,9 @@ import {heart, logOut, refreshAccessToken} from "@/api/interface/backendInterfac
 import router from "@/router/index.js";
 export default {
   name: 'Topbar',
+  props: [
+      'collapse'
+  ],
   data() {
     return {
       username: "",
@@ -58,7 +61,7 @@ export default {
 </script>
 
 <template>
-  <div class="topbar">
+  <div :class="[collapse? 'topbar-collapsed':'topbar']">
     <!-- 顶部栏内容 -->
     <div class="userInfo" >
       <div v-if="username">
@@ -79,24 +82,40 @@ export default {
 
 
 <style scoped>
-/*.topbar {
+.topbar {
   color: black;
   padding-top: 0;
   padding-bottom: 5px;
   text-align: center;
   height: 10%;
-  border: solid 1px black;
+  margin-top: 0.8%;
   margin-bottom: 10px;
   top: 0;
-  left: 8%;
   position: fixed;
-  width: 92%;
-}*/
+  width: 90%;
+  margin-left: 10%;
+  background-color: white;
+}
+.topbar-collapsed {
+  color: black;
+  padding-top: 0;
+  padding-bottom: 5px;
+  text-align: center;
+  height: 10%;
+  margin-top: 0.8%;
+  margin-bottom: 10px;
+  top: 0;
+  position: fixed;
+  width: 100%;
+  margin-left: 0;
+  background-color: white;
+}
+
 
 .userInfo {
   top: 10px;
   right: 10px;
   text-align: center;
-  position: absolute;
+  position: fixed;
 }
 </style>

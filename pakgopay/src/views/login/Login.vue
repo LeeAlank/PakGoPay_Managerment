@@ -678,6 +678,10 @@ import {ElNotification} from "element-plus";
         await LoginBack(loginForm).then((response) => {
            if (response.status === 200 && response.data) {
              console.log("new response----",response.data);
+             if (response.data.code !== 0) {
+               ElMessage.error(response.data.message)
+               return;
+             }
              try {
                // 登录成功后 根据返回结果跳转
                // 如果登录成功，跳转到首页

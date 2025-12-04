@@ -28,6 +28,8 @@
 <script>
 import {menu} from "@/api/interface/backendInterface.js";
 import SvgIcon from "@/components/SvgIcon/index.vue";
+import {getAsyncRoutes} from "@/router/asyncRouter.js";
+import router from "@/router/index.js";
 
 export default {
   props: [
@@ -37,19 +39,26 @@ export default {
   components: {SvgIcon},
   data() {
     return {
-      menuItems: JSON.parse(localStorage.getItem("menu")),
+      menuItems: []
+      /*menuItems: JSON.parse(localStorage.getItem("menu")),*/
       /*collapse: false,*/
     }
   },
-  mounted() {
-    if(localStorage.getItem('menu') === null) {
-      this.fetchMenu()
+  created() {
+    /*if(localStorage.getItem('menu') === null) {
+      this.fetchMenuList()
     } else {
-      this.menuItems = JSON.parse(localStorage.getItem("menu"))
-    }
+      getAsyncRoutes(this.menuItems).forEach((route) => {
+        console.log("sssss---",route)
+        router.addRoute(route)
+      })
+    }*/
+  },
+  mounted() {
+    this.menuItems = JSON.parse(localStorage.getItem('menu'))
   },
   methods: {
-    async fetchMenu() {
+    /*async fetchMenu() {
       try {
         await menu().then(res => {
           if (res.status === 200 && res.data.data) {
@@ -61,6 +70,18 @@ export default {
         console.error(error)
       }
     },
+    async fetchMenuList() {
+      await menu().then(res => {
+        if (res.status === 200 && res.data.data) {
+          this.menuItems = JSON.parse(res.data.data)
+          localStorage.setItem('menu', JSON.stringify(this.menuItems))
+          // 根据菜单提取路由
+        getAsyncRoutes(this.menuItems).forEach((route) => {
+            router.addRoute(route)
+          })
+        }
+      })
+    },*/
     showItems(item) {
       item.showItem = (item.showItem == true) ? false : true
       localStorage.setItem('menu',JSON.stringify(this.menuItems))
@@ -69,7 +90,6 @@ export default {
       alert("嘿嘿嘿")
     },
     changeCollapse() {
-      console.log("changeCollapse")
       this.collapse = !this.collapse
     }
   }
@@ -81,7 +101,7 @@ export default {
   background-color: darkslategrey;
   height: 100vh; /* 100% of the viewport height */
   /*width: 20vh;*/ /* Adjust as needed */
-  width: 10%;
+  width: 11%;
   position: fixed; /* Or absolute based on your layout needs */
   left: 0;
   top: 0;

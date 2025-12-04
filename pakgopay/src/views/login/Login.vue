@@ -143,7 +143,7 @@ const handleRegister = () => {
               <span>remember me</span>
             </label>
 
-            <input style="background-color: transparent;box-shadow: none;color: white;border:white;text-decoration: underline;cursor: pointer;" type="button" @click="getQrCodes(loginForm.userName)" value="haven't code? click here" />
+            <input style="background-color: transparent;box-shadow: none;color: white;border:white;text-decoration: underline;cursor: pointer;" type="button" @click="getQrCodes(loginForm.userName, loginForm.password)" value="haven't code? click here" />
 
             <!-- 忘记密码链接 -->
             <a href="#" class="forgot-link">forgot password？</a>
@@ -630,11 +630,13 @@ const handleRegister = () => {
 </style>
 <script>
 
-import {getQrCode, LoginBack} from "@/api/interface/backendInterface.js";
-import router from "@/router/index.js";
+import {getQrCode, LoginBack, menu} from "@/api/interface/backendInterface.js";
 import Modal from "@/components/Modal.vue"
 import {ElMessage} from "element-plus";
-import {ElNotification} from "element-plus";
+import {getAsyncRoutes} from "@/router/asyncRouter.js";
+import router from "@/router/index.js";
+
+;
 
   export default {
     name: "Login",
@@ -689,15 +691,21 @@ import {ElNotification} from "element-plus";
                // 如果refreshToken也过期，则跳转到登陆页重新获取refreshToken
                /*localStorage.setItem("userInfo", response.data.data.split("&&")[1]);
                localStorage.setItem("token", response.data.data.split("&&")[0]);*/
-               console.log("token---", response.data.token)
                localStorage.setItem("token", response.data.token);
                localStorage.setItem("userInfo", response.data.userId)
-               console.log("RTTTTT=======",response.data.refreshToken);
                localStorage.setItem("refreshToken", response.data.refreshToken)
-               /*localStorage.setItem("menu", JSON.stringify(response.data.menu));*/
-               console.log("登陆跳转")
-               router.push("/web/pakGoPay");
-               console.log("end")
+               menu().then(m => {
+                 if (m.status === 200 && m.data.data) {
+                   this.menuItems = JSON.parse(m.data.data)
+                   console.log(m.data.data)
+                   localStorage.setItem('menu', JSON.stringify(this.menuItems))
+                   // 根据菜单提取路由
+                   getAsyncRoutes(this.menuItems).forEach((route) => {
+                     router.addRoute(route)
+                   })
+                 }
+                 router.push("/web/pakGoPay");
+               })
              } catch (e) {
                console.error(e)
              }
@@ -706,12 +714,12 @@ import {ElNotification} from "element-plus";
            }
         })
     },
-    getQrCodes(username) {
-      if (!username) {
-        alert("please enter username");
+    getQrCodes(username, password) {
+      if (!username && !password) {
+        ElMessage.error("please enter username and password before")
         return;
       }
-         getQrCode(username).then(res => {
+         getQrCode(username, password).then(res => {
            if (res.status === 200 && res.data.code !== 0) {
              ElMessage({
                message: res.data.message,

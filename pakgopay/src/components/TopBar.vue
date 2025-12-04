@@ -12,32 +12,27 @@ export default {
     }
   },
   created() {
-    this.username = localStorage.getItem("userInfo");
+    this.username = localStorage.getItem("userName");
   },
   mounted() {
-    this.username = localStorage.getItem("userInfo");
-    this.heartBeat();
+    this.username = localStorage.getItem("userName")
+    /*this.username = localStorage.getItem("userName");
+    if (!this.username) {
+      this.logOut()
+    }*/
+   /* this.heartBeat();*/
   },
   methods: {
     logOut,
     async heartBeat() {
        console.log("heartBeat");
-      /*await heart().then(res => {
-        if(res.data !== 'success') {
-          console.info("重新登陆")
-          localStorage.removeItem("token");
-          localStorage.removeItem("userInfo");
-          localStorage.removeItem("menu")
-          router.push("/web/login");
-        }
-      });*/
-
       await heart().then(res => {
         console.log("heartbeat response ---",res);
         if(res.data === 'refresh') {
           console.info("重新登陆")
           localStorage.removeItem("token");
-          localStorage.removeItem("userInfo");
+          localStorage.removeItem("userName");
+          localStorage.removeItem("userId");
           localStorage.removeItem("menu");
           /*router.push("/web/login");*/
           // 返回refresh 需要调用refresh接口刷新token 无需重新登陆
@@ -45,7 +40,8 @@ export default {
             if (response.status === 200 && response.data) {
               if (response.data.code === 0) {
                 localStorage.setItem("token", response.data.token);
-                localStorage.setItem("userInfo", response.data.userId)
+                localStorage.setItem("userName", response.data.userName)
+                localStorage.setItem("userId", response.data.userId);
                 localStorage.setItem("refreshToken", response.data.refreshToken)
               } else {
                 router.push("/web/login")
@@ -75,7 +71,6 @@ export default {
         <button @click="logOut()">退出</button>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -85,37 +80,34 @@ export default {
 .topbar {
   color: black;
   padding-top: 0;
-  padding-bottom: 5px;
   text-align: center;
   height: 10%;
-  margin-top: 0.8%;
-  margin-bottom: 10px;
-  top: 0;
-  position: fixed;
+  display: flex;
+  align-items: center;
   width: 90%;
-  margin-left: 10%;
+  margin-top: 0.3%;
+  margin-left: 11.5%;
   background-color: white;
 }
 .topbar-collapsed {
   color: black;
   padding-top: 0;
-  padding-bottom: 5px;
   text-align: center;
   height: 10%;
-  margin-top: 0.8%;
-  margin-bottom: 10px;
   top: 0;
-  position: fixed;
+  display: flex;
   width: 100%;
+  margin-top: 0.3%;
   margin-left: 0;
   background-color: white;
+  align-items: center;
 }
 
 
 .userInfo {
-  top: 10px;
+  height: 50px;
   right: 10px;
-  text-align: center;
+  padding-right: 10px;
   position: fixed;
 }
 </style>

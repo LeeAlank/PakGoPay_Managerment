@@ -2,14 +2,12 @@ import service from '../axios.js'
 import router from "@/router/index.js";
 
 export async function LoginBack(loginFormData) {
-    console.info('请求组装的token',localStorage.getItem('token'));
-    console.info(loginFormData)
     return service({
         url: '/api/pakGoPay/server/Login/login',
         method: "POST",
         headers: {
             'Content-Type': 'application/json;charset=UTF-8',
-            'Authorization': `Bearer ${encodeURIComponent(localStorage.getItem('token'))}`,
+            /*'Authorization': `Bearer ${encodeURIComponent(localStorage.getItem('token'))}`,*/
         },
         data: loginFormData,
         responseType: 'json',
@@ -39,18 +37,24 @@ export async function menu() {
     })
 }
 
-export async function logOut() {
+export function logOut() {
+    alert("logot")
     localStorage.removeItem("token");
     localStorage.removeItem("menu")
-    await router.push("/web/login");
+    localStorage.removeItem("userName")
+    localStorage.removeItem("userId")
+    localStorage.removeItem("currentPath")
+    /*localStorage.removeItem("refreshToken")*/
+    router.push("/web/login").then()
 }
 
-export async function getQrCode(username) {
+export async function getQrCode(username, password) {
     return service({
         url: '/api/pakGoPay/server/Login/getCode',
         method: 'GET',
         params: {
             userId: username,
+            password: password
         }
     })
 }
@@ -62,5 +66,19 @@ export async function refreshAccessToken(refreshToken) {
         params: {
             freshToken: refreshToken
         }
+    })
+}
+
+export async function filterSearchMerchantStatement(form) {
+    console.log(JSON.stringify(form))
+    return service({
+        url: '/api/pakGoPay/server/merchant/merchantStatement',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        data: form,
+        responseType: 'json',
     })
 }

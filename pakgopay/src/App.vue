@@ -23,6 +23,9 @@ import {heart, refreshAccessToken} from "@/api/interface/backendInterface.js";
     methods: {
       logOut() {
         localStorage.removeItem("token" );
+        localStorage.removeItem("userName")
+        localStorage.removeItem("userId")
+        localStorage.removeItem("menu")
         router.push("/web/login");
       },
       changeCollapse() {
@@ -67,7 +70,7 @@ import {heart, refreshAccessToken} from "@/api/interface/backendInterface.js";
   text-align: center;
   height: 7%;
   margin-bottom: 10px;
-  top: 1%;
+  /*top: 0.8%;*/
   /*left: 10.9%;*/
   position: fixed;
   background-color: white;
@@ -87,9 +90,9 @@ import {heart, refreshAccessToken} from "@/api/interface/backendInterface.js";
   background-color: white;
 }
 .content {
- position: fixed;
+  position: fixed;
   top: 15%;
-  margin-left: 10.3%;
+  margin-left: 11.5%;
   width: 90%;
   height: 75%;
   background-color: #F3F3F3;
@@ -107,8 +110,8 @@ import {heart, refreshAccessToken} from "@/api/interface/backendInterface.js";
 .zhedie {
   position: fixed;
   color: red;
-  margin-left: 10%;
-  margin-top:0.1%;
+  margin-left: 11.5%;
+  margin-top:0.2%;
   background-color: limegreen;
 }
 .zhedie-zhedie {

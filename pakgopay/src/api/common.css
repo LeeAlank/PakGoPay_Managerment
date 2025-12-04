@@ -2,3 +2,86 @@
     margin-top: 10vh;
     margin-left: 25vh;
 }
+
+.main-title{
+    /*margin-top: 1%;*/
+    margin-left: 2%;
+    margin-right: 3%;
+    font-size: 24px;
+    font-weight: bold;
+    background-color: white;
+    padding-left: 10px;
+    border-radius: 10px;
+    width: 94.5%;
+}
+
+.main-toolbar{
+    margin-top: 1%;
+    margin-left: 2%;
+    margin-right: 3%;
+    background-color: white;
+    height: 20%;
+    width: 95%;
+    border-radius: 15px;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+}
+
+.main-toolform{
+    /*margin-left: 1%;*/
+    height: 90%;
+    padding: 0;
+    width: 100%;
+}
+
+.main-toolform-item-filter{
+    /*margin-top: 1%;*/
+    height: 30%;
+    margin-left: 2%;
+    /*margin-right: 2%;*/
+    /*margin-left: 2%;*/
+    display: flex;
+    justify-content: space-between;
+
+    align-items: center;
+}
+
+.main-toolform-item{
+    /*margin-top: 1%;*/
+    height: 35%;
+    /*margin-right: 2%;*/
+    /*margin-left: 2%;*/
+    display: flex;
+    justify-content: space-between;
+
+    align-items: center;
+}
+
+.main-toolform-input{
+    background-color: transparent;
+    border: solid 1px #6495ed;
+    height: 70%;
+    width: 300px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.main-toolform-line {
+    height: 50px;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.main-views-container {
+    width: 98%;
+    height: 200px;
+    margin-top: 20px;
+    margin-left: 2%;
+}
+
+.main-views-form {
+    height: 100px;
+}

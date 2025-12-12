@@ -128,8 +128,8 @@ collapse-title {
 }
 .sidebar li {
   color: #f2f2f2;
-  font-size: small;
-  margin: 0;
+  font-size: medium;
+  margin: 10px;
   height: 100%;
   padding: 2px;
   width: 100%;

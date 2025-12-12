@@ -21,11 +21,54 @@ export default {
         endTime: '',
       },
       reportTitle : '代收订单订单总数｜代收订单成功率｜代收订单成功数｜代付订单总数｜代收订单成功率｜代收订单成功数｜代收/付商户手续费｜一二三级代理佣金｜代收/付总利润',
-      currentPage: 1,
-      totalCount: 2,
+      tab1CurrentPage: 1,
+      tab1TotalCount: 2,
       pageSizes: [1,5,10,15,30,50,100],
-      pageSize: 1,
-      reportInfoData: [
+      tab1PageSize: 1,
+      tab2CurrentPage: 1,
+      tab2TotalCount: 2,
+      tab2PageSize: 1,
+      collectingReportInfoData: [
+        {
+          dsOrderNumber: '100000000000',
+          dsOrderSuccessRate: '98%',
+          dsOrderSuccessNumber: 1000,
+          commission: 10000,
+          agencyCommission: 100000000,
+          totalProfit: 100000000000,
+          merchantAccount: '测试商户'
+        },
+        {
+          dsOrderNumber: '100000000000',
+          dsOrderSuccessRate: '98%',
+          dsOrderSuccessNumber: 1000,
+          commission: 10000,
+          agencyCommission: 100000000,
+          totalProfit: 100000000000,
+          merchantAccount: '测试商户2'
+        }
+      ],
+      payingReportInfoData: [
+        {
+          dfOrderNumber: '99',
+          dfOrderSuccessRate: '98%',
+          dfOrderSuccessNumber: 1000,
+          commission: 10000,
+          agencyCommission: 100000000,
+          totalProfit: 100000000000,
+          merchantAccount: '测试商户'
+        },
+        {
+          dfOrderNumber: '77',
+          dfOrderSuccessRate: '98%',
+          dfOrderSuccessNumber: 1000,
+          commission: 10000,
+          agencyCommission: 100000000,
+          totalProfit: 100000000000,
+          merchantAccount: '测试商户2'
+        }
+      ],
+      allCollectingReportInfoData: [
         {
           dsOrderNumber: '100000000000',
           dsOrderSuccessRate: '98%',
@@ -37,21 +80,9 @@ export default {
           agencyCommission: 100000000,
           totalProfit: 100000000000,
           merchantAccount: '测试商户'
-        },
-        {
-          dsOrderNumber: '100000000000',
-          dsOrderSuccessRate: '98%',
-          dsOrderSuccessNumber: 1000,
-          dfOrderNumber: '001',
-          dfOrderSuccessRate: '98%',
-          dfOrderSuccessNumber: 1000,
-          commission: 10000,
-          agencyCommission: 100000000,
-          totalProfit: 100000000000,
-          merchantAccount: '测试商户2'
         }
       ],
-      allReportInfoData: [
+      allPayingReportInfoData: [
         {
           dsOrderNumber: '100000000000',
           dsOrderSuccessRate: '98%',
@@ -72,22 +103,39 @@ export default {
       //导出报表方法
     },
     // 改变每页显示条数
-    handleSizeChange(pageSize) {
-      this.pageSize = pageSize
-      this.currentPage = 1
-      this.handleCurrentChange(1)
+    handleTab1SizeChange(pageSize) {
+      this.tab1PageSize = pageSize
+      this.tab1CurrentPage = 1
+      this.handleTab1CurrentChange(1)
     },
-    handleCurrentChange(currentPage) {
-      this.currentPage = currentPage
+    handleTab1CurrentChange(currentPage) {
+      this.tab1CurrentPage = currentPage
       let pageSize = this.pageSize
       // 清空table绑定数据
-      this.reportInfoData = []
+      this.collectingReportInfoData = []
       // 获取当前页数数据范围 。(当前页-1)*每页数据 - 当前页*每页数据
-      this.reportInfoData = this.allReportInfoData.slice((((currentPage -1)*pageSize)), ((currentPage)*pageSize))
+      this.collectingReportInfoData = this.allCollectingReportInfoData.slice((((currentPage -1)*pageSize)), ((currentPage)*pageSize))
+    },
+    handleTab2SizeChange(pageSize) {
+      this.tab2PageSize = pageSize
+      this.tab2CurrentPage = 1
+      this.handleTab2CurrentChange(1)
+    },
+    handleTab2CurrentChange(currentPage) {
+      this.tab2CurrentPage = currentPage
+      let pageSize = this.tab2PageSize
+      // 清空table绑定数据
+      this.payingReportInfoData = []
+      // 获取当前页数数据范围 。(当前页-1)*每页数据 - 当前页*每页数据
+      this.payingReportInfoData = this.allPayingReportInfoData.slice((((currentPage -1)*pageSize)), ((currentPage)*pageSize))
     },
     getAllReportInfoData() {
       //获取所有数据
     },
+  },
+  mounted() {
+    this.tab1TotalCount = this.collectingReportInfoData.length
+    this.tab2TotalCount = this.payingReportInfoData.length
   }
 }
 </script>
@@ -178,149 +226,210 @@ export default {
       </div>
     </form>
   </div>
+
   <div class="reportInfo">
-    <form id="reportInfo" class="reportInfoForm">
-      <el-table
-          border :data="reportInfoData"
-          class="reportInfo-table"
-          style="width: 97%"
-          height="500"
-      >
-        <el-table-column
-            label="商户名称"
-            v-slot="{row}"
-            align="center"
-            fixed
-            width="150px"
-        >
-          <div>
-            {{row.merchantAccount}}
-          </div>
-        </el-table-column>
-        <el-table-column
-          prop="dsOrderNumber"
-          label="代收订单总数"
-          v-slot="{row}"
-          align="center"
-        >
-          <div>
-            {{row.dsOrderNumber}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="dsOrderSuccessRate"
-            label="代收订单成功率"
-            v-slot="{row}"
-            align="center"
-            width="150px"
-        >
-          <div>
-            {{row.dsOrderSuccessRate}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="dsOrderSuccessNumber"
-            label="代收订单成功数"
-            v-slot="{row}"
-            align="center"
-            width="150px"
-        >
-          <div>
-            {{row.dsOrderSuccessNumber}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="dfOrderNumber"
-            label="代付订单总数"
-            v-slot="{row}"
-            align="center"
-            width="150px"
-        >
-          <div>
-            {{row.dfOrderNumber}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="dfOrderSuccessRate"
-            label="代付订单成功率"
-            v-slot="{row}"
-            align="center"
-            width="150px"
-        >
-          <div>
-            {{row.dfOrderSuccessRate}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="dfOrderSuccessNumber"
-            label="代付订单成功数"
-            v-slot="{row}"
-            align="center"
-            width="150px"
-        >
-          <div>
-            {{row.dfOrderSuccessNumber}}
-          </div>
-        </el-table-column>
-          <el-table-column
-              prop="commission"
-              label="代收/付商户手续费"
-              v-slot="{row}"
-              align="center"
-              width="150px"
+    <el-tabs type="border-card">
+      <el-tab-pane label="代收报表">
+        <form id="reportInfo" class="reportInfoForm">
+          <el-table
+              border :data="collectingReportInfoData"
+              class="reportInfo-table"
+              style="width: 97%"
+              height="470"
           >
-            <div>
-              {{row.commission}}
-            </div>
-          </el-table-column>
+            <el-table-column
+                label="商户名称"
+                v-slot="{row}"
+                align="center"
+                width="150px"
+            >
+              <div>
+                {{row.merchantAccount}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="dsOrderNumber"
+                label="代收订单总数"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.dsOrderNumber}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="dsOrderSuccessRate"
+                label="代收订单成功率"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.dsOrderSuccessRate}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="dsOrderSuccessNumber"
+                label="代收订单成功数"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.dsOrderSuccessNumber}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="commission"
+                label="代收商户手续费"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.commission}}
+              </div>
+            </el-table-column>
             <el-table-column
                 prop="agencyCommission"
                 label="一二三级代理佣金"
                 v-slot="{row}"
                 align="center"
-
             >
               <div>
                 {{row.agencyCommission}}
               </div>
             </el-table-column>
-              <el-table-column
-                  prop="totalProfit"
-                  label="代收/付总利润"
-                  v-slot="{row}"
-                  align="center"
-                  width="100px"
-                  fixed="right"
-              >
-                <div>
-                  {{row.totalProfit}}
-                </div>
-              </el-table-column>
-      </el-table>
-      <el-pagination
-          background
-          layout="sizes, prev, pager, next, jumper, total"
-          :total="totalCount"
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="pageSizes"
-          @current-change="handleCurrentChange"
-          style="float:right; margin-right: 5%;"
-      >
-      </el-pagination>
-    </form>
+            <el-table-column
+                prop="totalProfit"
+                label="代收总利润"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.totalProfit}}
+              </div>
+            </el-table-column>
+          </el-table>
+          <el-pagination
+              background
+              layout="sizes, prev, pager, next, jumper, total"
+              :total="tab1TotalCount"
+              v-model:current-page="tab1CurrentPage"
+              v-model:page-size="tab1PageSize"
+              :page-sizes="pageSizes"
+              @current-change="handleTab1CurrentChange"
+              @size-change="handleTab2SizeChange"
+              style="float:right; margin-right: 5%;"
+          >
+          </el-pagination>
+        </form>
+      </el-tab-pane>
+      <el-tab-pane label="代付报表">
+        <form id="reportInfo" class="reportInfoForm">
+          <el-table
+              border :data="payingReportInfoData"
+              class="reportInfo-table"
+              style="width: 97%"
+              height="470"
+          >
+            <el-table-column
+                label="商户名称"
+                v-slot="{row}"
+                align="center"
+                width="150px"
+            >
+              <div>
+                {{row.merchantAccount}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="dfOrderNumber"
+                label="代付订单总数"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.dfOrderNumber}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="dfOrderSuccessRate"
+                label="代付订单成功率"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.dfOrderSuccessRate}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="dfOrderSuccessNumber"
+                label="代付订单成功数"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.dfOrderSuccessNumber}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="commission"
+                label="代付商户手续费"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.commission}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="agencyCommission"
+                label="一二三级代理佣金"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.agencyCommission}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="totalProfit"
+                label="代付总利润"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.totalProfit}}
+              </div>
+            </el-table-column>
+          </el-table>
+          <el-pagination
+              background
+              layout="sizes, prev, pager, next, jumper, total"
+              :total="tab2TotalCount"
+              v-model:current-page="tab2CurrentPage"
+              v-model:page-size="tab2PageSize"
+              :page-sizes="pageSizes"
+              @current-change="handleTab2CurrentChange"
+              @size-change="handleTab2SizeChange"
+              style="float:right; margin-right: 5%;"
+          >
+          </el-pagination>
+        </form>
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
 <style scoped>
   .title{
     /*margin-top: 1%;*/
+    margin-top: 0;
     margin-left: 2%;
     font-size: 24px;
     font-weight: bold;
     background-color: white;
     padding-left: 10px;
     border-radius: 10px;
-    width: 95.5%;
+    width: 10%;
+    color: deepskyblue;
   }
 
   .toolbar{

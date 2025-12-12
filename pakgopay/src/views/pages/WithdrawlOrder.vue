@@ -4,8 +4,11 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 </script>
 
 <template>
-  <div style="width: 100%;height: 110%; overflow-y: scroll;">
-    <div class="main-title">代付订单</div>
+  <div class="main-views-container">
+    <div class="main-title">
+      提现订单
+    </div>
+    <!-- 工具栏 -->
     <el-collapse style="margin-top: 20px; width: 95%;margin-left: 2%;">
       <el-collapse-item>
         <template #title>
@@ -128,15 +131,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       </el-collapse-item>
     </el-collapse>
 
-    <!-- <div v-on:click="createPathChannel()" style="background-color: limegreen;width:100px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;">
-                    <SvgIcon height="30px" width="22px" name="add"/>
-                    <div style="width: 60px;height:30px;color: white;display: flex;align-items: center">创建订单</div>
-                  </div>
-                  <div v-on:click="createPathChannel()" style="background-color: limegreen;width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;">
-                    <SvgIcon height="30px" width="22px" name="add"/>
-                    <div style="width: 50px;height:30px;color: white;display: flex;align-items: center">批量回调</div>
-                  </div> -->
-    <!-- 卡片信息 -->
+    <!-- 统计信息 -->
     <div>
       <div style="display: flex; justify-content: space-between;">
         <el-card style="width: 28%;height: 100%;margin-top: 1%;margin-left: 3%;">
@@ -212,19 +207,11 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </div>
         </div>
         <el-table
-            border :data="collectingOrderTableInfo"
+            border :data="withdrawlOrderTableInfo"
             class="merchantInfos-table"
             style="width: 97%;height: 95%;"
             :key="tableKey"
         >
-          <el-table-column
-              v-slot="{row}"
-              type="selection"
-              width="70px"
-              align="center"
-          >
-
-          </el-table-column>
           <el-table-column
               prop="orderId"
               label="订单号"
@@ -232,38 +219,6 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
               align="center"
           >
             <div>{{row.orderId}}</div>
-          </el-table-column>
-          <el-table-column
-              prop="merchantOrderId"
-              label="商户订单号"
-              v-slot="{row}"
-              align="center"
-          >
-            <div>{{row.merchantOrderId}}</div>
-          </el-table-column>
-          <el-table-column
-              prop="merchantAccount"
-              label="商户号"
-              v-slot="{row}"
-              align="center"
-          >
-            <div>{{row.merchantAccount}}</div>
-          </el-table-column>
-          <el-table-column
-              prop="merchantName"
-              label="商户名称"
-              v-slot="{row}"
-              align="center"
-          >
-            <div>{{row.merchantName}}</div>
-          </el-table-column>
-          <el-table-column
-              prop="currencyType"
-              label="币种"
-              v-slot="{row}"
-              align="center"
-          >
-            <div>{{row.currencyType}}</div>
           </el-table-column>
           <el-table-column
               prop="orderStatus"
@@ -274,22 +229,6 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             <div>{{row.orderStatus}}</div>
           </el-table-column>
           <el-table-column
-              prop="orderAmount"
-              label="订单金额"
-              v-slot="{row}"
-              align="center"
-          >
-            <div>{{row.orderAmount}}</div>
-          </el-table-column>
-          <el-table-column
-              prop="callBackStatus"
-              label="回调状态"
-              v-slot="{row}"
-              align="center"
-          >
-            <div>{{row.callBackStatus}}</div>
-          </el-table-column>
-          <el-table-column
               prop="createTime"
               label="创建时间"
               v-slot="{row}"
@@ -298,12 +237,20 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             <div>{{row.createTime}}</div>
           </el-table-column>
           <el-table-column
-              prop="orderId"
-              label="请求IP"
+              prop="applyer"
+              label="申请人"
               v-slot="{row}"
               align="center"
           >
-            <div>{{row.requestIP}}</div>
+            <div>{{row.applyer}}</div>
+          </el-table-column>
+          <el-table-column
+              prop="currencyType"
+              label="处理状态"
+              v-slot="{row}"
+              align="center"
+          >
+            <div>{{row.resolveStatus}}</div>
           </el-table-column>
         </el-table>
         <el-pagination
@@ -322,19 +269,17 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
     </div>
   </div>
 </template>
+
 <script>
 export default {
+  name: "WithdrawlOrder",
   data() {
     return {
       totalCount: 0,
       currentPage: 1,
       pageSize: 10,
-      pageSizes: [10, 50, 100],
-      activeToolBar: true,
+      pageSizes: [10, 20, 30, 40],
       tableKey: 0,
-      activeNames: '筛选',
-      checked: false,
-      checkAll: false,
       filterbox: {
         orderStatus: '',
         orderId: '',
@@ -356,153 +301,8 @@ export default {
         merchantFreezeAmount: 1000,
         merchantAvaiableAmount: 99000,
       },
-      collectingOrderTableInfo: [],
-      collectingOrderFormInfo: [
-        {
-          orderId: 'DF001',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '1000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        },
-        {
-          orderId: 'DF002',
-          merchantOrderId: 'SN002',
-          merchantAccount: 'lee01',
-          merchantName: '商户一',
-          currencyType: '马币',
-          orderStatus: '1',
-          orderAmount: '10000',
-          callBackStatus: '1',
-          createTime: '2025-12-12',
-          requestIP: '127.0.0.1',
-        }
-      ],
+      withdrawlOrderTableInfo: [],
+      withdrawlOrderFormInfo: []
     }
   },
   methods: {
@@ -524,8 +324,11 @@ export default {
     },
   },
   mounted() {
-    this.collectingOrderTableInfo = this.collectingOrderFormInfo;
-    this.totalCount = this.collectingOrderTableInfo.length;
+    this.withdrawlOrderTableInfo = this.withdrawlOrderFormInfo;
+    this.totalCount = this.withdrawlOrderTableInfo.length;
+    if (this.totalCount===0) {
+      return;
+    }
     this.handleChange(this.currentPage);
     this.tableKey++
   }
@@ -533,35 +336,4 @@ export default {
 </script>
 <style scoped>
 
-</style>
-<style>
-.toolbarName {
-  display:flex;
-  justify-content: left;
-  align-items: center;
-  margin-left: 1%;
-  color: #667eea;
-  font-size: large;
-}
-
-.cash-text-area {
-  width: 90%;
-  height: 100%;
-  background-color: transparent;
-  border: none;
-  resize: none;
-  font-size: xxx-large;
-  text-align: right;
-}
-
-.statics-title {
-  text-align: right;
-  width: 90%;
-  font-size: larger;
-}
-
-.el-table__header .el-table-column--selection .cell .el-checkbox:after {
-  content: "全选";
-  margin-left: 12px;
-}
 </style>

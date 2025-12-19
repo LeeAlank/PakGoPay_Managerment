@@ -258,7 +258,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 export default {
   data() {
     const validatePass = (rule, value, callback) => {
-      if (value === '' || value === 'undefined') {
+      if (value === '' || value === undefined) {
         callback(new Error('请输入密码'))
       } else {
         if (this.createUserInfo.confirmPassword !== '' && this.createUserInfo.confirmPassword !== 'undefined') {
@@ -269,7 +269,7 @@ export default {
     };
 
     const validatePass2 = (rule, value, callback) => {
-      if (value === '' || value === 'undefined') {
+      if (value === '' || value === undefined) {
         callback(new Error('请再次输入密码'))
       } else if (value !== this.createUserInfo.userPassword) {
         callback(new Error("两次输入都密码不一致"))
@@ -400,7 +400,7 @@ export default {
       });
     },
     checkPassword() {
-      if (this.createUserInfo.userPassword === null || this.createUserInfo.userPassword == 'undefined') {
+      if (this.createUserInfo.userPassword === null || this.createUserInfo.userPassword == undefined) {
         return
       }
       if (this.createUserInfo.confirmPassword !== this.createUserInfo.userPassword) {

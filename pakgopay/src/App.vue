@@ -12,8 +12,9 @@ import Content from "@/components/Content.vue";
   </div>
 </template>
 <script>
-import {heart, refreshAccessToken} from "@/api/interface/backendInterface.js";
+import {heart, menu, refreshAccessToken} from "@/api/interface/backendInterface.js";
   import router from "@/router/index.js";
+import {getAsyncRoutes} from "@/router/asyncRouter.js";
 
   export default {
     name: 'app',
@@ -37,8 +38,19 @@ import {heart, refreshAccessToken} from "@/api/interface/backendInterface.js";
                 if (response && response.data) {
                   localStorage.setItem("userName", response.data.userName);
                   localStorage.setItem("userId", response.data.userId);
-                  localStorage.setItem("menu", response.data.menu);
                   localStorage.setItem("token", response.data.token);
+                  menu().then(res => {
+                    if (res.status === 200 && res.data.data) {
+                      let menuJson = JSON.parse(res.data.data)
+                      let menu = JSON.stringify(JSON.parse(res.data.data))
+                      localStorage.setItem('menu', menu)
+                      // 根据菜单提取路由
+                      getAsyncRoutes(menuJson).forEach((route) => {
+                        router.addRoute(route)
+                      })
+                    }
+                  })
+                  /*localStorage.setItem("menu", response.data.menu);*/
                 }
             })
           }else if(res.data === 'success') {

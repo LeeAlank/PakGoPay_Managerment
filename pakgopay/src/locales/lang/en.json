@@ -40,7 +40,8 @@
     "currencyTypeManagement": "Currency Type Management",
     "currencyTypeReport": "Currency Type Report",
     "merchantRecharge": "Merchant Recharge",
-    "manualReconciliation": "Manual Reconciliation"
+    "manualReconciliation": "Manual Reconciliation",
+    "currencyTypeList": "Currency Type List"
   },
   "language": "language",
   "topbar": {

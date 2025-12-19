@@ -6,7 +6,7 @@ import HOME from "../views/Home.vue"
 import MerchantReport from "@/views/pages/MerchantReport.vue";
 import ChannelReport from "@/views/pages/ChannelReport.vue";
 import {START_LOCATION_NORMALIZED as route} from "vue-router/dist/devtools-BLCumUwL.mjs";
-import {menu} from "@/api/interface/backendInterface.js";
+import {menu, refreshAccessToken} from "@/api/interface/backendInterface.js";
 import {getAsyncRoutes} from "@/router/asyncRouter.js";
 
 const router = createRouter({
@@ -199,6 +199,15 @@ window.addEventListener('load', () => {
             // 根据菜单提取路由
             getAsyncRoutes(menuJson).forEach((route) => {
                 router.addRoute(route)
+            })
+        } else if (res.status === 401) {
+            // token过期，重新刷新token
+            refreshAccessToken(localStorage.getItem('refreshToken')).then(res => {
+                if (res.data.code === 1008) {
+                    router.push("/web/login").then(r => {})
+                }
+            localStorage.setItem("token", res.data.data.token);
+             menu().then(res => {})
             })
         }
         if (currentPath) {

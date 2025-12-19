@@ -40,7 +40,8 @@
     "currencyTypeManagement": "币种管理",
     "currencyTypeReport": "币种报表",
     "merchantRecharge": "商户充值",
-    "manualReconciliation": "手工调账"
+    "manualReconciliation": "手工调账",
+    "currencyTypeList": "币种列表"
   },
   "language": "语言",
   "topbar": {

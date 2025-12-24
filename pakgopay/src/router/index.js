@@ -1,11 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router"
 import PAKGOPAY from "../components/PakGoPay.vue"
-import ABOUT from "../components/ABOUT.vue"
 import LOGIN from "../views/login/Login.vue"
-import HOME from "../views/Home.vue"
-import MerchantReport from "@/views/pages/MerchantReport.vue";
-import ChannelReport from "@/views/pages/ChannelReport.vue";
-import {START_LOCATION_NORMALIZED as route} from "vue-router/dist/devtools-BLCumUwL.mjs";
 import {menu, refreshAccessToken} from "@/api/interface/backendInterface.js";
 import {getAsyncRoutes} from "@/router/asyncRouter.js";
 

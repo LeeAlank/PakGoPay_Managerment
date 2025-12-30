@@ -438,7 +438,6 @@ export default {
           type: 'warning',
         }).then(() => {
           deleteLoginUser(this.stopUserInfo.userId, this.stopUserInfo.googleCode).then(response => {
-              alert('status----'+JSON.stringify(response))
               if (response.status === 200 && response.data.code === 0) {
                 this.dialogVisible2 = false
                 this.dialogTitle2 = ""
@@ -576,7 +575,7 @@ export default {
   },
   async mounted() {
 
-    await roleList().then(response => {
+    await roleList(null).then(response => {
       if (response.status === 401) {
         refreshAccessToken(localStorage.getItem("refreshToken"));
       } else if (response.status !== 200 && response.status !== 401) {

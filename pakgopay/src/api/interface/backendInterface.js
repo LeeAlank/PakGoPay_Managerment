@@ -1,6 +1,7 @@
 import service from '../axios.js'
 import router from "@/router/index.js";
 
+
 export async function LoginBack(loginFormData) {
     return service({
         url: '/api/pakGoPay/server/Login/login',
@@ -101,12 +102,15 @@ export async function filterSearchMerchantStatement(form) {
     })
 }
 
-export async function roleList() {
+export async function roleList(roleName) {
     return service({
         url: '/api/pakGoPay/server/SystemConfig/roleList',
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        params: {
+            roleName: roleName
         }
     })
 }
@@ -175,5 +179,91 @@ export function deleteLoginUser(user_id, googleCode) {
             googleCode: googleCode,
             operatorId: `${localStorage.getItem('userId')}`
         }
+    })
+}
+
+export function addRole(roleInfo) {
+    return service({
+        url: '/api/pakGoPay/server/SystemConfig/addRole',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: roleInfo
+    })
+}
+
+export function getRoleInfoByRoleId(roleId) {
+    return service({
+        url: '/api/pakGoPay/server/SystemConfig/getRoleInfoByRoleId',
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        params: {
+            roleId: roleId,
+        }
+    })
+}
+export function modifyRoleInfo(form) {
+    return service({
+        url: '/api/pakGoPay/server/SystemConfig/modifyRoleInfo',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form,
+    })
+}
+
+export function deleteRole(form) {
+    return service({
+        url: '/api/pakGoPay/server/SystemConfig/deleteRole',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form,
+    })
+}
+
+export function getAllCurrencyType(form) {
+    return service({
+        url: '/api/pakGoPay/server/CurrencyTypeManagement/currencyTypeInfo',
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+    })
+}
+
+export function getCurrencyById(id) {
+    return service({
+        url: '/api/pakGoPay/server/CurrencyTypeManagement/getCurrencyById',
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        params: {
+            id: id === undefined ? null : id,
+        }
+    })
+}
+
+export function addCurrencyType(form) {
+    return service({
+        url: '/api/pakGoPay/server/CurrencyTypeManagement/addCurrencyType',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form,
     })
 }

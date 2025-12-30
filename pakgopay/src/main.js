@@ -15,8 +15,8 @@ import { createI18n } from 'vue-i18n'
 import messages from './locales'
 
 const i18n = createI18n({
-    locale: 'en', //默认语言
-    fallbackLocale: 'en',
+    locale: 'zh-cn', //默认语言
+    fallbackLocale: 'zh-cn',
     messages,
     globalInjection: true, //全局注入$t函数
 });

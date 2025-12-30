@@ -86,7 +86,7 @@ export default {
       localStorage.setItem('menu',JSON.stringify(this.menuItems))
     },
     testButton() {
-      alert("嘿嘿嘿")
+
     },
     changeCollapse() {
       this.collapse = !this.collapse

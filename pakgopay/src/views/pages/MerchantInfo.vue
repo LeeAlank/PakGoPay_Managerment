@@ -545,7 +545,6 @@ export default {
         })
         return
       }
-      alert(JSON.stringify(this.deleteMerchantInfo))
     }
   }
 }

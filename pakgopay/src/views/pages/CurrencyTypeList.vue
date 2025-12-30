@@ -18,12 +18,13 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
               placeholder="请选择币种"
               size="medium"
               style="width: 150px;"
+              clearable
           >
             <el-option
                 v-for="item in currencyOptions"
-                :key="item.value"
-                :value="item.value"
-                :label="item.label"
+                :key="item.id"
+                :value="item.id"
+                :label="item.name"
             />
           </el-select>
           <el-button @click="search" style="color: deepskyblue">搜索</el-button>
@@ -35,23 +36,24 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
     <div style="width: 96%;display:flex;justify-content: right;">
       <el-button @click="createNewCurrency"><SvgIcon name="add"/>新增</el-button>
     </div>
-    <el-form>
+    <el-form style="height: 650px">
       <el-table
         :data="currencyTypeData"
         border
-        style="height: 800px;width: 96%"
+        style="height: auto;width: 96%"
+        :key="tableKey"
       >
         <el-table-column
           label="币种名称"
           align="center"
           v-slot="{row}">
-          <div>{{row.currencyEnName}}</div>
+          <div>{{row.name}}</div>
         </el-table-column>
         <el-table-column
             label="币种符号"
             align="center"
             v-slot="{row}">
-          <div>{{row.currencyIcon}}</div>
+          <div>{{row.icon}}</div>
         </el-table-column>
         <el-table-column
             label="币种单位"
@@ -63,7 +65,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             label="对USDT汇率"
             align="center"
             v-slot="{row}">
-          <div>{{row.exchangeRateForUSTD}}</div>
+          <div>{{row.exchangeRate}}</div>
         </el-table-column>
       </el-table>
       <el-pagination
@@ -159,10 +161,11 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 </template>
 
 <script>
+import {getAllCurrencyType, getCurrencyById} from "@/api/interface/backendInterface.js";
+
 export default {
   name: 'CurrencyTypeList',
   data() {
-
     const validateExchangeRate = (rule, value, callback) => {
       if (this.addCurrencyTypeInfo.exchangeRateForUSDTType === 2 && (value === '' || value === undefined)) {
         callback(new Error('固定汇率模式下对USTD汇率为必填项'))
@@ -171,9 +174,15 @@ export default {
       }
     };
     return {
+      textToSpeak: '愛ぃ出る',
+      speech: null, //存储语音合成实例
+      tableKey: 0,
       dialogFormVisible: false,
       dialogTitle: '',
       addCurrencyTypeInfo: {},
+      currencyTypeData: [
+        /*{createTime: 1767082270000,currencyType:"US",exchangeRate:0.900000,icon:"$",id:1,isRate:1,name:"美金"}*/
+      ],
       currencyOptions: [
         {
           value: 1,
@@ -221,8 +230,45 @@ export default {
     }
   },
   methods: {
-    search() {
+    speak(){
+      if('speechSynthesis' in window){
+        if (this.speech){
 
+        }
+      }
+    },
+    search() {
+        getCurrencyById(this.filterbox.selectedCurrency).then(res => {
+          if (res.status === 200) {
+            if (res.data.code !== 0) {
+              this.$notify({
+                title: 'Failed',
+                message: 'get currency failed',
+                type: 'error',
+                position: 'bottom-right'
+              })
+            } else {
+              if ('speechSynthesis' in window) {
+                if (this.speech){
+                  window.speechSynthesis.cancel() //取消之前的语音
+                }
+                this.speech = new SpeechSynthesisUtterance(this.textToSpeak)
+                this.speech.lang = 'ja-JP'
+                window.speechSynthesis.speak(this.speech)
+              } else {
+                alert('换个浏览器')
+              }
+              this.currencyTypeData = JSON.parse(res.data.data)
+            }
+          } else {
+            this.$notify({
+              title: 'Failed',
+              message: 'get currency failed, try again',
+              type: 'error',
+              position: 'bottom-right'
+            })
+          }
+        })
     },
     createNewCurrency() {
       this.addCurrencyTypeInfo.exchangeRateForUSDTType = 1
@@ -249,6 +295,12 @@ export default {
         }
       })
     }
+  },
+  mounted() {
+    getAllCurrencyType().then(res => {
+      this.currencyTypeData = JSON.parse(res.data.data)
+      this.currencyOptions = JSON.parse(res.data.data)
+    })
   }
 }
 </script>

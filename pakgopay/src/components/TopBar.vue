@@ -12,7 +12,7 @@ export default {
     return {
       collapse: false,
       username: "",
-      selectedLang: 'en',
+      selectedLang: 'zh-cn',
       languageOptions: [
         {
           value: 'en',

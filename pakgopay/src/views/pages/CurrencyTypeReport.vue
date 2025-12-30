@@ -185,7 +185,6 @@ export default {
   },
   methods: {
     exportData() {
-      alert("sss")
     },
     search() {
 

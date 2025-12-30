@@ -606,7 +606,6 @@ export default {
         type: 'warning',
       }).then(() => {
         //直行删除
-        alert("still deleting this data")
       }).catch(() => {
         this.$message({
           type: 'info',

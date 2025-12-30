@@ -235,7 +235,7 @@ export default {
       }*/
       this.$refs[rechargeAccountInfo].validate((valid) => {
         if (valid) {
-          alert('submit!');
+
         } else {
           this.$notify({
             title: '错误',

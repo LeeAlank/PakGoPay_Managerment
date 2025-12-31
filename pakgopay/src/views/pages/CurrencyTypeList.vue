@@ -50,6 +50,12 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <div>{{row.name}}</div>
         </el-table-column>
         <el-table-column
+            label="币种英文缩写"
+            align="center"
+            v-slot="{row}">
+          <div>{{row.currencyType}}</div>
+        </el-table-column>
+        <el-table-column
             label="币种符号"
             align="center"
             v-slot="{row}">
@@ -87,22 +93,29 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
         class="dialog"
         center="true"
         width="40%"
-        style="height: 450px;"
+        style="height: 500px;"
         @closed="cancelDialog"
     >
-      <el-form style="margin-top: 50px;" :model="addCurrencyTypeInfo" :rules="rules" ref="addCurrencyTypeInfo">
+      <el-form style="margin-top: 25px;" :model="addCurrencyTypeInfo" :rules="rules" ref="addCurrencyTypeInfo">
         <div class="el-form-line">
           <el-row style="display: flex;justify-content: center;">
             <el-col :span="24" style="display: flex;justify-content: center;">
-              <el-form-item label="币种简称:" label-width="150px" size="medium" prop="currencyEnName">
-                <el-input style="width: 200px;" v-model="addCurrencyTypeInfo.currencyEnName"/>
+              <el-form-item label="币种英文缩写:" label-width="150px" size="medium" prop="currencyType">
+                <el-input style="width: 200px;" v-model="addCurrencyTypeInfo.currencyType"/>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row style="display: flex;justify-content: center;">
             <el-col :span="24" style="display: flex;justify-content: center;">
-              <el-form-item label="币种符号:" label-width="150px" size="medium" prop="currencyIcon">
-                <el-input type="number" v-model="addCurrencyTypeInfo.currencyIcon" style="width: 200px"/>
+              <el-form-item label="币种简称:" label-width="150px" size="medium" prop="name">
+                <el-input style="width: 200px;" v-model="addCurrencyTypeInfo.name"/>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row style="display: flex;justify-content: center;">
+            <el-col :span="24" style="display: flex;justify-content: center;">
+              <el-form-item label="币种符号:" label-width="150px" size="medium" prop="icon">
+                <el-input v-model="addCurrencyTypeInfo.icon" style="width: 200px"/>
               </el-form-item>
             </el-col>
           </el-row>
@@ -124,8 +137,8 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </el-row>
           <el-row style="display: flex;justify-content: center;">
             <el-col :span="24" style="display: flex;justify-content: center;">
-              <el-form-item label="对USDT汇率模式:" label-width="150px" size="medium" prop="exchangeRateForUSDTType" style="display: flex;flex-direction: row">
-                <el-select v-model="addCurrencyTypeInfo.exchangeRateForUSDTType" style="width: 200px;text-align: center">
+              <el-form-item label="对USDT汇率模式:" label-width="150px" size="medium" prop="exchangeRate" style="display: flex;flex-direction: row">
+                <el-select v-model="addCurrencyTypeInfo.isRate" style="width: 200px;text-align: center">
                   <el-option
                     v-for="item in exchangeRateOptions"
                     :label="item.label"
@@ -136,10 +149,10 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row v-if="addCurrencyTypeInfo.exchangeRateForUSDTType === 2">
+          <el-row v-if="addCurrencyTypeInfo.isRate === 2">
             <el-col :span="24" style="display: flex;justify-content: center;">
-              <el-form-item label="对USDT汇率:" label-width="150px" size="medium" prop="exchangeRateForUSDT">
-                <el-input type="number" v-model="addCurrencyTypeInfo.exchangeRateForUSDT" style="width: 200px"/>
+              <el-form-item label="对USDT汇率:" label-width="150px" size="medium" prop="exchangeRate">
+                <el-input type="number" v-model="addCurrencyTypeInfo.exchangeRate" style="width: 200px"/>
               </el-form-item>
             </el-col>
           </el-row>
@@ -161,21 +174,19 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 </template>
 
 <script>
-import {getAllCurrencyType, getCurrencyById} from "@/api/interface/backendInterface.js";
+import {addCurrencyType, getAllCurrencyType, getCurrencyById} from "@/api/interface/backendInterface.js";
 
 export default {
   name: 'CurrencyTypeList',
   data() {
     const validateExchangeRate = (rule, value, callback) => {
-      if (this.addCurrencyTypeInfo.exchangeRateForUSDTType === 2 && (value === '' || value === undefined)) {
+      if (this.addCurrencyTypeInfo.exchangeRate === 2 && (value === '' || value === undefined)) {
         callback(new Error('固定汇率模式下对USTD汇率为必填项'))
       } else {
         callback()
       }
     };
     return {
-      textToSpeak: '愛ぃ出る',
-      speech: null, //存储语音合成实例
       tableKey: 0,
       dialogFormVisible: false,
       dialogTitle: '',
@@ -207,10 +218,13 @@ export default {
         }
       ],
       rules: {
-        currencyEnName: [
-          { required: true, message: '请输入用户名', trigger: 'blur' }
+        currencyType: [
+          { required: true, message: '请输入币种英文简称', trigger: 'blur' }
         ],
-        currencyIcon: [
+        name: [
+          { required: true, message: '请输入币种名称', trigger: 'blur' }
+        ],
+        icon: [
           { required: true, message: '请输入币种符号', trigger: 'blur' }
         ],
         currencyAccuracy: [
@@ -219,7 +233,7 @@ export default {
         googleCode: [
           { required: true, message: '请输入谷歌验证码', trigger: 'blur' }
         ],
-        exchangeRateForUSDT: [
+        exchangeRate: [
           { validator: validateExchangeRate, message: '请输入对USDT汇率', trigger: 'blur', }
         ]
       },
@@ -230,12 +244,24 @@ export default {
     }
   },
   methods: {
-    speak(){
-      if('speechSynthesis' in window){
-        if (this.speech){
-
+    getCurrencyTypeList() {
+      getAllCurrencyType().then(res => {
+        if (res.status === 200) {
+           if (res.data.code === 0) {
+             this.currencyTypeData = JSON.parse(res.data.data)
+             this.currencyOptions = JSON.parse(res.data.data)
+           } else {
+            // this.$notify.error(res.data.message)
+           }
+        } else {
+          this.$notify({
+            title: 'Failed',
+            message: 'get currency failed, try again',
+            type: 'error',
+            position: 'bottom-right'
+          })
         }
-      }
+      })
     },
     search() {
         getCurrencyById(this.filterbox.selectedCurrency).then(res => {
@@ -248,19 +274,10 @@ export default {
                 position: 'bottom-right'
               })
             } else {
-              if ('speechSynthesis' in window) {
-                if (this.speech){
-                  window.speechSynthesis.cancel() //取消之前的语音
-                }
-                this.speech = new SpeechSynthesisUtterance(this.textToSpeak)
-                this.speech.lang = 'ja-JP'
-                window.speechSynthesis.speak(this.speech)
-              } else {
-                alert('换个浏览器')
-              }
               this.currencyTypeData = JSON.parse(res.data.data)
             }
-          } else {
+            }
+          else {
             this.$notify({
               title: 'Failed',
               message: 'get currency failed, try again',
@@ -271,7 +288,7 @@ export default {
         })
     },
     createNewCurrency() {
-      this.addCurrencyTypeInfo.exchangeRateForUSDTType = 1
+      this.addCurrencyTypeInfo.isRate = 2
       this.dialogFormVisible = true;
       this.dialogTitle = "新增币种"
     },
@@ -291,16 +308,32 @@ export default {
     submit(formName) {
       this.$refs[formName].validate(valid => {
         if (valid) {
-
+            addCurrencyType(this.addCurrencyTypeInfo).then(res => {
+              if (res.status === 200) {
+                if (res.data.code !== 0) {
+                  this.$notify({
+                    title: 'Failed',
+                    message: res.data.message,
+                    type: 'error',
+                    position: 'bottom-right'
+                  })
+                } else {
+                  this.$notify({
+                    title: 'Success',
+                    message: 'add currency success',
+                    type: 'success',
+                    position: 'bottom-right'
+                  })
+                  this.getCurrencyTypeList()
+                }
+              }
+            })
         }
       })
     }
   },
   mounted() {
-    getAllCurrencyType().then(res => {
-      this.currencyTypeData = JSON.parse(res.data.data)
-      this.currencyOptions = JSON.parse(res.data.data)
-    })
+    this.getCurrencyTypeList();
   }
 }
 </script>

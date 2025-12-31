@@ -2,6 +2,18 @@
 import {heart, logOut, refreshAccessToken} from "@/api/interface/backendInterface.js";
 import router from "@/router/index.js";
 import SvgIcon from "@/components/SvgIcon/index.vue";
+import { connectWebSocket, disconnectWebSocket } from "@/util/websocket.js"
+
+/*const showNewMessage = (message) => {
+  /!*this.$notify({
+    title: 'new message',
+    message: message,
+    type: "info",
+    duration: 0,
+    position: "top-right",
+  })*!/
+  this.speak(message)
+}*/
 export default {
   name: 'Topbar',
   components: {SvgIcon},
@@ -10,6 +22,8 @@ export default {
   ],
   data() {
     return {
+      speech: null, //存储语音合成实例
+      textToSpeak: '',
       collapse: false,
       username: "",
       selectedLang: 'zh-cn',
@@ -32,11 +46,15 @@ export default {
   },
   mounted() {
     this.username = localStorage.getItem("userName")
+    connectWebSocket('newOrder', this.showNewMessage, null)
     /*this.username = localStorage.getItem("userName");
     if (!this.username) {
       this.logOut()
     }*/
    /* this.heartBeat();*/
+  },
+  beforeUnmount() {
+    disconnectWebSocket();
   },
   methods: {
     logOut,
@@ -71,12 +89,44 @@ export default {
     changeCollapse() {
       this.collapse = !this.collapse;
       this.$emit("changeBar", this.collapse);
+    },
+    speak() {
+      if ('speechSynthesis' in window) {
+        if (this.speech){
+          window.speechSynthesis.cancel() //取消之前的语音
+        }
+        this.speech = new SpeechSynthesisUtterance(this.textToSpeak)
+        //this.speech.lang = 'ja-JP'
+        window.speechSynthesis.speak(this.speech)
+      } else {
+        alert('换个浏览器')
+      }
+    },
+    showNewMessage(message) {
+      this.$notify({
+        title: 'new message',
+        message: message,
+        type: "info",
+        duration: 5000,
+        position: "top-right",
+      })
+      this.textToSpeak = message;
+      this.playNotice()
+      this.speak()
+    },
+    async playNotice() {
+      this.$refs.noticePlayer.muted=false
+      await this.$refs.noticePlayer.play()
     }
   },
 }
 </script>
 
 <template>
+  <audio ref="noticePlayer" muted="true">
+    <source type="audio/mp3" src="@/audio/notice.mp3">
+  </audio>
+  <button refs="startButton"></button>
   <div :class="[collapse? 'topbar-collapsed':'topbar']">
     <div v-if="!$route.meta.showBar" :class="[!collapse? 'zhedie':'zhedie-zhedie']" @click="changeCollapse()">
       <SvgIcon width="30px" height="30px" :name="!collapse ? 'shouqi' : 'zhankai'" style="cursor: pointer;margin:0;"/>

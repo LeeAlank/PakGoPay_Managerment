@@ -28,18 +28,20 @@ export default defineConfig({
   },
 
     server: {
-        host: '0.0.0.0',
+        host: 'localhost',
         port: 5173,
         url: '/web/login',
         open: true,
         proxy: {
             "/api": {
-                target: "http://0.0.0.0:8090",
+                target: "http://localhost:8090",
                 changeOrigin: true, //  用于控制请求头中的host值
                 rewrite: (path) => path.replace("/api", ''),
             },
 
-        }
+        },
+        sockHost: 'localhost:8090',
+        disableHostCheck: true,
     },
     build: {
         assetsDir: "assets",

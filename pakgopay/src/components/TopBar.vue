@@ -22,6 +22,7 @@ export default {
   ],
   data() {
     return {
+      stomp: null,
       speech: null, //存储语音合成实例
       textToSpeak: '',
       collapse: false,
@@ -46,7 +47,10 @@ export default {
   },
   mounted() {
     this.username = localStorage.getItem("userName")
-    connectWebSocket('newOrder', this.showNewMessage, null)
+    if (this.username) {
+      this.stomp = connectWebSocket('newOrder', this.showNewMessage, null)
+    }
+
     /*this.username = localStorage.getItem("userName");
     if (!this.username) {
       this.logOut()
@@ -54,7 +58,10 @@ export default {
    /* this.heartBeat();*/
   },
   beforeUnmount() {
-    disconnectWebSocket();
+    if (this.stomp) {
+      disconnectWebSocket();
+    }
+
   },
   methods: {
     logOut,

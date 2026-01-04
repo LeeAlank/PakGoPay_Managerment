@@ -29,6 +29,7 @@ export function connectWebSocket(topic, onMessageCallback, refreshCallback) {
         console.error('WebSocket Connect Error, will retry reconnect......', error);
         scheduleReconnect(topic, onMessageCallback, refreshCallback);
         })
+    return stompClient;
 }
 
 function scheduleReconnect(topic, onMessageCallback, refreshCallback) {

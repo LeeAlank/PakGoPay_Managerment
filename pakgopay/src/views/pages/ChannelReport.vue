@@ -8,6 +8,8 @@ import merchantReport from "@/views/pages/MerchantReport.vue";
 import {ElPagination} from "element-plus";
 import 'element-plus/theme-chalk/el-pagination.css'
 import '@/api/common.css'
+import {ref} from "vue";
+const filterTimeRange = ref('')
 export default {
   name: "ChannelReport",
   components: {
@@ -90,12 +92,14 @@ export default {
               <el-form-item label="时间范围:" label-width="150px" prop="timeRange">
                 <div style="display: flex; flex-direction: row;">
                   <el-date-picker
-                      v-model="filterbox.timeRange"
+                      v-model="filterTimeRange"
                       type="datetimerange"
                       :shortcuts="pickerOptions"
                       range-separator="至"
                       start-placeholder="开始日期"
                       end-placeholder="结束日期"
+                      format="YYYY/MM/DD"
+                      value-format="YYYY-MM-DD"
                   >
                   </el-date-picker>
                   <el-button @click="reset('filterForm')">
@@ -120,9 +124,9 @@ export default {
       <div class="statistics-container"  style="flex-direction: row;justify-content: space-around">
         <el-card id="statistics" class="statistics-form">
           <div class="statistics-form-item">
-            <SvgIcon name="cash" width="100px" height="100px"/>
+            <SvgIcon name="tixian" width="100px" height="100px"/>
             <div style="display: flex; flex-direction: column;width: 80%;">
-              <span>代收金额:</span>
+              <span style="text-align: left;font-size: x-large">代收金额:</span>
               <textarea v-model="statistics.collectionChannelAmount" disabled class="cash-text-area"></textarea>
             </div>
           </div>
@@ -130,9 +134,9 @@ export default {
 
         <el-card id="statistics" class="statistics-form">
           <div class="statistics-form-item">
-            <SvgIcon name="tixian" width="90px" height="90px"/>
+            <SvgIcon name="paying" width="90px" height="90px"/>
             <div style="display: flex; flex-direction: column;width: 80%;">
-              <span>代付总金额:</span>
+              <span style="text-align: left;font-size: x-large">代付总金额:</span>
               <textarea v-model="statistics.payingChannelAmount" disabled class="cash-text-area"></textarea>
             </div>
           </div>
@@ -140,52 +144,172 @@ export default {
       </div>
     </el-collapse-item>
   </el-collapse>
-  <div class="reportInfo">
-    <form id="reportInfoTable" class="reportInfoForm">
-      <el-table style="width: 100%; height: 100%;" border :data="channelInfo" class="reportInfo-table">
-        <el-table-column
-            prop="channelName"
-            label="渠道名称"
-            align="center"
-        />
-        <el-table-column
-            prop="channelLabelName"
-            label="渠道代号"
-            align="center"
-        />
-        <el-table-column
-            prop="channelCollectingTotalAccount"
-            label="渠道代收总金额"
-            align="center"
-        />
-        <el-table-column
-            prop="channelPayingTotalAccount"
-            label="渠道代付总金额"
-            align="center"
-        />
-        <el-table-column
-            prop="channelRate"
-            label="渠道费率"
-            align="center"
-        />
-        <el-table-column
-            prop="chennelNP"
-            label="渠道净利润"
-            align="center"
-        />
-      </el-table>
-      <el-pagination
-          background
-          layout="sizes, prev, pager, next, jumper, total"
-          :total="totalCount"
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="pageSizes"
-          @current-change="handleCurrentChange"
-          style="float:right; margin-right: 5%;"
-      >
-      </el-pagination>
-    </form>
+  <div class="reportInfo" style="width: 95%;margin-left: 2%;">
+    <el-tabs>
+      <el-tab-pane label="代付">
+        <form id="reportInfoTable" class="reportInfoForm">
+          <el-table style="width: 100%; height: 100%;" border :data="payingChannelInfo" class="reportInfo-table">
+            <el-table-column
+                prop="channelName"
+                label="渠道名称"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.channelName}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="payingChannelOrderNumber"
+                label="代付订单总数"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.payingChannelOrderNumber}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="payingChannelFailureOrderNumber"
+                label="代付失败订单数"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.payingChannelFailureOrderNumber}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="payingChannelSuccessOrderNumber"
+                label="代付成功订单数"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.payingChannelSuccessOrderNumber}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="payingChannelSuccessRate"
+                label="代收订单成功率"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.payingChannelSuccessRate}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="payingChannelMerchantCommission"
+                label="代付商户手续费"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.payingChannelMerchantCommission}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="payingChannelProfit"
+                label="代付净利润"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.payingChannelProfit}}</div>
+            </el-table-column>
+            <el-table-column
+              prop="time"
+              label="时间"
+              align="center"
+              v-slot="{row}"
+            >
+              {{getTimeFromTimestamp(row.time)}}
+            </el-table-column>
+          </el-table>
+          <el-pagination
+              background
+              layout="sizes, prev, pager, next, jumper, total"
+              :total="totalCount"
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="pageSizes"
+              @current-change="handleCurrentChange"
+              style="float:right; margin-right: 5%;"
+          >
+          </el-pagination>
+        </form>
+      </el-tab-pane>
+      <el-tab-pane label="代收">
+        <form id="reportInfoTable" class="reportInfoForm">
+          <el-table style="width: 100%; height: 100%;" border :data="collectionChannelInfo" class="reportInfo-table">
+            <el-table-column
+                prop="channelName"
+                label="渠道名称"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.channelName}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="collectionChannelOrderNumber"
+                label="代收订单总数"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.collectionChannelOrderNumber}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="collectionChannelFailureOrderNumber"
+                label="代收失败订单数"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.collectionChannelFailureOrderNumber}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="collectionChannelSuccessOrderNumber"
+                label="代收成功订单数"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.collectionChannelSuccessOrderNumber}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="collectionChannelSuccessRate"
+                label="代收订单成功率"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.collectionChannelSuccessRate}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="collectionChannelMerchantCommission"
+                label="代收商户手续费"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.collectionChannelMerchantCommission}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="collectionChannelProfit"
+                label="代收净利润"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{row.collectionChannelProfit}}</div>
+            </el-table-column>
+            <el-table-column
+                prop="time"
+                label="时间"
+                align="center"
+                v-slot="{row}"
+            >
+              {{getTimeFromTimestamp(row.time)}}
+            </el-table-column>
+          </el-table>
+          <el-pagination
+              background
+              layout="sizes, prev, pager, next, jumper, total"
+              :total="totalCount"
+              v-model:current-page="currentPage"
+              v-model:page-size="pageSize"
+              :page-sizes="pageSizes"
+              @current-change="handleCurrentChange"
+              style="float:right; margin-right: 5%;"
+          >
+          </el-pagination>
+        </form>
+      </el-tab-pane>
+    </el-tabs>
+
   </div>
 </template>
 

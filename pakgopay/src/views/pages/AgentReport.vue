@@ -1,149 +1,158 @@
 <script setup>
-import '@/api/common.css'
 import SvgIcon from "@/components/SvgIcon/index.vue";
 </script>
 
 <template>
   <div class="main-title">代理报表</div>
-  <div class="main-toolbar">
-    <form class="main-toolform">
-      <div class="main-toolform-item-filter">
-        <div class="main-toolform-line" style="justify-content: right;margin-right:3%;">
-          <div v-on:click="reset()" style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
-            <SvgIcon height="30px" width="30px" name="reset"/>
-            <div style="width: 50px;color: white">重置</div>
-          </div>
-          <div v-on:click="search()" style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
-            <SvgIcon height="30px" width="30px" name="search"/>
-            <div style="width:50px;color: white">查询</div>
-          </div>
-          <div v-on:click="exportMerchantInfo" style="background-color: limegreen;width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;">
-            <SvgIcon height="30px" width="30px" name="export"/>
-            <div style="width: 50px;color: white">导出</div>
-          </div>
-        </div>
-      </div>
-      <div class="main-toolform-item">
-        <div class="main-toolform-line">渠道名称：<input v-model="filterbox.pathChannelName" type="text" class="main-toolform-input" placeholder="通道名称"/></div>
-        <div class="main-toolform-line">渠道别名：<input v-model="filterbox.pathChannelLabelName" type="text" class="main-toolform-input" placeholder="通道别名"/></div>
-        <div class="main-toolform-line">开始时间：<input v-model="filterbox.startTime" type="date"  style="width: 150px;" class="main-toolform-input" placeholder="开始时间"/>&nbsp;~&nbsp;
-          <input v-model="filterbox.endTime" style="width: 150px;" type="date" class="main-toolform-input" placeholder="结束时间"/>
-        </div>
-      </div>
-    </form>
-  </div>
-  <div class="statistics-container" style="margin-right: 5%;">
-    <form id="statistics" class="statistics-form">
-      <div class="statistics-form-item">
-        <SvgIcon name="cash" width="100px" height="100px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;justify-items: right">
-          <span style="text-align: right;font-size: x-large">总收益金额:</span>
-          <textarea v-model="totalbox.income" disabled class="cash-text-area"></textarea>
-        </div>
-      </div>
-    </form>
+  <el-collapse style="margin-top: 20px; width: 95%;margin-left: 1%;margin-right: 3%;">
+    <el-collapse-item>
+      <template #title>
+        <span class="toolbarName">
+          工具栏&统计数据
+        </span>
+      </template>
+      <div class="main-toolbar">
+        <el-form class="main-toolform" ref="filterForm" :model="filterbox">
+          <el-row style="display: flex;justify-content: center;align-items: center;">
+            <el-col :span="8">
+              <el-form-item label="代理:" label-width="150px" prop="agentId">
+                <el-select
+                    :options="agentOptions"
+                    :props="agentProps"
+                    placeholder="请选择代理"
+                    v-model="filterbox.agentId"
+                    style="width: 250px"
+                />
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="时间范围:" label-width="150px" prop="timeRange">
+                <div style="display: flex; flex-direction: row;">
+                  <el-date-picker
+                      v-model="filterTimeRange"
+                      type="datetimerange"
+                      :shortcuts="pickerOptions"
+                      range-separator="至"
+                      start-placeholder="开始日期"
+                      end-placeholder="结束日期"
+                      format="YYYY/MM/DD"
+                      value-format="YYYY-MM-DD"
+                  >
+                  </el-date-picker>
+                  <el-button @click="reset('filterForm')">
+                    <SvgIcon height="20px" width="20px" name="reset"/>
+                    <div style="color: black">重置</div>
+                  </el-button>
+                  <el-button type="primary" @click="search()" style="margin:0">
+                    <SvgIcon height="20px" width="20px" name="search"/>
+                    <div style="color: black">查询</div>
+                  </el-button>
+                </div>
 
-    <form id="statistics" class="statistics-form">
-      <div class="statistics-form-item">
-        <SvgIcon name="tixian" width="90px" height="90px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span style="text-align: right;font-size: x-large">提现总金额:</span>
-          <textarea v-model="totalbox.withdraw" disabled class="cash-text-area"></textarea>
-        </div>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
       </div>
-    </form>
+      <div class="statistics-container" style="justify-content: space-around">
+        <el-card id="statistics" class="statistics-form">
+          <div class="statistics-form-item">
+            <SvgIcon name="tixian" width="100px" height="100px"/>
+            <div style="display: flex; flex-direction: column;width: 80%;justify-items: right">
+              <span style="text-align: left;font-size: x-large">代收总金额:</span>
+              <textarea v-model="totalbox.income" disabled class="cash-text-area"></textarea>
+            </div>
+          </div>
+        </el-card>
 
-    <form id="statistics" class="statistics-form">
-      <div class="statistics-form-item">
-        <SvgIcon name="cash-freeze" width="100px" height="100px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;margin-right: 3%">
-          <span style="text-align: right;font-size: x-large">冻结总金额:</span>
-          <textarea v-model="totalbox.freeze" disabled class="cash-text-area"></textarea>
-        </div>
+        <el-card id="statistics" class="statistics-form">
+          <div class="statistics-form-item">
+            <SvgIcon name="paying" width="90px" height="90px"/>
+            <div style="display: flex; flex-direction: column;width: 80%;">
+              <span style="text-align: left;font-size: x-large">代付总金额:</span>
+              <textarea v-model="totalbox.withdraw" disabled class="cash-text-area"></textarea>
+            </div>
+          </div>
+        </el-card>
       </div>
-    </form>
-  </div>
-  <div class="reportInfo" style="margin-right: 5%;">
-<!--    <form id="reportInfo" class="reportInfoForm">
-      <el-table
-          border :data="reportInfoData"
-          class="reportInfo-table"
-          style="width: 97%"
-          height="500"
+    </el-collapse-item>
+  </el-collapse>
+
+
+  <div class="reportInfo" style="margin-left: 1%;margin-right: 3%;margin-top: 1%;width: 95%;">
+    <el-button @click="exportMerchantInfo" style="margin:0;float: right">
+      <SvgIcon height="20px" width="20px" name="export"/>
+      <div style="color: black">导出</div>
+    </el-button>
+    <el-table
+        border
+        :data="agentReportData"
+        class="merchantInfos-table"
+        style="width: 100%;height: auto;"
+        :key="tableKey"
+    >
+      <el-table-column
+          prop="agentName"
+          label="代理名称"
+          v-slot="{row}"
+          align="center"
+          >
+        <div>{{row.agentName}}</div>
+      </el-table-column>
+      <el-table-column
+          prop="collectionOrderSuccessNumber"
+          label="代收成功订单数"
+          v-slot="{row}"
+          align="center"
+          >
+        <div>{{row.collectionOrderSuccessNumber}}</div>
+      </el-table-column>
+      <el-table-column
+          prop="collectionCommission"
+          label="代收佣金"
+          v-slot="{row}"
+          align="center"
+          >
+        <div>{{row.collectionCommission}}</div>
+      </el-table-column>
+      <el-table-column
+          prop="payingOrderSuccessNumber"
+          label="代理名称"
+          v-slot="{row}"
+          align="center"
+          >
+        <div>{{row.payingOrderSuccessNumber}}</div>
+      </el-table-column>
+      <el-table-column
+          prop=" payingOrderCommission"
+          label="代理名称"
+          v-slot="{row}"
+          align="center"
       >
-        <el-table-column
-            label="代理"
-            v-slot="{row}"
-            align="center"
-        >
-          <div>
-            {{row.agentAccount}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="dsOrderNumber"
-            label="代理成功订单数量"
-            v-slot="{row}"
-            align="center"
-        >
-          <div>
-            {{row.agentOrderSuccessNum}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="payingCommisson"
-            label="代收佣金"
-            v-slot="{row}"
-            align="center"
-        >
-          <div>
-            {{row.payingCommission}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="collectionCommission"
-            label="到付佣金"
-            v-slot="{row}"
-            align="center"
-        >
-          <div>
-            {{row.collectionCommission}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="withdrawAmount"
-            label="提现金额"
-            v-slot="{row}"
-            align="center"
-        >
-          <div>
-            {{row.withdrawAmount}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="freezeAmount"
-            label="冻结金额"
-            v-slot="{row}"
-            align="center"
-        >
-          <div>
-            {{row.freezeAmount}}
-          </div>
-        </el-table-column>
-      </el-table>
-      <el-pagination
-          background
-          layout="sizes, prev, pager, next, jumper, total"
-          :total="totalCount"
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="pageSizes"
-          @current-change="handleCurrentChange"
-          style="float:right; margin-right: 5%;"
-      >
-      </el-pagination>
-    </form>-->
-    <el-tabs type="border-card">
+        <div>{{row.payingOrderCommission}}</div>
+      </el-table-column>
+      <el-table-column
+          prop="time"
+          label="时间"
+          v-slot="{row}"
+          align="center">
+        <div>{{row.time}}</div>
+      </el-table-column>
+    </el-table>
+    <el-pagination
+        background
+        layout="sizes, prev, pager, next, jumper, total"
+        :total="totalCount"
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="pageSizes"
+        style="float:right; margin-right: 5%;"
+        @current-change="handleChange"
+        @size-change="handleSizeChange"
+    >
+
+    </el-pagination>
+<!--    <el-tabs type="border-card">
       <el-tab-pane label="代收">
         <el-form style="width: 100%;">
           <el-table
@@ -353,24 +362,23 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </el-pagination>
         </el-form>
       </el-tab-pane>
-    </el-tabs>
+    </el-tabs>-->
   </div>
 </template>
 
 <script>
+  import {ref} from "vue";
+
+  const filterTimeRange = ref('')
   export default {
     data() {
       return {
-        tab1CurrentPage: 1,
-        tab1TotalCount: 2,
-        tab2CurrentPage: 1,
-        tab2TotalCount: 2,
-        tab3CurrentPage: 1,
-        tab3TotalCount: 5,
+        agentReportData: [],
+        tableKey: 0,
+        currentPage: 1,
+        totalCount: 2,
         pageSizes: [5,10,15,30,50,100],
-        tab1PageSize: 5,
-        tab2PageSize: 5,
-        tab3PageSize: 5,
+        pageSize: 5,
         filterbox: {
           pathChannelName: '',
           pathChannelLabelName: '',
@@ -534,6 +542,9 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
   }
 </script>
 <style scoped>
+@import "@/assets/base.css";
+@import '@/api/common.css';
+
   .main-toolform-input {
     text-align: center;
   }
@@ -571,9 +582,10 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
     background-color: transparent;
     border: none;
     resize: none;
-    font-size: 40px;
+    font-size: 30px;
     font-weight: bold;
     margin-left: 30px;
+    text-align: left;
   }
 
   .reportInfo{

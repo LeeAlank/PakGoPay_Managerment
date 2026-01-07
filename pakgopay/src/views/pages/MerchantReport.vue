@@ -2,6 +2,7 @@
 <script setup>
 
 import SvgIcon from "@/components/SvgIcon/index.vue";
+import {getTimeFromTimestamp} from "@/api/common.js";
 
 </script>
 <script>
@@ -163,10 +164,11 @@ export default {
       //获取所有数据
     },
     search() {
-      alert(JSON.stringify(this.filterbox.timeRange))
+
     }
   },
   mounted() {
+    this.tab1TotalCount = this.collectingReportInfoData.length
     this.tab1TotalCount = this.collectingReportInfoData.length
     this.tab2TotalCount = this.payingReportInfoData.length
   }
@@ -221,7 +223,7 @@ export default {
                     start-placeholder="开始日期"
                     end-placeholder="结束日期"
                     format="YYYY/MM/DD"
-                    value-format="YYYY-MM-DD"
+                    value-format="x"
                 >
                 </el-date-picker>
               </el-form-item>
@@ -235,7 +237,7 @@ export default {
           <div class="statistics-form-item">
             <SvgIcon name="cash" width="100px" height="100px"/>
             <div style="display: flex; flex-direction: column;width: 80%;">
-              <span>总账户金额:</span>
+              <span style="text-align: left;font-size: x-large">总账户金额:</span>
               <textarea v-model="filterbox.merchantAccount" disabled class="cash-text-area"></textarea>
             </div>
           </div>
@@ -245,7 +247,7 @@ export default {
           <div class="statistics-form-item">
             <SvgIcon name="tixian" width="90px" height="90px"/>
             <div style="display: flex; flex-direction: column;width: 80%;">
-              <span>提现总金额:</span>
+              <span style="text-align: left;font-size: x-large">提现总金额:</span>
               <textarea v-model="filterbox.merchantAccount" disabled class="cash-text-area"></textarea>
             </div>
           </div>
@@ -255,7 +257,7 @@ export default {
           <div class="statistics-form-item">
             <SvgIcon name="cash-freeze" width="100px" height="100px"/>
             <div style="display: flex; flex-direction: column;width: 80%;">
-              <span>冻结总金额:</span>
+              <span style="text-align: left;font-size: x-large">冻结总金额:</span>
               <textarea v-model="filterbox.merchantAccount" disabled class="cash-text-area"></textarea>
             </div>
           </div>
@@ -324,13 +326,33 @@ export default {
               </div>
             </el-table-column>
             <el-table-column
-                prop="agencyCommission"
-                label="一二三级代理佣金"
+                prop="firstAgentCommission"
+                label="一级代理佣金"
                 v-slot="{row}"
                 align="center"
             >
               <div>
-                {{row.agencyCommission}}
+                {{row.firstLevelAgentCommission}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="secondLevelAgentCommission"
+                label="二级代理佣金"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.secondLevelAgentCommission}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="thirdLevelAgentCommission"
+                label="三级代理佣金"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.thirdLevelAgentCommission}}
               </div>
             </el-table-column>
             <el-table-column
@@ -341,6 +363,16 @@ export default {
             >
               <div>
                 {{row.totalProfit}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="time"
+                label="时间"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{getTimeFromTimestamp(row.time)}}
               </div>
             </el-table-column>
           </el-table>
@@ -417,13 +449,33 @@ export default {
               </div>
             </el-table-column>
             <el-table-column
-                prop="agencyCommission"
-                label="一二三级代理佣金"
+                prop="firstLevelAgentCommission"
+                label="一级代理佣金"
                 v-slot="{row}"
                 align="center"
             >
               <div>
-                {{row.agencyCommission}}
+                {{row.firstLevelAgentCommission}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="secondLevelAgentCommission"
+                label="二级代理佣金"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.secondLevelAgentCommission}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="thirdLevelAgentCommission"
+                label="三级代理佣金"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{row.thirdLevelAgentCommission}}
               </div>
             </el-table-column>
             <el-table-column
@@ -434,6 +486,16 @@ export default {
             >
               <div>
                 {{row.totalProfit}}
+              </div>
+            </el-table-column>
+            <el-table-column
+                prop="time"
+                label="代收总利润"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{getTimeFromTimestamp(row.time)}}
               </div>
             </el-table-column>
           </el-table>

@@ -6,6 +6,8 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 <script>
 import {ElPagination} from "element-plus";
 import 'element-plus/theme-chalk/el-pagination.css'
+import {ref} from "vue";
+const filterDateRange = ref('')
 export default {
   name: "ChannelReport",
   components: {
@@ -13,6 +15,21 @@ export default {
   },
   data() {
     return {
+      totalbox: {},
+      pathChannelOptions: [
+        {
+          channelId: 1,
+          channelName: '通道一'
+        },
+        {
+          channelId: 2,
+          channelName: '通道二'
+        }
+      ],
+      pathChannelProps: {
+        value: 'channelId',
+        label: 'channelName'
+      },
       currentPage: 1,
       totalCount: 2,
       pageSizes: [1,5,10,15,30,50,100],
@@ -26,7 +43,7 @@ export default {
     }
   },
   methods: {
-    exportMerchantInfo() {
+    exportPathChannelInfo() {
       //导出报表方法
     },
     // 改变每页显示条数
@@ -48,51 +65,96 @@ export default {
 </script>
 <template>
   <div class="main-title">{{$t('route.pathChannelReport')}}</div>
-  <div class="main-toolbar">
-    <form class="main-toolform">
-      <div class="main-toolform-item-filter">
-        <!--        <div v-on:click="exportMerchantInfo" style="height:30px;justify-content: left; border: solid 1px #6495ed; width:200px;border-radius: 15px;cursor: pointer;" class="main-toolform-line">
-                  <div style="display: flex; flex-direction: row;justify-content: center;width: 90px;align-items: center;">
-                    <SvgIcon height="20px" width="20px" name="filter"/>筛选
-                  </div>
-                  &lt;!&ndash;          <input disabled type="text" style="border:none;width: 30px;">&ndash;&gt;
-                  <div @click.stop="">
-                    <el-form-item style="height:15px;display: flex; justify-content: center;">
-                      <el-select
-                          style="width:100px;height: 100%;border: none;"
-                          placeholder="select"
-                      >
-                        <el-option>sss</el-option>
-                      </el-select>
-                    </el-form-item></div>
-                </div>-->
-        <div class="main-toolform-line" style="justify-content: right;margin-right:3%;">
-          <div v-on:click="reset()" style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
-            <SvgIcon height="30px" width="30px" name="reset"/>
-            <div style="width: 50px;color: white">重置</div>
-          </div>
-          <div v-on:click="search()" style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
-            <SvgIcon height="30px" width="30px" name="search"/>
-            <div style="width: 50px;color: white">查询</div>
-          </div>
-          <div v-on:click="exportMerchantInfo" style="background-color: limegreen;width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;">
-            <SvgIcon height="30px" width="30px" name="export"/>
-            <div style="width: 50px;color: white">导出</div>
-          </div>
-        </div>
-      </div>
-      <div class="main-toolform-item">
-        <div class="main-toolform-line">渠道名称：<input v-model="filterbox.pathChannelName" type="text" class="main-toolform-input" placeholder="通道名称"/></div>
-        <div class="main-toolform-line">渠道别名：<input v-model="filterbox.pathChannelLabelName" type="text" class="main-toolform-input" placeholder="通道别名"/></div>
-        <div class="main-toolform-line">开始时间：<input v-model="filterbox.startTime" type="date"  style="width: 100px;" class="main-toolform-input" placeholder="开始时间"/>&nbsp;~&nbsp;
-          <input v-model="filterbox.endTime" style="width: 100px;" type="date" class="main-toolform-input" placeholder="结束时间"/>
-        </div>
-      </div>
-    </form>
-  </div>
+  <el-collapse style="margin-top: 20px; width: 95%;margin-left: 1%;margin-right: 3%;">
+    <el-collapse-item>
+      <template #title>
+         <span class="toolbarName">
+          工具栏&统计数据
+        </span>
+      </template>
+      <div class="main-toolbar">
+        <el-form style="width: 96%;">
+          <el-row style="display: flex;justify-content: space-around;">
+            <el-form-item style="display: flex;justify-content: center;color: deepskyblue">
+              <template #label>
+                <span style="width: 150px;">通道:</span>
+              </template>
+              <el-select
+                  :options="pathChannelOptions"
+                  :props="pathChannelProps"
+                  v-model="filterbox.pathChannelName"
+                  style="width: 200px"
+              />
+            </el-form-item>
 
-  <div class="reportInfo">
+
+            <el-form-item style="display: flex;justify-content: center;color: deepskyblue">
+              <template #label>
+                <span style="width: 150px">时间范围:</span>
+              </template>
+              <el-date-picker
+                  v-model="filterDateRange"
+                  type="daterange"
+                  range-separator="至"
+                  start-placeholder="开始日期"
+                  end-placeholder="结束日期"
+                  format="YYYY/MM/DD"
+                  value-format="x"
+              >
+              </el-date-picker>
+              <el-button type="primary" plain @click="reset">
+                <template #icon>
+                  <SvgIcon name="reset"/>
+                </template>
+                <span style="color: black">重置</span>
+              </el-button>
+              <el-button type="success" @click="search" style="margin: 0">
+                <template #icon>
+                  <div style="width: 100%">
+                    <SvgIcon name="search" style="width: 20px;height: 20px" />
+                  </div>
+                </template>
+                <div style="color: black">查询</div>
+              </el-button>
+            </el-form-item>
+          </el-row>
+        </el-form>
+      </div>
+      <div class="statistics-container" style="justify-content: space-around">
+        <el-card id="statistics" class="statistics-form">
+          <div class="statistics-form-item">
+            <SvgIcon name="tixian" width="100px" height="100px"/>
+            <div style="display: flex; flex-direction: column;width: 80%;justify-items: right">
+              <span style="text-align: left;font-size: x-large">代收总金额:</span>
+              <textarea v-model="totalbox.collectionAmount" disabled class="cash-text-area"></textarea>
+            </div>
+          </div>
+        </el-card>
+
+        <el-card id="statistics" class="statistics-form">
+          <div class="statistics-form-item">
+            <SvgIcon name="paying" width="90px" height="90px"/>
+            <div style="display: flex; flex-direction: column;width: 80%;">
+              <span style="text-align: left;font-size: x-large">代付总金额:</span>
+              <textarea v-model="totalbox.payingAmount" disabled class="cash-text-area"></textarea>
+            </div>
+          </div>
+        </el-card>
+      </div>
+    </el-collapse-item>
+  </el-collapse>
+
+
+  <div class="reportInfo" style="margin-left: 1%;margin-right: 3%;margin-top: 1%;width: 95%;">
     <form id="reportInfoTable" class="reportInfoForm">
+      <el-button @click="exportPathChannelInfo" style="margin: 0;float: right;">
+        <template #icon>
+          <div style="width: 100%">
+            <SvgIcon name="export" style="width: 20px;height: 20px" />
+          </div>
+        </template>
+        <div style="color: black">导出</div>
+      </el-button>
       <el-table style="width: 100%; height: 100%;" border :data="channelInfo" class="reportInfo-table">
         <el-table-column
             prop="channelName"
@@ -141,6 +203,8 @@ export default {
 </template>
 
 <style scoped>
+@import "@/assets/base.css";
+@import "@/api/common.css";
 .reportInfo{
   margin-top: 20px;
 }

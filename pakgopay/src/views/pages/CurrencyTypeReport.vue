@@ -5,40 +5,83 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 
 <template>
  <div class="main-title" style="margin-top: 0">币种报表</div>
-  <div class="toolbar" style="width: 96%">
-    <el-row style="display: flex;justify-content: space-between;">
-      <el-form-item style="display: flex;justify-content: center;color: deepskyblue">
-        <template #label>
-          <span>币种:</span>
-        </template>
-        <el-select
-            v-model="filterbox.selectedCurrency"
-            placeholder="请选择币种"
-            size="medium"
-            style="width: 150px;"
-        >
-           <el-option
-             v-for="item in currencyOptions"
-             :key="item.value"
-             :value="item.value"
-             :label="item.label"
-           />
-        </el-select>
-        <el-button @click="search" style="color: deepskyblue">搜索</el-button>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="exportData" style="color: deepskyblue"><SvgIcon name="export"/>导出</el-button>
-      </el-form-item>
-    </el-row>
-  </div>
+  <el-collapse style="margin-top: 20px; width: 95%;margin-left: 1%;margin-right: 3%;">
+    <el-collapse-item>
+      <template #title>
+        <span class="toolbarName">
+          工具栏&统计数据
+        </span>
+      </template>
+      <div class="toolbar" style="width: 96%">
+        <el-row style="display: flex;justify-content: space-around;">
+          <el-form-item style="display: flex;justify-content: center;color: deepskyblue">
+            <template #label>
+              <span>币种:</span>
+            </template>
+            <el-select
+                v-model="filterbox.selectedCurrency"
+                placeholder="请选择币种"
+                size="medium"
+                style="width: 150px;"
+                clearable
+            >
+              <el-option
+                  v-for="item in currencyOptions"
+                  :key="item.value"
+                  :value="item.value"
+                  :label="item.label"
+              />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-date-picker
+                v-model="filterDateRange"
+                type="daterange"
+                range-separator="至"
+                start-placeholder="开始日期"
+                end-placeholder="结束日期"
+                format="YYYY/MM/DD"
+                value-format="x"
+            >
+            </el-date-picker>
+            <el-button @click="search" style="color: deepskyblue">搜索</el-button>
+            <el-button @click="exportData" style="color: deepskyblue;margin: 0"><SvgIcon name="export"/>导出</el-button>
+          </el-form-item>
+        </el-row>
+      </div>
+      <div class="statistics-container" style="justify-content: space-around">
+        <el-card id="statistics" class="statistics-form">
+          <div class="statistics-form-item">
+            <SvgIcon name="tixian" width="100px" height="100px"/>
+            <div style="display: flex; flex-direction: column;width: 80%;justify-items: right">
+              <span style="text-align: left;font-size: x-large">代收总金额:</span>
+              <textarea v-model="totalbox.collectionAmount" disabled class="cash-text-area"></textarea>
+            </div>
+          </div>
+        </el-card>
 
-  <div class="main-views-container" style="height: 900px">
-    <el-tabs style="height: 100%">
-      <el-tab-pane label="代收" class="tabTable">
+        <el-card id="statistics" class="statistics-form">
+          <div class="statistics-form-item">
+            <SvgIcon name="paying" width="90px" height="90px"/>
+            <div style="display: flex; flex-direction: column;width: 80%;">
+              <span style="text-align: left;font-size: x-large">代付总金额:</span>
+              <textarea v-model="totalbox.payingAmount" disabled class="cash-text-area"></textarea>
+            </div>
+          </div>
+        </el-card>
+      </div>
+    </el-collapse-item>
+  </el-collapse>
+
+
+  <div class="reportInfo" style="margin-left: 1%;margin-right: 3%;margin-top: 1%;width: 95%;">
+    <el-tabs style="height: 100%;width: 100%">
+      <el-tab-pane label="代收" class="tabTable" style="width: 100%">
         <el-table
           :data="collectingData"
-          height="800px"
+          height="auto"
           border
+          style="width: 100%"
         >
           <el-table-column
             label="币种"
@@ -94,10 +137,10 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
         >
         </el-pagination>
       </el-tab-pane>
-      <el-tab-pane label="代付" class="tabTable">
+      <el-tab-pane label="代付" class="tabTable" style="width: 100%">
         <el-table
           :data="payingData"
-          height="800px"
+          height="auto"
           border
         >
           <el-table-column
@@ -159,10 +202,14 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 </template>
 
 <script>
+import {ref} from "vue";
+
+const filterDateRange = ref('')
 export default {
   name: 'CurrencyTypeReport',
   data() {
     return {
+      totalbox: {},
       tab1TotalCount: 0,
       tab2TotalCount: 0,
       tab1CurrentPage: 1,
@@ -205,6 +252,8 @@ export default {
 }
 </script>
 <style scoped>
+@import "@/assets/base.css";
+@import "@/api/common.css";
 .toolbar {
   margin-left: 2%;
   margin-top: 1%;

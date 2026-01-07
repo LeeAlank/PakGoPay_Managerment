@@ -12,6 +12,9 @@ export function isValidIP(ipList) {
 }
 
 export function getTimeFromTimestamp(timestamp) {
+    if (!timestamp) {
+        return 'No data';
+    }
     const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     return dayjs.unix(timestamp).tz(timeZone).format('YYYY-MM-DD HH:mm:ss');
 }

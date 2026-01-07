@@ -4,10 +4,10 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 </script>
 
 <template>
-  <div class="main-title">提现账号管理</div>
+  <div class="main-title">商户账号</div>
   <div class="main-toolbar">
-    <form class="main-toolform">
-      <div class="main-toolform-item">
+    <el-form class="main-toolform">
+<!--      <div class="main-toolform-item">
         <div class="main-toolform-line" style="justify-content: right;margin-right: 4%;">
           <div v-on:click="reset()" style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
             <SvgIcon height="30px" width="30px" name="reset"/>
@@ -17,21 +17,43 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             <SvgIcon height="30px" width="30px" name="search"/>
             <div style="width: 50px;color: white">查询</div>
           </div>
-          <div v-on:click="exportStatements()" style="background-color: limegreen;width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;">
-            <SvgIcon height="30px" width="30px" name="export"/>
-            <div style="width: 50px;color: white">导出</div>
-          </div>
-          <div v-on:click="addWithdrawlAccount()" style="background-color: limegreen;width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;">
-            <SvgIcon height="30px" width="30px" name="add"/>
-            <div style="width: 50px;color: white">新增</div>
-          </div>
         </div>
-      </div>
-      <div class="main-toolform-item">
+      </div>-->
+<!--      <div class="main-toolform-item">
         <div class="main-toolform-line">商户账号：<input v-model="filterbox.merchantAccount"  type="text" class="main-toolform-input" placeholder="商户账号"/></div>
         <div class="main-toolform-line">提现账号：<input v-model="filterbox.withdrawlAccount"  type="text" class="main-toolform-input" placeholder="提现账号"/></div>
-      </div>
-    </form>
+      </div>-->
+      <el-row style="display: flex;justify-content: space-around;">
+        <el-form-item label="商户账号" label-width="150px">
+          <el-input style="width: 200px" v-model="filterbox.merchantName"/>
+        </el-form-item>
+        <el-form-item label="收款账号" label-width="150px">
+          <el-input style="width: 200px" v-model="filterbox.withdrawlAccount"/>
+        </el-form-item>
+        <el-form-item label="录入时间" label-width="150px">
+          <el-date-picker
+              v-model="filterDateRange"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              format="YYYY/MM/DD"
+              value-format="x"
+          >
+          </el-date-picker>
+          <div style="display: flex;flex-direction: row;">
+            <div v-on:click="reset()" style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
+              <SvgIcon height="30px" width="30px" name="reset"/>
+              <div style="width: 50px;color: white">重置</div>
+            </div>
+            <div v-on:click="search()" style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
+              <SvgIcon height="30px" width="30px" name="search"/>
+              <div style="width: 50px;color: white">查询</div>
+            </div>
+          </div>
+        </el-form-item>
+      </el-row>
+    </el-form>
   </div>
   <div style="display: flex;height: 12vh;justify-content: space-between;margin-right: 10%;margin-left: 10%;">
     <el-card style="width: 30%;height: 100%;margin-top: 1%;">
@@ -67,11 +89,21 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
      商户展示为一条 提现账户展示多条
      客服/管理员展示所有商户下的所有账号
      -->
-    <form class="main-views-form" style="height: 600px;">
+    <form class="main-views-form" style="height: 600px;width: 97%;">
+      <div style="display: flex;flex-direction: row;float: right">
+        <el-button v-on:click="exportStatements()" style="width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;">
+          <SvgIcon height="30px" width="30px" name="export"/>
+          <div style="width: 50px;color: black">导出</div>
+        </el-button>
+        <el-button v-on:click="addWithdrawlAccount()" style="width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;">
+          <SvgIcon height="30px" width="30px" name="add"/>
+          <div style="width: 50px;color: black">新增</div>
+        </el-button>
+      </div>
       <el-table
           border :data="withdrawAccountFormData"
           class="merchantInfos-table"
-          style="width: 97%;height: 100%;"
+          style="width: 100%;height: 100%;"
       >
         <el-table-column
             prop="商户名称"
@@ -246,6 +278,9 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
  代理不显示商户信息 只看报表
  -->
 <script>
+import {ref} from "vue";
+
+const filterDateRange = ref('')
 export default {
   data() {
     return {

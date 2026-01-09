@@ -290,3 +290,15 @@ export function getChannelReport(form) {
         data: form,
     })
 }
+
+export function getAgentReport(form) {
+    return service({
+        url: '/api/pakGoPay/server/queryAgentReport',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form,
+    })
+}

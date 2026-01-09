@@ -4,6 +4,47 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 
 <template>
   <div class="main-title">代理报表</div>
+  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0">
+    <el-form-item style="margin-left: 2%;">
+      <template #label>
+          <span style="color: black;font-size: small;align-items: center;">
+            统计币种:
+          </span>
+      </template>
+      <el-select
+          style="width: 100px;align-items: center;text-align: center;"
+          :options="currencyOptions"
+          :props="currencyProps"
+          default-first-option
+          v-model="filterbox.currency"
+          @change="handleCurrencyChange"
+          filterable
+      />
+    </el-form-item>
+  </div>
+
+  <div class="statistics-container" style="justify-content: space-around">
+    <el-card id="statistics" class="statistics-form" v-if="this.statisticsInfo.collectionCard">
+      <div class="statistics-form-item">
+        <SvgIcon name="tixian" width="100px" height="100px"/>
+        <div style="display: flex; flex-direction: column;width: 80%;justify-items: right">
+          <span style="text-align: left;font-size: x-large">代收总金额:</span>
+          <textarea v-model="statisticsInfo.collectionAgentAmount" disabled class="cash-text-area"></textarea>
+        </div>
+      </div>
+    </el-card>
+
+    <el-card id="statistics" class="statistics-form" v-if="this.statisticsInfo.payingCard">
+      <div class="statistics-form-item">
+        <SvgIcon name="paying" width="90px" height="90px"/>
+        <div style="display: flex; flex-direction: column;width: 80%;">
+          <span style="text-align: left;font-size: x-large">代付总金额:</span>
+          <textarea v-model="statisticsInfo.payingAgentAmount" disabled class="cash-text-area"></textarea>
+        </div>
+      </div>
+    </el-card>
+  </div>
+
   <el-collapse style="margin-top: 20px; width: 95%;margin-left: 1%;margin-right: 3%;">
     <el-collapse-item>
       <template #title>
@@ -26,17 +67,16 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
               </el-form-item>
             </el-col>
             <el-col :span="8">
-              <el-form-item label="时间范围:" label-width="150px" prop="timeRange">
+              <el-form-item label="时间范围:" label-width="150px" prop="filterDateRange">
                 <div style="display: flex; flex-direction: row;">
                   <el-date-picker
-                      v-model="filterTimeRange"
-                      type="datetimerange"
-                      :shortcuts="pickerOptions"
+                      v-model="filterbox.filterDateRange"
+                      type="daterange"
                       range-separator="至"
                       start-placeholder="开始日期"
                       end-placeholder="结束日期"
                       format="YYYY/MM/DD"
-                      value-format="YYYY-MM-DD"
+                      value-format="x"
                   >
                   </el-date-picker>
                   <el-button @click="reset('filterForm')">
@@ -54,27 +94,6 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </el-row>
         </el-form>
       </div>
-      <div class="statistics-container" style="justify-content: space-around">
-        <el-card id="statistics" class="statistics-form">
-          <div class="statistics-form-item">
-            <SvgIcon name="tixian" width="100px" height="100px"/>
-            <div style="display: flex; flex-direction: column;width: 80%;justify-items: right">
-              <span style="text-align: left;font-size: x-large">代收总金额:</span>
-              <textarea v-model="totalbox.income" disabled class="cash-text-area"></textarea>
-            </div>
-          </div>
-        </el-card>
-
-        <el-card id="statistics" class="statistics-form">
-          <div class="statistics-form-item">
-            <SvgIcon name="paying" width="90px" height="90px"/>
-            <div style="display: flex; flex-direction: column;width: 80%;">
-              <span style="text-align: left;font-size: x-large">代付总金额:</span>
-              <textarea v-model="totalbox.withdraw" disabled class="cash-text-area"></textarea>
-            </div>
-          </div>
-        </el-card>
-      </div>
     </el-collapse-item>
   </el-collapse>
 
@@ -84,123 +103,71 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       <SvgIcon height="20px" width="20px" name="export"/>
       <div style="color: black">导出</div>
     </el-button>
-    <el-table
-        border
-        :data="agentReportData"
-        class="merchantInfos-table"
-        style="width: 100%;height: auto;"
-        :key="tableKey"
-    >
-      <el-table-column
-          prop="agentName"
-          label="代理名称"
-          v-slot="{row}"
-          align="center"
-          >
-        <div>{{row.agentName}}</div>
-      </el-table-column>
-      <el-table-column
-          prop="collectionOrderSuccessNumber"
-          label="代收成功订单数"
-          v-slot="{row}"
-          align="center"
-          >
-        <div>{{row.collectionOrderSuccessNumber}}</div>
-      </el-table-column>
-      <el-table-column
-          prop="collectionCommission"
-          label="代收佣金"
-          v-slot="{row}"
-          align="center"
-          >
-        <div>{{row.collectionCommission}}</div>
-      </el-table-column>
-      <el-table-column
-          prop="payingOrderSuccessNumber"
-          label="代理名称"
-          v-slot="{row}"
-          align="center"
-          >
-        <div>{{row.payingOrderSuccessNumber}}</div>
-      </el-table-column>
-      <el-table-column
-          prop=" payingOrderCommission"
-          label="代理名称"
-          v-slot="{row}"
-          align="center"
-      >
-        <div>{{row.payingOrderCommission}}</div>
-      </el-table-column>
-      <el-table-column
-          prop="time"
-          label="时间"
-          v-slot="{row}"
-          align="center">
-        <div>{{row.time}}</div>
-      </el-table-column>
-    </el-table>
-    <el-pagination
-        background
-        layout="sizes, prev, pager, next, jumper, total"
-        :total="totalCount"
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :page-sizes="pageSizes"
-        style="float:right; margin-right: 5%;"
-        @current-change="handleChange"
-        @size-change="handleSizeChange"
-    >
-
-    </el-pagination>
-<!--    <el-tabs type="border-card">
-      <el-tab-pane label="代收">
+    <el-tabs type="border-card" style="width: 100%;" @tab-click="handleTabClick" v-model="activeTabPane">
+      <el-tab-pane label="代收报表">
         <el-form style="width: 100%;">
           <el-table
               border
-              :data="collectingReportInfoData"
-              class="reportInfo-table"
+              :data="collectionAgentReportInfo"
+              class="reportInfo-table1"
               style="width: 100%"
-              height="470"
+              height="auto"
           >
             <el-table-column
-              label="代理名称"
-              v-slot="{row}"
-              align="center"
-              prop="agentName"
+                label="代理名称"
+                v-slot="{row}"
+                align="center"
+                prop="agentName"
             >
-              <div>{{row.agentName}}</div>
+              <div>{{ row.agentName }}</div>
+            </el-table-column>
+            <el-table-column
+                label="时间"
+                v-slot="{row}"
+                align="center"
+                prop="recordDate"
+            >
+              <div>{{ row.recordDate }}</div>
             </el-table-column>
             <el-table-column
                 label="代收订单总数"
                 v-slot="{row}"
                 align="center"
-                prop="collectingOrderAmount"
+                prop="orderQuantity"
             >
-              <div>{{row.collectingOrderAmount}}</div>
-            </el-table-column>
-            <el-table-column
-                label="代收订单佣金"
-                v-slot="{row}"
-                align="center"
-                prop="collectingOrderCommission"
-            >
-              <div>{{row.collectingOrderCommission}}</div>
+              <div>{{ row.orderQuantity }}</div>
             </el-table-column>
             <el-table-column
                 label="代收订单成功数"
                 v-slot="{row}"
                 align="center"
-                prop="collectingOrderSuccessAmount"
+                prop="successQuantity"
             >
-              <div>{{row.collectingOrderSuccessAmount}}</div>
+              <div>{{ row.successQuantity }}</div>
             </el-table-column>
             <el-table-column
                 label="代收订单失败数"
                 v-slot="{row}"
                 align="center"
-                prop="collectingOrderFailureAmount"
+                prop="failureQuantity"
             >
-              <div>{{row.collectingOrderFailureAmount}}</div>
+              <div>{{ row.orderQuantity-row.successQuantity }}</div>
+            </el-table-column>
+            <el-table-column
+                label="成功率"
+                v-slot="{row}"
+                align="center"
+                prop="successRate"
+            >
+              <div>{{ ((row.successQuantity/row.orderQuantity)*100).toFixed(2) }}%</div>
+            </el-table-column>
+            <el-table-column
+                label="代收订单佣金"
+                v-slot="{row}"
+                align="center"
+                prop="commission"
+            >
+              <div>{{ row.commission }}</div>
             </el-table-column>
           </el-table>
           <el-pagination
@@ -217,14 +184,14 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </el-pagination>
         </el-form>
       </el-tab-pane>
-      <el-tab-pane label="代付">
+      <el-tab-pane label="代付报表">
         <el-form style="width: 100%;">
           <el-table
               border
-              :data="payingReportInfoData"
-              class="reportInfo-table"
+              :data="payingAgentReportInfo"
+              class="reportInfo-table2"
               style="width: 100%"
-              height="470"
+              height="auto"
           >
             <el-table-column
                 label="代理名称"
@@ -232,40 +199,57 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                 align="center"
                 prop="agentName"
             >
-              <div>{{row.agentName}}</div>
+              <div>{{ row.agentName }}</div>
+            </el-table-column>
+            <el-table-column
+                label="时间"
+                v-slot="{row}"
+                align="center"
+                prop="recordTime"
+            >
+              <div>{{ row.recordDate }}</div>
             </el-table-column>
             <el-table-column
                 label="代付订单总数"
                 v-slot="{row}"
                 align="center"
-                prop="payingOrderAmount"
+                prop="orderQuantity"
             >
-              <div>{{row.payingOrderAmount}}</div>
+              <div>{{ row.orderQuantity }}</div>
+            </el-table-column>
+            <el-table-column
+                label="代付成功订单数"
+                v-slot="{row}"
+                align="center"
+                prop="successQuantity"
+            >
+              <div>{{ row.successQuantity }}</div>
+            </el-table-column>
+            <el-table-column
+                label="代订失败订单数"
+                v-slot="{row}"
+                align="center"
+                prop="failureQuantity"
+            >
+              <div>{{ row.orderQuantity-row.successQuantity }}</div>
+            </el-table-column>
+            <el-table-column
+                label="代付成功率"
+                v-slot="{row}"
+                align="center"
+                prop="successRate"
+            >
+              <div>{{ ((row.successQuantity/row.orderQuantity)*100).toFixed(2) }}%</div>
             </el-table-column>
             <el-table-column
                 label="代付订单佣金"
                 v-slot="{row}"
                 align="center"
-                prop="collectingOrderCommission"
+                prop="commission"
             >
-              <div>{{row.payingOrderCommission}}</div>
+              <div>{{ row.commission }}</div>
             </el-table-column>
-            <el-table-column
-                label="代付订单成功数"
-                v-slot="{row}"
-                align="center"
-                prop="payingOrderSuccessAmount"
-            >
-              <div>{{row.payingOrderSuccessAmount}}</div>
-            </el-table-column>
-            <el-table-column
-                label="代收订单失败数"
-                v-slot="{row}"
-                align="center"
-                prop="payingOrderFailureAmount"
-            >
-              <div>{{row.payingOrderFailureAmount}}</div>
-            </el-table-column>
+
           </el-table>
           <el-pagination
               background
@@ -281,334 +265,322 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </el-pagination>
         </el-form>
       </el-tab-pane>
-      <el-tab-pane label="商户数据">
-        <el-form style="width: 100%;">
-          <el-table
-              border
-              :data="merchantReportInfoData"
-              class="reportInfo-table"
-              style="width: 100%"
-              height="470"
-              :span-method="aggregationRow"
-          >
-            <el-table-column
-              label="代理名称"
-              align="center"
-              prop="agentName"
-              v-slot="{row}"
-            >
-              <div>{{row.agentName}}</div>
-            </el-table-column>
-            <el-table-column
-              label="商户名称"
-              align="center"
-              prop="merchantName"
-              v-slot="{row}"
-            >
-              <div>{{row.merchantName}}</div>
-            </el-table-column>
-            <el-table-column
-                label="商户代收订单总数"
-                align="center"
-                prop="merchantCollectingOrderAmount"
-                v-slot="{row}"
-            >
-              <div>{{row.merchantCollectingOrderAmount}}</div>
-            </el-table-column>
-            <el-table-column
-                label="商户代付订单总数"
-                align="center"
-                prop="merchantPayingOrderAmount"
-                v-slot="{row}"
-            >
-              <div>{{row.merchantPayingOrderAmount}}</div>
-            </el-table-column>
-            <el-table-column
-                label="商户代付订单成功率"
-                align="center"
-                prop="merchantPayingOrderSuccessRate"
-                v-slot="{row}"
-            >
-              <div>{{row.merchantPayingOrderSuccessRate}}</div>
-            </el-table-column>
-            <el-table-column
-                label="商户代收订单成功率"
-                align="center"
-                prop="merchantCollectingOrderSuccessRate"
-                v-slot="{row}"
-            >
-              <div>{{row.merchantCollectingOrderSuccessRate}}</div>
-            </el-table-column>
-            <el-table-column
-                label="商户代理佣金"
-                align="center"
-                prop="merchantAgentCommission"
-                v-slot="{row}"
-            >
-              <div>{{row.merchantAgentCommission}}</div>
-            </el-table-column>
-          </el-table>
-          <el-pagination
-              background
-              layout="sizes, prev, pager, next, jumper, total"
-              :total="tab3TotalCount"
-              v-model:current-page="tab3CurrentPage"
-              v-model:page-size="tab3PageSize"
-              :page-sizes="pageSizes"
-              @current-change="handleTab3CurrentChange"
-              @size-change="handleTab3SizeChange"
-              style="float:right; margin-right: 5%;"
-          >
-          </el-pagination>
-        </el-form>
-      </el-tab-pane>
-    </el-tabs>-->
+    </el-tabs>
   </div>
 </template>
 
 <script>
-  import {ref} from "vue";
+import {ref} from "vue";
+import {getAgentReport, getAllCurrencyType} from "@/api/interface/backendInterface.js";
+import {getTodayStartTimestamp, loadingBody} from "@/api/common.js";
 
-  const filterTimeRange = ref('')
-  export default {
-    data() {
-      return {
-        agentReportData: [],
-        tableKey: 0,
-        currentPage: 1,
-        totalCount: 2,
-        pageSizes: [5,10,15,30,50,100],
-        pageSize: 5,
-        filterbox: {
-          pathChannelName: '',
-          pathChannelLabelName: '',
-          startTime: '',
-          endTime: '',
-        },
-        totalbox: {
-          income: "$10000000",
-          withdraw: "$900",
-          freeze: "$900",
-        },
-        /*reportInfoData: [
-          {
-            agentAccount: '代理商1',
-            agentOrderSuccessNum: '1',
-            payingCommission: '$10000000',
-            collectionCommission: '$10000000',
-            withdrawAmount: '$900',
-            freezeAmount: '$900',
-          }
-        ],
-        reportInfoData2: [
-          {
-            agentAccount: '代理商1',
-            agentOrderSuccessNum: '1',
-            payingCommission: '$10000000',
-            collectionCommission: '$10000000',
-            withdrawAmount: '$900',
-            freezeAmount: '$900',
-          },
-          {
-            agentAccount: '代理商2',
-            agentOrderSuccessNum: '1',
-            payingCommission: '$10000000',
-            collectionCommission: '$10000000',
-            withdrawAmount: '$900',
-            freezeAmount: '$900',
-          }
-        ]*/
-        collectingReportInfoData: [],
-        collectingReportInfoDataTestData:[],
-        payingReportInfoData: [],
-        payingReportInfoDataTestData: [],
-        merchantReportInfoData: [],
-        merchantReportInfoDataTestData: [
-          {
-            agentName: '代理商一',
-            merchantName: '商户一',
-            merchantCollectingOrderAmount: 100,
-            merchantPayingOrderAmount: 10,
-            merchantPayingOrderSuccessRate: '99%',
-            merchantCollectingOrderSuccessRate: '100%',
-            merchantAgentCommission: '$1000000',
-          },
-          {
-            agentName: '代理商一',
-            merchantName: '商户二',
-            merchantCollectingOrderAmount: 100,
-            merchantPayingOrderAmount: 10,
-            merchantPayingOrderSuccessRate: '90%',
-            merchantCollectingOrderSuccessRate: '99.9%',
-            merchantAgentCommission: '$999',
-          },
-          {
-            agentName: "代理商二",
-            merchantName: '商户三',
-            merchantCollectingOrderAmount: 100,
-            merchantPayingOrderAmount: 10,
-            merchantPayingOrderSuccessRate: '85%',
-            merchantCollectingOrderSuccessRate: '89%',
-            merchantAgentCommission: '$1200108',
-          },
-          {
-            agentName: '代理商三',
-            merchantName: '商户四',
-            merchantCollectingOrderAmount: 100,
-            merchantPayingOrderAmount: 10,
-            merchantPayingOrderSuccessRate: '97.1%',
-            merchantCollectingOrderSuccessRate: '98.2%',
-            merchantAgentCommission: '$2100910',
-          },
-          {
-            agentName: '代理商三',
-            merchantName: '商户五',
-            merchantCollectingOrderAmount: 100,
-            merchantPayingOrderAmount: 10,
-            merchantPayingOrderSuccessRate: '99.9%',
-            merchantCollectingOrderSuccessRate: '88.1%',
-            merchantAgentCommission: '$2001000',
-          },
-        ],
-      }
-    },
-    methods: {
-      handleCurrentChange(currentPage) {
-
+const filterTimeRange = ref('')
+export default {
+  data() {
+    return {
+      timeRange: [],
+      currency: '',
+      currencyIcon: '',
+      currencyIcons: {},
+      currencyOptions: [],
+      currencyProps: {
+        value: 'currencyType',
+        label: 'name'
       },
-      handleTab1CurrentChange(currentPage) {
-        this.tab1CurrentPage = currentPage
-        let pageSize = this.tab1PageSize
-        // 清空table绑定数据
-        this.collectingReportInfoData = []
-        // 获取当前页数数据范围 。(当前页-1)*每页数据 - 当前页*每页数据
-        this.collectingReportInfoData = this.collectingReportInfoDataTestData.slice((((currentPage -1)*pageSize)), ((currentPage)*pageSize))
-      },
-      handleTab1SizeChange(currentPage) {
+      statisticsInfo: {},
+      collectionAgentReportInfo: [],
+      payingAgentReportInfo: [],
+      activeTabPane: '0',
+      tableKey: 0,
+      tab1CurrentPage: 1,
+      tab1PageSize: 5,
+      tab1TotalCount: 2,
+      tab2CurrentPage: 1,
+      tab2PageSize: 5,
+      tab2TotalCount: 2,
+      pageSizes: [5, 10, 15, 30, 50, 100],
 
+      filterbox: {
+        pathChannelName: '',
+        pathChannelLabelName: '',
+        startTime: '',
+        endTime: '',
       },
-      handleTab2CurrentChange(currentPage) {
-
-      },
-      handleTab2SizeChange(currentPage) {
-
-      },
-      handleTab3CurrentChange(currentPage) {
-
-      },
-      handleTab3SizeChange(currentPage) {
-
-      },
-      aggregationRow({ row, column, rowIndex, columnIndex }) {
-        if (columnIndex === 0) {
-          return {
-            rowspan: row.rowspan,
-            colspan: 1
-            }
-          }
-        },
-      setrowspans(data) {
-        // 先给所有的数据都加一个v.rowspan = 1
-        data.forEach(v => {
-          v.rowspan = 1
-        })
-        // 双层循环
-        for (let i = 0; i < data.length; i++) {
-          // 内层循环，上面已经给所有的行都加了v.rowspan = 1
-          // 这里进行判断
-          // 如果当前行的id和下一行的id相等
-          // 就把当前v.rowspan + 1
-          // 下一行的v.rowspan - 1
-          for (let j = i + 1; j < data.length; j++) {
-            if (data[i].agentName === data[j].agentName) {
-              data[i].rowspan++
-              data[j].rowspan--
-            }
-          }
-          // 这里跳过已经重复的数据
-          i = i + data[i].rowspan - 1
-        }
-        this.collectingReportInfoData = []
-        this.collectingReportInfoDataTestData =data
-      }
-
-    },
-    mounted() {
-      this.merchantReportInfoData = this.merchantReportInfoDataTestData
-      this.setrowspans(this.merchantReportInfoData)
+      loadingInstance: '',
     }
+  },
+  methods: {
+    reset(form) {
+      this.$refs[form].resetFields()
+      this.filterbox.currency = this.currency
+    },
+    handleCurrencyChange() {
+      this.currency = this.filterbox.currency;
+      this.currencyIcon = this.currencyIcons[this.currency]
+      this.filterSearch()
+    },
+    filterSearch() {
+      this.collectionAgentReportInfo = []
+      this.payingAgentReportInfo = []
+      this.activeTabPane = '0'
+      this.search(0)
+    },
+    search(orderType, paneName) {
+      let loadingClass = ''
+      if (paneName === '0') {
+        loadingClass = 'reportInfo-table1'
+      } else if (paneName === '1') {
+        loadingClass = 'reportInfo-table2'
+      } else {
+        loadingClass = 'reportInfo-table1'
+      }
+      this.loadingInstance = loadingBody(this, loadingClass)
+      let timeRange = new String(this.filterbox.filterDateRange)
+      if (!this.filterbox.filterDateRange) {
+        this.filterbox.startTime = getTodayStartTimestamp()
+        this.filterbox.endTime = getTodayStartTimestamp()
+      } else {
+        this.filterbox.startTime = timeRange.split(',')[0] / 1000
+        this.filterbox.endTime = timeRange.split(',')[1] / 1000
+      }
 
+      if (!orderType) {
+        this.filterbox.orderType = 0;
+      } else {
+        this.filterbox.orderType = orderType
+      }
+      // request backend interface to get data
+      getAgentReport(this.filterbox).then(response => {
+        if (response.status === 200 && response.data.code === 0) {
+          let resData = JSON.parse(response.data.data)
+          let dataList = resData.agentReportDtoList
+          const cardInfo = resData.cardInfo[this.filterbox.currency]
+          if (orderType === 0) {
+            this.collectionAgentReportInfo = dataList
+            this.tab1CurrentPage = resData.pageNo
+            this.tab1TotalCount = resData.totalNumber
+            this.tab1PageSize = resData.pageSize
+            this.statisticsInfo.collectionAgentAmount = this.currencyIcon + cardInfo.total
+            this.statisticsInfo.collectionCard = true
+            this.statisticsInfo.payingCard = false
+          } else if (orderType === 1) {
+            this.payingAgentReportInfo = dataList
+            this.tab2CurrentPage = resData.pageNo
+            this.tab2TotalCount = resData.totalNumber
+            this.tab2PageSize = resData.pageSize
+            this.statisticsInfo.payingAgentAmount = this.currencyIcon + cardInfo.total
+            this.statisticsInfo.collectionCard = false
+            this.statisticsInfo.payingCard = true
+          }
+        } else if (response.data.code !== 0) {
+          this.$notify({
+            title: 'Error',
+            message: response.data.message,
+            duration: 3000,
+            type: 'error',
+            position: 'bottom-right',
+          })
+        } else {
+          this.$notify({
+            title: 'Error',
+            message: 'Some error occurred.',
+            duration: 3000,
+            type: 'error',
+            position: 'bottom-right'
+          })
+        }
+        this.loadingInstance.close()
+      }).catch(error => {
+        console.log(error)
+        this.loadingInstance.close()
+        this.$notify({
+          title: 'Error',
+          message: error.message,
+          duration: 3000,
+          type: 'error',
+          position: 'bottom-right'
+        })
 
+      })
+    },
+    handleTab1CurrentChange(currentPage) {
+      this.filterbox.isNeedCardData = false
+      this.tab1CurrentPage = currentPage
+      let pageSize = this.pageSize
+      // 清空table绑定数据
+      this.collectionChannelInfo = []
+      // 获取当前页数数据范围 。(当前页-1)*每页数据 - 当前页*每页数据
+      /*this.collectingReportInfoData = this.allCollectingReportInfoData.slice((((currentPage -1)*pageSize)), ((currentPage)*pageSize))*/
+      this.filterbox.pageNo = currentPage
+      this.filterbox.pageSize = this.tab1PageSize
+      this.search(0)
+    },
+    handleTab1SizeChange(pageSize) {
+      this.tab1PageSize = pageSize
+      this.tab1CurrentPage = 1
+      this.handleTab1CurrentChange(1)
+    },
+    handleTab2CurrentChange(currentPage) {
+      this.filterbox.isNeedCardData = false
+      this.tab2CurrentPage = currentPage
+      let pageSize = this.pageSize
+      // 清空table绑定数据
+      this.payingChannelInfo = []
+      // 获取当前页数数据范围 。(当前页-1)*每页数据 - 当前页*每页数据
+      /*this.collectingReportInfoData = this.allCollectingReportInfoData.slice((((currentPage -1)*pageSize)), ((currentPage)*pageSize))*/
+      this.filterbox.pageNo = currentPage
+      this.filterbox.pageSize = this.tab2PageSize
+      this.search(1)
+    },
+    handleTab2SizeChange(currentPage) {
+      this.tab2PageSize = pageSize
+      this.tab2CurrentPage = 1
+      this.handleTab2CurrentChange(1)
+    },
+    handleTabClick(tab) {
+      this.filterbox.pageNo = 1;
+      this.filterbox.pageSize = 10;
+      if (tab.paneName === '0') {
+        this.tab2CurrentPage = 1;
+        this.tab2PageSize = 10;
+        this.search(0, tab.paneName)
+      } else if (tab.paneName === '1') {
+        this.tab1CurrentPage = 1;
+        this.tab1PageSize = 10;
+        this.search(1, tab.paneName)
+      }
+    },
+ /*   aggregationRow({row, column, rowIndex, columnIndex}) {
+      if (columnIndex === 0) {
+        return {
+          rowspan: row.rowspan,
+          colspan: 1
+        }
+      }
+    },
+    setrowspans(data) {
+      // 先给所有的数据都加一个v.rowspan = 1
+      data.forEach(v => {
+        v.rowspan = 1
+      })
+      // 双层循环
+      for (let i = 0; i < data.length; i++) {
+        // 内层循环，上面已经给所有的行都加了v.rowspan = 1
+        // 这里进行判断
+        // 如果当前行的id和下一行的id相等
+        // 就把当前v.rowspan + 1
+        // 下一行的v.rowspan - 1
+        for (let j = i + 1; j < data.length; j++) {
+          if (data[i].agentName === data[j].agentName) {
+            data[i].rowspan++
+            data[j].rowspan--
+          }
+        }
+        // 这里跳过已经重复的数据
+        i = i + data[i].rowspan - 1
+      }
+      this.collectingReportInfoData = []
+      this.collectingReportInfoDataTestData = data
+    }*/
+
+  },
+  async mounted() {
+    await getAllCurrencyType().then(res => {
+      if (res.status === 200) {
+        if (res.data.code === 0) {
+          this.currencyOptions = JSON.parse(res.data.data)
+          console.log('options----' + this.currencyOptions[0].currencyType)
+          this.currency = this.currencyOptions[0].currencyType
+          this.filterbox.currency = this.currencyOptions[0].currencyType
+          this.currencyIcons = {};
+          this.currencyOptions.forEach(currency => {
+            this.currencyIcons[currency.currencyType] = currency.icon
+          })
+          let iconKey = this.currency;
+          this.currencyIcon = this.currencyIcons[iconKey]
+        }
+      }
+    })
+    this.startTime = getTodayStartTimestamp()
+    this.endTime = getTodayStartTimestamp()
+    this.filterbox.isNeedCardData = true
+    this.activeTabPane = '0'
+    this.search(0)
+    this.tab1TotalCount = this.collectionAgentReportInfo.length
+    this.tab2TotalCount = this.collectionAgentReportInfo.length
   }
+
+
+}
 </script>
 <style scoped>
 @import "@/assets/base.css";
 @import '@/api/common.css';
 
-  .main-toolform-input {
-    text-align: center;
-  }
+.main-toolform-input {
+  text-align: center;
+}
 
-  .statistics-form{
-    margin-left: 2%;
-    margin-top: 1%;
-    background-color: white;
-    height: 150px;
-    width: 500px;
-    display: flex;
-    align-items: center;
-    border-radius: 20px;
-  }
+.statistics-form {
+  margin-left: 2%;
+  margin-top: 1%;
+  background-color: white;
+  height: 150px;
+  width: 500px;
+  display: flex;
+  align-items: center;
+  border-radius: 20px;
+}
 
-  .statistics-container{
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    margin-left: 30px;
-    margin-right: 50px;
-  }
+.statistics-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-left: 30px;
+  margin-right: 50px;
+}
 
-  .statistics-form-item{
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    height: 70%;
-  }
+.statistics-form-item {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 70%;
+}
 
-  .cash-text-area {
-    width: 90%;
-    height: 100%;
-    background-color: transparent;
-    border: none;
-    resize: none;
-    font-size: 30px;
-    font-weight: bold;
-    margin-left: 30px;
-    text-align: left;
-  }
+.cash-text-area {
+  width: 90%;
+  height: 100%;
+  background-color: transparent;
+  border: none;
+  resize: none;
+  font-size: 30px;
+  font-weight: bold;
+  margin-left: 30px;
+  text-align: left;
+}
 
-  .reportInfo{
-    margin-top: 1%;
-    height: 60%;
-    margin-left: 3%;
-  }
+.reportInfo {
+  margin-top: 1%;
+  height: 60%;
+  margin-left: 3%;
+}
 
-  .reportInfoForm {
-    height: 100%;
-  }
+.reportInfoForm {
+  height: 100%;
+}
 
-  .reportInfo-table{
-    height: 100%;
-    text-align: center;
-  }
+.reportInfo-table {
+  height: 100%;
+  text-align: center;
+}
 
-  :deep().el-table th.is-leaf {
+:deep().el-table th.is-leaf {
 
-    background-color: lightskyblue;
-    color: white;
-    font-weight: bold;
-    font-size: larger;
-  }
+  background-color: lightskyblue;
+  color: white;
+  font-weight: bold;
+  font-size: larger;
+}
 
 </style>

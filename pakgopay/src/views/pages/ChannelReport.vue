@@ -169,9 +169,6 @@ export default {
                this.statisticsInfo.payingCard = true
                this.statisticsInfo.collectionCard = false
              }
-
-
-
          } else if (response.data.code !==0) {
            this.$notify({
              title: 'Error',
@@ -222,7 +219,7 @@ export default {
     this.activeTabPane = '0'
     this.search(0)
     this.tab1TotalCount = this.collectionChannelInfo.length
-    this.tab1TotalCount = this.payingChannelInfo.length
+    this.tab2TotalCount = this.payingChannelInfo.length
   }
 }
 </script>
@@ -365,7 +362,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{((row.successQuantity/row.orderQuantity)/100).toFixed(2)}}%</div>
+              <div>{{((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%</div>
             </el-table-column>
             <el-table-column
                 prop="collectionChannelMerchantCommission"
@@ -373,7 +370,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{row.merchantFee}}</div>
+              <div>{{this.currencyIcon+row.merchantFee}}</div>
             </el-table-column>
             <el-table-column
                 prop="collectionChannelProfit"
@@ -381,7 +378,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{row.orderBalance}}</div>
+              <div>{{this.currencyIcon+row.orderBalance}}</div>
             </el-table-column>
             <el-table-column
                 prop="recordDate"
@@ -447,7 +444,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{((row.successQuantity/row.orderQuantity)/100).toFixed(2)}}%</div>
+              <div>{{((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%</div>
             </el-table-column>
             <el-table-column
                 prop="merchantFee"
@@ -455,7 +452,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{row.merchantFee}}</div>
+              <div>{{this.currencyIcon+row.merchantFee}}</div>
             </el-table-column>
             <el-table-column
                 prop="orderBalance"
@@ -463,7 +460,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{row.orderBalance}}</div>
+              <div>{{this.currencyIcon+row.orderBalance}}</div>
             </el-table-column>
             <el-table-column
               prop="time"

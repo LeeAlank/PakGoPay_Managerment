@@ -415,7 +415,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.merchantFee}}
+                {{this.currencyIcon+row.merchantFee}}
               </div>
             </el-table-column>
             <el-table-column
@@ -425,7 +425,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.agent1Fee}}
+                {{this.currencyIcon+row.agent1Fee}}
               </div>
             </el-table-column>
             <el-table-column
@@ -435,7 +435,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.agent2Fee}}
+                {{this.currencyIcon+row.agent2Fee}}
               </div>
             </el-table-column>
             <el-table-column
@@ -445,7 +445,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.agent3Fee}}
+                {{this.currencyIcon+row.agent3Fee}}
               </div>
             </el-table-column>
             <el-table-column
@@ -455,7 +455,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.orderProfit}}
+                {{this.currencyIcon+row.orderProfit}}
               </div>
             </el-table-column>
             <el-table-column
@@ -538,7 +538,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.merchantFee}}
+                {{this.currencyIcon+row.merchantFee}}
               </div>
             </el-table-column>
             <el-table-column
@@ -548,7 +548,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.agent1Fee}}
+                {{this.currencyIcon+row.agent1Fee}}
               </div>
             </el-table-column>
             <el-table-column
@@ -558,7 +558,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.agent2Fee}}
+                {{this.currencyIcon+row.agent2Fee}}
               </div>
             </el-table-column>
             <el-table-column
@@ -568,7 +568,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.agent3Fee}}
+                {{this.currencyIcon+row.agent3Fee}}
               </div>
             </el-table-column>
             <el-table-column
@@ -578,7 +578,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.orderProfit}}
+                {{this.currencyIcon+row.orderProfit}}
               </div>
             </el-table-column>
             <el-table-column

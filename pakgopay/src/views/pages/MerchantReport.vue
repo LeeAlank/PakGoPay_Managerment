@@ -1,8 +1,7 @@
-
 <script setup>
 
 import SvgIcon from "@/components/SvgIcon/index.vue";
-import {getDateFromTimestamp, getFormateDate, getTimeFromTimestamp} from "@/api/common.js";
+import {getFormateDate} from "@/api/common.js";
 
 </script>
 <script>
@@ -10,12 +9,19 @@ import '@/api/common.css'
 import {ElPagination} from "element-plus";
 import 'element-plus/theme-chalk/el-pagination.css'
 import '@/api/common.css'
-import {ref} from "vue";
-import {getAllCurrencyType, getMerchantReport} from "@/api/interface/backendInterface.js";
-import {getTodayStartTimestamp, loadingBody} from "@/api/common.js";
+
+import {exportMerchantReport, getAllCurrencyType, getMerchantReport} from "@/api/interface/backendInterface.js";
+import {
+  exportExcel,
+  getFormateDate,
+  getFormateTime,
+  getMerchantReportTitle,
+  getTodayStartTimestamp,
+  loadingBody
+} from "@/api/common.js";
+
 export default {
-  components: {
-  },
+  components: {},
   data() {
     return {
       currency: '',
@@ -30,25 +36,20 @@ export default {
       activeTabPane: 0,
       starttingTime: '',
       endingTime: '',
-      value:'',
-      statisticsInfo:{},
-      timeRange:'',
-      filterbox: {
-      },
-      reportTitle : '代收订单订单总数｜代收订单成功率｜代收订单成功数｜代付订单总数｜代收订单成功率｜代收订单成功数｜代收/付商户手续费｜一二三级代理佣金｜代收/付总利润',
+      value: '',
+      statisticsInfo: {},
+      timeRange: '',
+      filterbox: {},
+      reportTitle: '代收订单订单总数｜代收订单成功率｜代收订单成功数｜代付订单总数｜代收订单成功率｜代收订单成功数｜代收/付商户手续费｜一二三级代理佣金｜代收/付总利润',
       tab1CurrentPage: 1,
       tab1TotalCount: 2,
-      pageSizes: [1,5,10,15,30,50,100],
+      pageSizes: [1, 5, 10, 15, 30, 50, 100],
       tab1PageSize: 1,
       tab2CurrentPage: 1,
       tab2TotalCount: 2,
       tab2PageSize: 1,
-      collectingReportInfoData: [
-
-      ],
-      payingReportInfoData: [
-
-      ],
+      collectingReportInfoData: [],
+      payingReportInfoData: [],
       allCollectingReportInfoData: [
         {
           dsOrderNumber: '100000000000',
@@ -87,6 +88,74 @@ export default {
     },
     exportMerchantInfo() {
       //导出报表方法
+      this.filterbox.orderType = null
+      this.filterbox.columns = getMerchantReportTitle(this)
+      let timeRange = null
+      if (this.filterbox.filterDateRange) {
+        timeRange = new String(this.filterbox.filterDateRange)
+        this.filterbox.startTime = timeRange.split(',')[0] / 1000
+        this.filterbox.endTime = timeRange.split(',')[1] / 1000
+      } else {
+        this.filterbox.startTime = getTodayStartTimestamp(this.filterbox.startTime)
+        this.filterbox.endTime = getTodayStartTimestamp()
+      }
+      exportMerchantReport(this.filterbox).then(async res => {
+        const fileName = this.$t('exportMerchantReportName') + getFormateTime()
+        await exportExcel(res, fileName, this)
+        /*if (res.status === 200) {
+          if (res.data.type === 'application/json') {
+            const blobData = res.data;
+            const jsonData = JSON.parse(await blobData.text())
+            if (jsonData.code !== 0) {
+              this.$notify({
+                title: 'Failed',
+                message: jsonData.message,
+                duration: 3000,
+                type: 'error',
+                position: 'bottom-right',
+              })
+            }
+          } else {
+            const blob = new Blob([res.data], {type: "application/vnd.ms-excel;charset=UTF-8"});
+            console.log('blob---'+ blob.size)
+            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+              window.navigator.msSaveOrOpenBlob(blob, fileName)
+            } else {
+              const downLoadElement = document.createElement('a');
+              const href = window.URL.createObjectURL(blob);
+              downLoadElement.href = href;
+              downLoadElement.download = fileName;
+              document.body.appendChild(downLoadElement);
+              downLoadElement.click();
+              document.body.removeChild(downLoadElement);
+              window.URL.revokeObjectURL(href);
+            }
+            this.$notify({
+              title: 'Success',
+              message: 'export data success',
+              duration: 3000,
+              type: 'success',
+              position: 'bottom-right',
+            })
+          }
+        } else {
+          if (res.data.type === 'application/json') {
+            const blobData = res.data;
+            const jsonData = JSON.parse(await blobData.text())
+            this.$notify({
+              title: 'Error',
+              message: jsonData.message,
+              duration: 3000,
+              type: 'error',
+              position: 'bottom-right',
+            })
+          }
+
+        }
+        this.filterbox.orderType = '0'*/
+      }).catch(err => {
+        console.log(err)
+      })
     },
     // 改变每页显示条数
     handleTab1SizeChange(pageSize) {
@@ -138,7 +207,7 @@ export default {
     search(orderType, paneName) {
       let loadingClass = ''
       if (paneName === '0') {
-         loadingClass = 'reportInfo-table1'
+        loadingClass = 'reportInfo-table1'
       } else if (paneName === '1') {
         loadingClass = 'reportInfo-table2'
       } else {
@@ -151,8 +220,8 @@ export default {
         this.filterbox.startTime = getTodayStartTimestamp()
         this.filterbox.endTime = getTodayStartTimestamp()
       } else {
-        this.filterbox.startTime = timeRange.split(',')[0]/1000
-        this.filterbox.endTime = timeRange.split(',')[1]/1000
+        this.filterbox.startTime = timeRange.split(',')[0] / 1000
+        this.filterbox.endTime = timeRange.split(',')[1] / 1000
       }
       if (!orderType) {
         this.filterbox.orderType = 0;
@@ -162,21 +231,21 @@ export default {
       getMerchantReport(this.filterbox).then(res => {
         if (res.status === 200 && res.data.code === 0) {
           let resData = JSON.parse(res.data.data)
-            if (orderType === 0) {
-              this.collectingReportInfoData = resData.merchantReportDtoList
-              this.tab1CurrentPage = resData.pageNo
-              this.tab1TotalCount = resData.totalNumber
-              this.tab1PageSize = resData.pageSize
-            } else if (orderType === 1) {
-              this.payingReportInfoData = resData.merchantReportDtoList
-              this.tab2CurrentPage = resData.pageNo
-              this.tab2TotalCount = resData.totalNumber
-              this.tab2PageSize = resData.pageSize
-            }
-            const cardInfo = resData.cardInfo[this.filterbox.currency]
-            this.statisticsInfo.totalAmount = this.currencyIcon+cardInfo.total;
-            this.statisticsInfo.totalWithdrawlAmount = this.currencyIcon+cardInfo.withdraw;
-            this.statisticsInfo.totalFreezeAmount = this.currencyIcon+cardInfo.frozen;
+          if (orderType === 0) {
+            this.collectingReportInfoData = resData.merchantReportDtoList
+            this.tab1CurrentPage = resData.pageNo
+            this.tab1TotalCount = resData.totalNumber
+            this.tab1PageSize = resData.pageSize
+          } else if (orderType === 1) {
+            this.payingReportInfoData = resData.merchantReportDtoList
+            this.tab2CurrentPage = resData.pageNo
+            this.tab2TotalCount = resData.totalNumber
+            this.tab2PageSize = resData.pageSize
+          }
+          const cardInfo = resData.cardInfo[this.filterbox.currency]
+          this.statisticsInfo.totalAmount = this.currencyIcon + cardInfo.total;
+          this.statisticsInfo.totalWithdrawlAmount = this.currencyIcon + cardInfo.withdraw;
+          this.statisticsInfo.totalFreezeAmount = this.currencyIcon + cardInfo.frozen;
         } else if (res.status === 200 && res.data.code !== 0) {
           this.$notify({
             title: 'Error',
@@ -258,9 +327,9 @@ export default {
 </script>
 <template>
   <div class="main-title" style="display: flex;flex-direction: row; align-items: center;">
-      商户报表
+    商户报表
   </div>
-  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0" >
+  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0">
     <el-form-item style="margin-left: 2%;">
       <template #label>
           <span style="color: black;font-size: small;align-items: center">
@@ -322,7 +391,8 @@ export default {
           <el-row class="toolform-item">
             <el-col :span="8" class="toolform-line" style="display: flex;justify-content: center;align-items: center;">
               <el-form-item label="商户名称:" label-width="150px" prop="merchantAccount">
-                <el-input v-model="filterbox.merchantName" type="text" style="width: 200px;display: flex;text-align: center" placeholder="商户账号"/>
+                <el-input v-model="filterbox.merchantName" type="text"
+                          style="width: 200px;display: flex;text-align: center" placeholder="商户账号"/>
               </el-form-item>
             </el-col>
             <el-col :span="16" class="toolform-line" style="display: flex;justify-content: center;align-items: center;">
@@ -338,15 +408,18 @@ export default {
                 >
                 </el-date-picker>
                 <div style="display: flex;flex-direction: row">
-                  <div v-on:click="reset('filterForm')" style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
+                  <div v-on:click="reset('filterForm')"
+                       style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
                     <SvgIcon height="30px" width="30px" name="reset"/>
                     <div style="width: 50px;color: white">重置</div>
                   </div>
-                  <div v-on:click="filtersearch" style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
+                  <div v-on:click="filtersearch"
+                       style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
                     <SvgIcon height="30px" width="30px" name="search"/>
                     <div style="width: 50px;color: white">查询</div>
                   </div>
-                  <div v-on:click="exportMerchantInfo" style="background-color: limegreen;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
+                  <div v-on:click="exportMerchantInfo"
+                       style="background-color: limegreen;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
                     <SvgIcon height="30px" width="30px" name="export"/>
                     <div style="width: 50px;color: white">导出</div>
                   </div>
@@ -375,7 +448,7 @@ export default {
                 width="150px"
             >
               <div>
-                {{row.merchantName}}
+                {{ row.merchantName }}
               </div>
             </el-table-column>
             <el-table-column
@@ -385,7 +458,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.orderQuantity}}
+                {{ row.orderQuantity }}
               </div>
             </el-table-column>
             <el-table-column
@@ -395,7 +468,7 @@ export default {
                 align="center"
             >
               <div>
-                {{((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%
+                {{ ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%
               </div>
             </el-table-column>
             <el-table-column
@@ -405,7 +478,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.successQuantity}}
+                {{ row.successQuantity }}
               </div>
             </el-table-column>
             <el-table-column
@@ -415,7 +488,7 @@ export default {
                 align="center"
             >
               <div>
-                {{this.currencyIcon+row.merchantFee}}
+                {{ this.currencyIcon + row.merchantFee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -425,7 +498,7 @@ export default {
                 align="center"
             >
               <div>
-                {{this.currencyIcon+row.agent1Fee}}
+                {{ this.currencyIcon + row.agent1Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -435,7 +508,7 @@ export default {
                 align="center"
             >
               <div>
-                {{this.currencyIcon+row.agent2Fee}}
+                {{ this.currencyIcon + row.agent2Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -445,7 +518,7 @@ export default {
                 align="center"
             >
               <div>
-                {{this.currencyIcon+row.agent3Fee}}
+                {{ this.currencyIcon + row.agent3Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -455,7 +528,7 @@ export default {
                 align="center"
             >
               <div>
-                {{this.currencyIcon+row.orderProfit}}
+                {{ this.currencyIcon + row.orderProfit }}
               </div>
             </el-table-column>
             <el-table-column
@@ -465,7 +538,7 @@ export default {
                 align="center"
             >
               <div>
-                {{(getFormateDate(row.recordDate))}}
+                {{ (getFormateDate(row.recordDate)) }}
               </div>
             </el-table-column>
           </el-table>
@@ -483,7 +556,7 @@ export default {
           </el-pagination>
         </form>
       </el-tab-pane>
-      <el-tab-pane label="代付报表"  style="width: 100%">
+      <el-tab-pane label="代付报表" style="width: 100%">
         <form id="reportInfo" class="reportInfoForm" style="height: auto">
           <el-table
               border :data="payingReportInfoData"
@@ -498,7 +571,7 @@ export default {
                 width="150px"
             >
               <div>
-                {{row.merchantName}}
+                {{ row.merchantName }}
               </div>
             </el-table-column>
             <el-table-column
@@ -508,7 +581,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.orderQuantity}}
+                {{ row.orderQuantity }}
               </div>
             </el-table-column>
             <el-table-column
@@ -518,7 +591,7 @@ export default {
                 align="center"
             >
               <div>
-                {{((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%
+                {{ ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%
               </div>
             </el-table-column>
             <el-table-column
@@ -528,7 +601,7 @@ export default {
                 align="center"
             >
               <div>
-                {{row.successQuantity}}
+                {{ row.successQuantity }}
               </div>
             </el-table-column>
             <el-table-column
@@ -538,7 +611,7 @@ export default {
                 align="center"
             >
               <div>
-                {{this.currencyIcon+row.merchantFee}}
+                {{ this.currencyIcon + row.merchantFee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -548,7 +621,7 @@ export default {
                 align="center"
             >
               <div>
-                {{this.currencyIcon+row.agent1Fee}}
+                {{ this.currencyIcon + row.agent1Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -558,7 +631,7 @@ export default {
                 align="center"
             >
               <div>
-                {{this.currencyIcon+row.agent2Fee}}
+                {{ this.currencyIcon + row.agent2Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -568,7 +641,7 @@ export default {
                 align="center"
             >
               <div>
-                {{this.currencyIcon+row.agent3Fee}}
+                {{ this.currencyIcon + row.agent3Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -578,7 +651,7 @@ export default {
                 align="center"
             >
               <div>
-                {{this.currencyIcon+row.orderProfit}}
+                {{ this.currencyIcon + row.orderProfit }}
               </div>
             </el-table-column>
             <el-table-column
@@ -588,7 +661,7 @@ export default {
                 align="center"
             >
               <div>
-                {{(getFormateDate(row.recordDate))}}
+                {{ (getFormateDate(row.recordDate)) }}
               </div>
             </el-table-column>
           </el-table>
@@ -610,150 +683,152 @@ export default {
   </div>
 </template>
 <style scoped>
-  .title{
-    /*margin-top: 1%;*/
-    margin-top: 0;
-    margin-left: 2%;
-    font-size: 24px;
-    font-weight: bold;
-    background-color: white;
-    padding-left: 10px;
-    border-radius: 10px;
-    width: 10%;
-    color: deepskyblue;
-  }
+.title {
+  /*margin-top: 1%;*/
+  margin-top: 0;
+  margin-left: 2%;
+  font-size: 24px;
+  font-weight: bold;
+  background-color: white;
+  padding-left: 10px;
+  border-radius: 10px;
+  width: 10%;
+  color: deepskyblue;
+}
 
-  .toolbar{
-    margin-top: 1%;
-    margin-left: 2%;
-    background-color: white;
-    height: 20%;
-    width: 96%;
-    border-radius: 15px;
-    overflow: auto;
-    display: flex;
-    align-items: center;
-  }
+.toolbar {
+  margin-top: 1%;
+  margin-left: 2%;
+  background-color: white;
+  height: 20%;
+  width: 96%;
+  border-radius: 15px;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+}
 
-  .toolform{
-    /*margin-left: 1%;*/
-    height: 90%;
-    padding: 0;
-    width: 100%;
-  }
+.toolform {
+  /*margin-left: 1%;*/
+  height: 90%;
+  padding: 0;
+  width: 100%;
+}
 
-  .toolform-item-filter{
-    /*margin-top: 1%;*/
-    height: 30%;
-    margin-left: 2%;
-    /*margin-right: 2%;*/
-    /*margin-left: 2%;*/
-    display: flex;
-    justify-content: space-between;
+.toolform-item-filter {
+  /*margin-top: 1%;*/
+  height: 30%;
+  margin-left: 2%;
+  /*margin-right: 2%;*/
+  /*margin-left: 2%;*/
+  display: flex;
+  justify-content: space-between;
 
-    align-items: center;
-  }
+  align-items: center;
+}
 
-  .toolform-item{
-    /*margin-top: 1%;*/
-    height: 35%;
-    /*margin-right: 2%;*/
-    /*margin-left: 2%;*/
-    display: flex;
-    justify-content: space-between;
+.toolform-item {
+  /*margin-top: 1%;*/
+  height: 35%;
+  /*margin-right: 2%;*/
+  /*margin-left: 2%;*/
+  display: flex;
+  justify-content: space-between;
 
-    align-items: center;
-  }
+  align-items: center;
+}
 
-  .toolform-input{
-    background-color: transparent;
-    border: solid 1px #6495ed;
-    height: 70%;
-    width: 300px;
-    border-radius: 10px;
-    text-align: center;
-  }
+.toolform-input {
+  background-color: transparent;
+  border: solid 1px #6495ed;
+  height: 70%;
+  width: 300px;
+  border-radius: 10px;
+  text-align: center;
+}
 
-  .toolform-line {
-    height: 50px;
-    display: flex;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-  }
+.toolform-line {
+  height: 50px;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+}
 
-  .el-select .el-input_icon {
-    font-size: 20px;
-    transform: scale(1.5);
-    border: 0;
-  }
-  .statistics-form{
-    margin-left: 2%;
-    margin-top: 1%;
-    background-color: white;
-    height: 150px;
-    width: 500px;
-    display: flex;
-    align-items: center;
-    border-radius: 20px;
-  }
+.el-select .el-input_icon {
+  font-size: 20px;
+  transform: scale(1.5);
+  border: 0;
+}
 
-  .statistics-container{
-     display: flex;
-     flex-direction: row;
-     justify-content: space-between;
-     align-items: center;
-     margin-left: 30px;
-     margin-right: 50px;
-  }
+.statistics-form {
+  margin-left: 2%;
+  margin-top: 1%;
+  background-color: white;
+  height: 150px;
+  width: 500px;
+  display: flex;
+  align-items: center;
+  border-radius: 20px;
+}
 
-  .statistics-form-item{
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    height: 70%;
-  }
+.statistics-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  margin-left: 30px;
+  margin-right: 50px;
+}
 
-  .cash-text-area {
-    width: 90%;
-    height: 100%;
-    background-color: transparent;
-    border: none;
-    resize: none;
-  }
+.statistics-form-item {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 70%;
+}
 
-  .reportInfo{
-    margin-top: 1%;
-    height: 60%;
-    margin-left: 2%;
-  }
+.cash-text-area {
+  width: 90%;
+  height: 100%;
+  background-color: transparent;
+  border: none;
+  resize: none;
+}
 
-  .reportInfoForm {
-    height: 100%;
-  }
+.reportInfo {
+  margin-top: 1%;
+  height: 60%;
+  margin-left: 2%;
+}
 
-  .reportInfo-table{
-    height: 100%;
-    text-align: center;
-  }
+.reportInfoForm {
+  height: 100%;
+}
 
-  .el-table .el-table_body-rapper{
-    width: 100%;
-    height: calc(100% - 23px);
-  }
+.reportInfo-table {
+  height: 100%;
+  text-align: center;
+}
 
-  :deep().el-table th.is-leaf {
+.el-table .el-table_body-rapper {
+  width: 100%;
+  height: calc(100% - 23px);
+}
 
-    background-color: lightskyblue;
-    color: white;
-    font-weight: bold;
-    font-size: larger;
-  }
+:deep().el-table th.is-leaf {
 
-  .toolbarName{
-    color: black;
-  }
-  :deep() .el-collapse-item__header {
-    background-color: deepskyblue;
-  }
+  background-color: lightskyblue;
+  color: white;
+  font-weight: bold;
+  font-size: larger;
+}
+
+.toolbarName {
+  color: black;
+}
+
+:deep() .el-collapse-item__header {
+  background-color: deepskyblue;
+}
 </style>

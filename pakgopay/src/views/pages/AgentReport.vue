@@ -99,7 +99,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 
 
   <div class="reportInfo" style="margin-left: 1%;margin-right: 3%;margin-top: 1%;width: 95%;">
-    <el-button @click="exportMerchantInfo" style="margin:0;float: right">
+    <el-button @click="exportAgentInfo" style="margin:0;float: right">
       <SvgIcon height="20px" width="20px" name="export"/>
       <div style="color: black">导出</div>
     </el-button>
@@ -271,8 +271,8 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 
 <script>
 import {ref} from "vue";
-import {getAgentReport, getAllCurrencyType} from "@/api/interface/backendInterface.js";
-import {getTodayStartTimestamp, loadingBody} from "@/api/common.js";
+import {exportAgentReport, getAgentReport, getAllCurrencyType} from "@/api/interface/backendInterface.js";
+import {exportExcel, getAgentReportTitle, getFormateTime, getTodayStartTimestamp, loadingBody} from "@/api/common.js";
 
 const filterTimeRange = ref('')
 export default {
@@ -310,6 +310,25 @@ export default {
     }
   },
   methods: {
+    exportAgentInfo() {
+      this.filterbox.orderType = null
+      this.filterbox.columns = getAgentReportTitle(this)
+      let timeRange = null
+      if (this.filterbox.filterDateRange) {
+        timeRange = new String(this.filterbox.filterDateRange)
+        this.filterbox.startTime = timeRange.split(',')[0] / 1000
+        this.filterbox.endTime = timeRange.split(',')[1] / 1000
+      } else {
+        this.filterbox.startTime = getTodayStartTimestamp(this.filterbox.startTime)
+        this.filterbox.endTime = getTodayStartTimestamp()
+      }
+      exportAgentReport(this.filterbox).then(async res => {
+          const fileName = this.$t('exportAgentReportName') + getFormateTime()
+          await exportExcel(res, fileName, this)
+      }).catch(err => {
+        console.log(err)
+      })
+    },
     reset(form) {
       this.$refs[form].resetFields()
       this.filterbox.currency = this.currency
@@ -450,39 +469,6 @@ export default {
         this.search(1, tab.paneName)
       }
     },
- /*   aggregationRow({row, column, rowIndex, columnIndex}) {
-      if (columnIndex === 0) {
-        return {
-          rowspan: row.rowspan,
-          colspan: 1
-        }
-      }
-    },
-    setrowspans(data) {
-      // 先给所有的数据都加一个v.rowspan = 1
-      data.forEach(v => {
-        v.rowspan = 1
-      })
-      // 双层循环
-      for (let i = 0; i < data.length; i++) {
-        // 内层循环，上面已经给所有的行都加了v.rowspan = 1
-        // 这里进行判断
-        // 如果当前行的id和下一行的id相等
-        // 就把当前v.rowspan + 1
-        // 下一行的v.rowspan - 1
-        for (let j = i + 1; j < data.length; j++) {
-          if (data[i].agentName === data[j].agentName) {
-            data[i].rowspan++
-            data[j].rowspan--
-          }
-        }
-        // 这里跳过已经重复的数据
-        i = i + data[i].rowspan - 1
-      }
-      this.collectingReportInfoData = []
-      this.collectingReportInfoDataTestData = data
-    }*/
-
   },
   async mounted() {
     await getAllCurrencyType().then(res => {

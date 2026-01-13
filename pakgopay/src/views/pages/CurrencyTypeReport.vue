@@ -87,7 +87,7 @@ import {getFormateDate} from "@/api/common.js";
             >
             </el-date-picker>
             <el-button @click="filterSearch" style="color: deepskyblue">搜索</el-button>
-            <el-button @click="exportData" style="color: deepskyblue;margin: 0"><SvgIcon name="export"/>导出</el-button>
+            <el-button @click="exportCurrencyInfo" style="color: deepskyblue;margin: 0"><SvgIcon name="export"/>导出</el-button>
           </el-form-item>
         </el-row>
       </div>
@@ -147,19 +147,19 @@ import {getFormateDate} from "@/api/common.js";
           </el-table-column>
           <el-table-column
               label="代收商户手续费"
-              prop="amount"
+              prop="merchantFee"
               align="center"
               v-slot="{row}"
           >
-            <div>{{row.amount}}</div>
+            <div>{{row.merchantFee}}</div>
           </el-table-column>
           <el-table-column
               label="代收总利润"
-              prop="amount"
+              prop="orderProfit"
               align="center"
               v-slot="{row}"
           >
-            <div>{{row.orderBalance}}</div>
+            <div>{{row.orderProfit}}</div>
           </el-table-column>
           <el-table-column
               label="日期"
@@ -232,23 +232,23 @@ import {getFormateDate} from "@/api/common.js";
           </el-table-column>
           <el-table-column
               label="代付商户手续费"
-              prop="amount"
+              prop="merchantFee"
               align="center"
               v-slot="{row}"
           >
-            <div>{{row.amount}}</div>
+            <div>{{row.merchantFee}}</div>
           </el-table-column>
           <el-table-column
               label="代付总利润"
-              prop="orderBalance"
+              prop="orderProfit"
               align="center"
               v-slot="{row}"
           >
-            <div>{{row.orderBalance}}</div>
+            <div>{{row.orderProfit}}</div>
           </el-table-column>
           <el-table-column
               label="日期"
-              prop="amount"
+              prop="recordDate"
               align="center"
               v-slot="{row}"
           >
@@ -275,10 +275,17 @@ import {getFormateDate} from "@/api/common.js";
 <script>
 import {ref} from "vue";
 import {
+  exportCurrencyReport,
   getAllCurrencyType,
   getCurrencyReport,
 } from "@/api/interface/backendInterface.js";
-import {getTodayStartTimestamp, loadingBody} from "@/api/common.js";
+import {
+  exportExcel,
+  getCurrencyReportTitle,
+  getFormateTime,
+  getTodayStartTimestamp,
+  loadingBody
+} from "@/api/common.js";
 
 const filterDateRange = ref('')
 export default {
@@ -404,19 +411,58 @@ export default {
         this.loadingInstance.close()
       })
     },
-    exportData() {
+    exportCurrencyInfo() {
+      this.filterbox.orderType = null
+      this.filterbox.columns = getCurrencyReportTitle(this)
+      let timeRange = null
+      if (this.filterbox.filterDateRange) {
+        timeRange = new String(this.filterbox.filterDateRange)
+        this.filterbox.startTime = timeRange.split(',')[0] / 1000
+        this.filterbox.endTime = timeRange.split(',')[1] / 1000
+      } else {
+        this.filterbox.startTime = getTodayStartTimestamp(this.filterbox.startTime)
+        this.filterbox.endTime = getTodayStartTimestamp()
+      }
+      exportCurrencyReport(this.filterbox).then(async res => {
+          const fileName = this.$t('exportMerchantReportName') + getFormateTime()
+         await exportExcel(res, fileName, this)
+      }).catch(err => {
+          console.log(err)
+      })
     },
-    handleTab1CurrentChange(val) {
-
+    handleTab1CurrentChange(currentPage) {
+      this.filterbox.isNeedCardData = false
+      this.tab1CurrentPage = currentPage
+      let pageSize = this.pageSize
+      // 清空table绑定数据
+      this.collectionCurrencyInfo = []
+      // 获取当前页数数据范围 。(当前页-1)*每页数据 - 当前页*每页数据
+      /*this.collectingReportInfoData = this.allCollectingReportInfoData.slice((((currentPage -1)*pageSize)), ((currentPage)*pageSize))*/
+      this.filterbox.pageNo = currentPage
+      this.filterbox.pageSize = this.tab1PageSize
+      this.search(0)
     },
     handleTab2CurrentChange(val) {
-
+      this.filterbox.isNeedCardData = false
+      this.tab2CurrentPage = currentPage
+      let pageSize = this.pageSize
+      // 清空table绑定数据
+      this.payingCurrencylInfo = []
+      // 获取当前页数数据范围 。(当前页-1)*每页数据 - 当前页*每页数据
+      /*this.collectingReportInfoData = this.allCollectingReportInfoData.slice((((currentPage -1)*pageSize)), ((currentPage)*pageSize))*/
+      this.filterbox.pageNo = currentPage
+      this.filterbox.pageSize = this.tab2PageSize
+      this.search(1)
     },
-    handleTab1PageSizeChange(val) {
-
+    handleTab1PageSizeChange(pageSize) {
+      this.tab1PageSize = pageSize
+      this.tab1CurrentPage = 1
+      this.handleTab1CurrentChange(1)
     },
-    handleTab2PageSizeChange(val) {
-
+    handleTab2PageSizeChange(pageSize) {
+      this.tab2PageSize = pageSize
+      this.tab2CurrentPage = 1
+      this.handleTab2CurrentChange(1)
     }
   },
   async mounted() {

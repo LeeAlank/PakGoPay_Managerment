@@ -14,7 +14,7 @@ import { createI18n } from 'vue-i18n'
 // 导入语言包
 import messages from './locales'
 
-const i18n = createI18n({
+export const i18n = createI18n({
     locale: 'zh-cn', //默认语言
     fallbackLocale: 'zh-cn',
     messages,

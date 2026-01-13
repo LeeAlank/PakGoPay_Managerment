@@ -11,12 +11,96 @@ export function isValidIP(ipList) {
     }
 }
 
+export function getMerchantReportTitle(i18n) {
+    const Merchant_Report_Title = [
+        {key: "merchantName", title: i18n.$t('exportReportTitle.merchantName')},
+        {key: "orderQuantity", title: i18n.$t('exportReportTitle.orderQuantity')},
+        {key: "orderSuccessRate", title: i18n.$t('exportReportTitle.orderSuccessRate')},
+        {key:"successQuantity", title: i18n.$t('exportReportTitle.successQuantity')},
+        {key:"merchantFee", title: i18n.$t('exportReportTitle.merchantFee')},
+        {key:"agent1Fee", title:i18n.$t('exportReportTitle.agent1Fee')},
+        {key:"agent2Fee", title:i18n.$t('exportReportTitle.agent2Fee')},
+        {key:"agent3Fee", title:i18n.$t('exportReportTitle.agent3Fee')},
+        {key:"orderProfit", title:i18n.$t('exportReportTitle.orderProfit')},
+        {key:"currency", title:i18n.$t('exportReportTitle.currency')},
+        {key:"timeDate", title:i18n.$t('exportReportTitle.timeDate')},
+    ]
+    return Merchant_Report_Title
+}
+
+export function getChannelReportTitle(i18n) {
+    const Channel_Report_Title = [
+        {key:"channelName", title: i18n.$t('exportReportTitle.channelName')},
+        {key:"orderQuantity", title: i18n.$t('exportReportTitle.orderQuantity')},
+        {key:"orderSuccessRate", title: i18n.$t('exportReportTitle.orderSuccessRate')},
+        {key:"failedQuantity", title: i18n.$t('exportReportTitle.failedQuantity')},
+        {key:"successQuantity", title: i18n.$t('exportReportTitle.successQuantity')},
+        {key:"merchantFee", title: i18n.$t('exportReportTitle.merchantFee')},
+        {key:"orderProfit", title: i18n.$t('exportReportTitle.orderProfit')},
+        {key:"currency", title: i18n.$t('exportReportTitle.currency')},
+        {key:"timeDate", title: i18n.$t('exportReportTitle.timeDate')},
+    ]
+    return Channel_Report_Title
+}
+
+export function getAgentReportTitle(i18n) {
+    const Agent_Report_Title = [
+        {key:"agentName", title: i18n.$t('exportReportTitle.agentName')},
+        {key:"orderQuantity", title: i18n.$t('exportReportTitle.orderQuantity')},
+        {key:"orderSuccessRate", title: i18n.$t('exportReportTitle.orderSuccessRate')},
+        {key:"failedQuantity", title: i18n.$t('exportReportTitle.failedQuantity')},
+        {key:"successQuantity", title: i18n.$t('exportReportTitle.successQuantity')},
+        {key:"commission", title: i18n.$t('exportReportTitle.commission')},
+        {key:"currency", title: i18n.$t('exportReportTitle.currency')},
+        {key:"timeDate", title: i18n.$t('exportReportTitle.timeDate')},
+    ]
+    return Agent_Report_Title
+}
+
+export function getCurrencyReportTitle(i18n) {
+    const Currency_Report_Title = [
+        {key: "currency", title: i18n.$t('exportReportTitle.currency')},
+        {key: "orderQuantity", title: i18n.$t('exportReportTitle.orderQuantity')},
+        {key: "orderSuccessRate", title: i18n.$t('exportReportTitle.orderSuccessRate')},
+        {key: "failedQuantity", title: i18n.$t('exportReportTitle.failedQuantity')},
+        {key: "successQuantity", title: i18n.$t('exportReportTitle.successQuantity')},
+        {key: "merchantFee", title: i18n.$t('exportReportTitle.merchantFee')},
+        {key: "orderProfit", title: i18n.$t('exportReportTitle.orderProfit')},
+    ]
+    return Currency_Report_Title
+}
+
 export function getFormateDate(ts) {
     const d = new Date(ts * 1000);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+}
+
+export function getFormateTime() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hour = date.getHours().toString().padStart(2, '0');
+    const minute = date.getMinutes().toString().padStart(2, '0');
+    const second = date.getSeconds().toString().padStart(2, '0');
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+}
+
+export function getFormateTimeByTimeBystamp(ts) {
+    if (!ts) {
+        return '';
+    }
+    const date = new Date(ts * 1000);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hour = date.getHours().toString().padStart(2, '0');
+    const minute = date.getMinutes().toString().padStart(2, '0');
+    const second = date.getSeconds().toString().padStart(2, '0');
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 }
 
 export function getTimeFromTimestamp(timestamp) {
@@ -58,4 +142,60 @@ export function getTodayStartTimestamp() {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     return Math.floor(now.getTime() / 1000);
+}
+
+export async function exportExcel(res, fileName, that) {
+
+    if (res.status === 200) {
+        if (res.data.type === 'application/json') {
+            const blobData = res.data;
+            const jsonData = JSON.parse(await blobData.text())
+            if (jsonData.code !== 0) {
+                this.$notify({
+                    title: 'Failed',
+                    message: jsonData.message,
+                    duration: 3000,
+                    type: 'error',
+                    position: 'bottom-right',
+                })
+            }
+        } else {
+            const blob = new Blob([res.data], {type: "application/vnd.ms-excel;charset=UTF-8"});
+            console.log('blob---'+ blob.size)
+            if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveOrOpenBlob(blob, fileName)
+            } else {
+                const downLoadElement = document.createElement('a');
+                const href = window.URL.createObjectURL(blob);
+                downLoadElement.href = href;
+                downLoadElement.download = fileName;
+                document.body.appendChild(downLoadElement);
+                downLoadElement.click();
+                document.body.removeChild(downLoadElement);
+                window.URL.revokeObjectURL(href);
+            }
+            that.$notify({
+                title: 'Success',
+                message: 'export data success',
+                duration: 3000,
+                type: 'success',
+                position: 'bottom-right',
+            })
+        }
+    } else {
+        if (res.data.type === 'application/json') {
+            const blobData = res.data;
+            const jsonData = JSON.parse(await blobData.text())
+            that.$notify({
+                title: 'Error',
+                message: jsonData.message,
+                duration: 3000,
+                type: 'error',
+                position: 'bottom-right',
+            })
+        }
+
+    }
+    this.filterbox.orderType = '0'
+
 }

@@ -10,8 +10,8 @@ import {ElPagination} from "element-plus";
 import 'element-plus/theme-chalk/el-pagination.css'
 import '@/api/common.css'
 import {ref} from "vue";
-import {getAllCurrencyType, getChannelReport} from "@/api/interface/backendInterface.js";
-import {getTodayStartTimestamp, loadingBody} from "@/api/common.js";
+import {exportChannelReport, getAllCurrencyType, getChannelReport} from "@/api/interface/backendInterface.js";
+import {exportExcel, getChannelReportTitle, getFormateTime, getTodayStartTimestamp, loadingBody} from "@/api/common.js";
 export default {
   name: "ChannelReport",
   components: {
@@ -60,8 +60,24 @@ export default {
     }
   },
   methods: {
-    exportMerchantInfo() {
+    exportChannelInfo() {
       //导出报表方法
+      this.filterbox.orderType = null
+      this.filterbox.columns = getChannelReportTitle(this)
+      let timeRange = null
+      if (this.filterbox.filterDateRange) {
+        timeRange = new String(this.filterbox.filterDateRange)
+        this.filterbox.startTime = timeRange.split(',')[0] / 1000
+        this.filterbox.endTime = timeRange.split(',')[1] / 1000
+      } else {
+        this.filterbox.startTime = getTodayStartTimestamp(this.filterbox.startTime)
+        this.filterbox.endTime = getTodayStartTimestamp()
+      }
+      exportChannelReport(this.filterbox).then(async res => {
+        const fileName = this.$t('exportChannelReportName') + getFormateTime()
+        await exportExcel(res, fileName, this)
+        this.filterbox.orderType = '0'
+      })
     },
     handleCurrencyChange() {
       this.currency = this.filterbox.currency;
@@ -305,7 +321,7 @@ export default {
                     <SvgIcon height="20px" width="20px" name="search"/>
                     <div style="color: black">查询</div>
                   </el-button>
-                  <el-button @click="exportMerchantInfo" style="margin:0">
+                  <el-button @click="exportChannelInfo" style="margin:0">
                     <SvgIcon height="20px" width="20px" name="export"/>
                     <div style="color: black">导出</div>
                   </el-button>

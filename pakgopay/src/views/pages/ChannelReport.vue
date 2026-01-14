@@ -163,7 +163,7 @@ export default {
       } else {
         this.filterbox.orderType = orderType
       }
-      this.filterbox.channelId = '1'
+      this.filterbox.channelId = 1
       getChannelReport(this.filterbox).then(response => {
          if (response.status === 200 && response.data.code === 0) {
            let resData = JSON.parse(response.data.data)

@@ -185,9 +185,10 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
         >
           <div>
 <!--            {{row.enableTimePeriod}}-->
-            {{
-              !row.enableTimePeriod ? 'all' : getFormateTimeByTimeBystamp(row.enableTimePeriod ? row.enableTimePeriod.split('/')[0] : '') + '-' + getFormateTimeByTimeBystamp(row.enableTimePeriod ? row.enableTimePeriod.split('/')[1] : '')
-            }}
+<!--            {{
+              !row.enableTimePeriod ? 'all' : getFormateTimeByTimeBystamp(row.enableTimePeriod ? row.enableTimePeriod.toLocaleString().split(',')[0] : '') + '-' + getFormateTimeByTimeBystamp(row.enableTimePeriod ? row.enableTimePeriod.toLocaleString().split(',')[1] : '')
+            }}-->
+            {{!row.enableTimePeriod ? '*' : row.enableTimePeriod}}
           </div>
         </el-table-column>
         <el-table-column
@@ -560,7 +561,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
               label-width="150px"
           >
             {{
-              !paymentDetailInfo.enableTimePeriod ? 'all' : getFormateTimeByTimeBystamp(paymentDetailInfo.enableTimePeriod ? paymentDetailInfo.enableTimePeriod.split('/')[0] : '') + '-' + getFormateTimeByTimeBystamp(paymentDetailInfo.enableTimePeriod ? paymentDetailInfo.enableTimePeriod.split('/')[1] : '')
+              !paymentDetailInfo.enableTimePeriod ? 'all' : getFormateTimeByTimeBystamp(paymentDetailInfo.enableTimePeriod ? paymentDetailInfo.enableTimePeriod.split(',')[0] : '') + '-' + getFormateTimeByTimeBystamp(paymentDetailInfo.enableTimePeriod ? paymentDetailInfo.enableTimePeriod.split(',')[1] : '')
             }}
           </el-form-item>
         </el-col>
@@ -832,11 +833,12 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
           >
             <el-time-picker
             type="time"
-            v-model="createPathChannelInfo.enableTimePeriod"
+            v-model="createPathChannelInfo.enableTimePeriod1"
             value-format="HH:mm:ss"
             format="HH:mm:ss"
             is-range
             range-separator="-"
+            @change="timeChange"
             />
           </el-form-item>
         </el-col>
@@ -876,7 +878,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
               label-width="150px"
               prop="paymentMinAmount"
           >
-            <el-input v-model="createPathChannelInfo.paymentMinAmount" style="width: 200px"/>
+            <el-input type="number" v-model.number="createPathChannelInfo.paymentMinAmount" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -885,7 +887,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
               label-width="150px"
               prop="paymentMaxAmount"
           >
-            <el-input v-model="createPathChannelInfo.paymentMaxAmount" style="width: 200px"/>
+            <el-input type="number" v-model.number="createPathChannelInfo.paymentMaxAmount" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -909,7 +911,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
               label-width="150px"
               prop="collectionDailyLimit"
           >
-            <el-input v-model="createPathChannelInfo.collectionDailyLimit" style="width: 200px"/>
+            <el-input v-model.number="createPathChannelInfo.collectionDailyLimit" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -918,7 +920,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
               label-width="150px"
               prop="collectionMonthlyLimit"
           >
-            <el-input v-model="createPathChannelInfo.collectionMonthlyLimit" style="width: 200px"/>
+            <el-input v-model.number="createPathChannelInfo.collectionMonthlyLimit" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -976,7 +978,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
               label-width="150px"
               prop="payDailyLimit"
           >
-            <el-input v-model="createPathChannelInfo.payDailyLimit" style="width: 200px"/>
+            <el-input v-model.number="createPathChannelInfo.payDailyLimit" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -985,7 +987,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
               label-width="150px"
               prop="payMonthlyLimit"
           >
-            <el-input v-model="createPathChannelInfo.payMonthlyLimit" style="width: 200px"/>
+            <el-input v-model.number.number="createPathChannelInfo.payMonthlyLimit" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -1085,7 +1087,12 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
 </template>
 
 <script>
-import {getAllCurrencyType, getPaymentInfo} from "@/api/interface/backendInterface.js";
+import {
+  createPaymentInfo,
+  editPaymentInfo,
+  getAllCurrencyType,
+  getPaymentInfo
+} from "@/api/interface/backendInterface.js";
 import {loadingBody} from "@/api/common.js";
 export default {
   name: "PathChannelList",
@@ -1301,6 +1308,9 @@ export default {
     }
   },
   methods: {
+    timeChange(val) {
+      this.createPathChannelInfo.enableTimePeriod = val.toLocaleString()
+    },
     reset(form) {
       this.$refs[form].resetFields();
     },
@@ -1383,20 +1393,79 @@ export default {
       }
     },
     submitCreatePaymentInfo(type) {
+      console.log('submitCreatePaymentInfo'+ JSON.stringify(this.createPathChannelInfo))
       if (type === 'create') {
         this.$refs['createPaymentForm'].validate(valid => {
           if (valid) {
-            alert('校验通过')
-          } else {
-            alert('未通过')
+            // reuqest interface to create
+            createPaymentInfo(this.createPathChannelInfo).then(res => {
+              if (res.status === 200 && res.data.code === 0) {
+                this.$notify({
+                  title:'Success',
+                  message:'create payment info successfully',
+                  duration:3000,
+                  type: 'success',
+                  position: 'bottom-right'
+                })
+              } else if (res.status === 200 && res.data.code !== 0) {
+                this.$notify({
+                  title:'Error',
+                  message:res.data.message,
+                  duration:3000,
+                  type: 'error',
+                  position: 'bottom-right'
+                })
+              } else {
+                this.$notify({
+                  title:'Error',
+                  message:'some error occurred.',
+                  duration:3000,
+                  type: 'error',
+                  position: 'bottom-right'
+                })
+              }
+              this.dialogFormVisible = false
+              this.pathChannelDialogTitle = ''
+              this.$refs['createPaymentForm'].resetFields()
+              this.search()
+            })
           }
         })
       } else {
         this.$refs['createPaymentForm'].validate(valid => {
           if (valid) {
-            alert('you are modifying data')
-          } else {
-            alert('you are modifying data, but some data must been inputed')
+            // request interface to edit
+            editPaymentInfo(this.createPathChannelInfo).then(res => {
+                if (res.status === 200 && res.data.code === 0) {
+                   this.$notify({
+                     title:'Success',
+                     message:'create payment info successfully',
+                     duration:3000,
+                     type: 'success',
+                     position: 'bottom-right'
+                   })
+                } else if (res.status === 200 && res.data.code !== 0) {
+                  this.$notify({
+                    title:'Error',
+                    message:res.data.message,
+                    duration:3000,
+                    type: 'error',
+                    position: 'bottom-right'
+                  })
+                } else {
+                  this.$notify({
+                    title:'Error',
+                    message:'some error occurred.',
+                    duration:3000,
+                    type: 'error',
+                    position: 'bottom-right'
+                  })
+                }
+                this.dialogFormVisible = false
+                this.pathChannelDialogTitle = ''
+                this.$refs['createPaymentForm'].resetFields()
+                this.search()
+            })
           }
         })
       }

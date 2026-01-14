@@ -378,3 +378,27 @@ export function getPaymentInfo(form) {
         data: form
     })
 }
+
+export function editPaymentInfo(form) {
+    return service({
+        url: '/api/pakGoPay/server/editPayment',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form
+    })
+}
+
+export function createPaymentInfo(form) {
+    return service({
+        url: '/api/pakGoPay/server/addPayment',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form
+    })
+}

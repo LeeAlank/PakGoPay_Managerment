@@ -14,24 +14,6 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       </template>
       <div class="main-toolbar" style="height: 100px;">
         <el-form class="main-toolform" style="display: grid;align-items: center;" ref="filterboxForm" :model="filterbox">
-<!--          <div style="display: flex; align-items: center;">
-            <div class="main-toolform-line" style="justify-content: left;margin-left: 3%;">
-              代理名称：<input v-model="filterbox.agentName" type="text" class="main-toolform-input"
-                              style="width: 150px;" placeholder="代理名称"/>
-            </div>&nbsp;
-            <div class="main-toolform-line" style="justify-content: left;margin-left: 3%;">
-              代理账号：<input v-model="filterbox.agentAccount" type="text" class="main-toolform-input"
-                              style="width: 150px;" placeholder="代理账号"/>
-            </div>&nbsp;
-            <div class="main-toolform-line" style="justify-content: left;margin-left: 3%;">
-              状态：
-              <el-select v-model="filterbox.status" style="width: 200px;">
-                <el-option :value="1">启用</el-option>
-                <el-option :value="0">停用</el-option>
-              </el-select>
-            </div>
-
-          </div>-->
           <el-row>
             <el-col :span="6">
               <div>
@@ -174,6 +156,8 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                 inactive-color="#ff4949"
                 active-text="启用"
                 inactive-text="停用"
+                :inactive-value="0"
+                :active-value="1"
                 disabled
             ></el-switch>
           </div>
@@ -967,6 +951,7 @@ export default {
            this.agentInfo.channelIds = this.agentInfo.channelIdList
            if (this.modifyType === 'edit') {
              // modify
+             alert(JSON.stringify(this.agentInfo))
              modifyAgentInfo(this.agentInfo).then((res) => {
                if (res.status === 200 && res.data.code === 0) {
                  this.search()

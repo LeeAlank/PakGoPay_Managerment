@@ -4,7 +4,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 </script>
 
 <template>
-  <div class="main-title">提现记录</div>
+  <div class="main-title">代理账号</div>
   <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0">
     <el-form-item style="margin-left: 2%;">
       <template #label>
@@ -76,7 +76,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             >
             </el-date-picker></div>
             <div class="main-toolform-line">收款账号地址:<el-input v-model="filterbox.walletAddr" placeholder="收款账号地址" class="main-toolform-input"/></div>
-            <div class="main-toolform-line">代理名称:<el-input v-model="filterbox.agentName" clearable  type="text" class="main-toolform-input" placeholder="代理名称">
+            <div class="main-toolform-line">代理名称:<el-input v-model="filterbox.name" clearable  type="text" class="main-toolform-input" placeholder="代理名称">
               <template #append>
                 <el-button style="font-size: 15px">
                   <SvgIcon name="search"/>搜索
@@ -112,7 +112,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           label="代理名称"
           align="center"
         >
-          <div>{{row.agentName}}</div>
+          <div>{{row.name}}</div>
         </el-table-column>
         <el-table-column
             v-slot="{row}"

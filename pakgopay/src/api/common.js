@@ -220,6 +220,6 @@ export async function exportExcel(res, fileName, that) {
         }
 
     }
-    that.filterbox.orderType = '0'
+    this.filterbox.orderType = '0'
 
 }

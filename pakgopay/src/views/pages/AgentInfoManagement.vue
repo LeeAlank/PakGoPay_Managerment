@@ -62,7 +62,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       </div>
       <el-table
           border :data="agentInfoTableData"
-          class="merchantInfos-table"
+          class="agentInfoTable"
           style="width: 97%;height: auto;"
           :key="tablekey"
       >
@@ -595,6 +595,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 <script>
 import {createAgentInfo, getAgentInfo, getChannelInfo, getPaymentInfo} from "@/api/interface/backendInterface.js";
 import validator from "axios/unsafe/helpers/validator.js";
+import {loadingBody} from "@/api/common.js";
 
 export default {
   name: 'ChannelList',
@@ -652,11 +653,11 @@ export default {
       }
     }
     return {
+      loadingInstance: '',
       createType: '',
       modifyType: '',
       tablekey: 0,
       filterbox: {
-        agentName: '',
       },
       dialogFormVisible: false,
       parentDialogTitle: '',
@@ -879,21 +880,45 @@ export default {
     this.search()
   },
   methods: {
-    search() {
-     /* if (!this.filterbox.agentName) {
-        this.agentInfoTableData = this.agentInfoFormData
-        this.tablekey++
-        return;
-      }
-      this.agentInfoTableData = []
-      this.agentInfoFormData.forEach((item) => {
-        if (item.agentName === this.filterbox.agentName) {
-          this.agentInfoTableData.push(item)
+    async search() {
+      this.loadingInstance =  loadingBody(this, 'agentInfoTable')
+      await getAgentInfo(this.filterbox).then((res) => {
+        if (res.status === 200 && res.data.code === 0) {
+          const allData = JSON.parse(res.data.data)
+          this.agentInfoTableData = allData.agentInfoDtoList
+          this.totalCount = allData.totalNumber
+        } else if (res.status === 200 && res.data.code !== 0) {
+          console.log(2)
+          this.$notify({
+            title: 'Error',
+            type: 'error',
+            duration: 5000,
+            message: res.data.message,
+            position: 'bottom-right'
+          })
+        } else {
+          this.$notify({
+            title: 'Error',
+            type: 'error',
+            duration: 5000,
+            position: 'bottom-right',
+            message: 'some error occurred, please try again'
+          })
         }
-        this.tablekey++
-      })*/
-      getAgentInfo({pageSize: 1000}).then((res) => {
-        this.agentInfoTableData = JSON.parse(res.data.data).agentInfoDtoList
+        setTimeout(()=>{
+          this.loadingInstance.close()
+          this.loadingInstance = null
+        }, 500)
+
+      }).catch((err) => {
+        this.loadingInstance.close()
+        this.$notify({
+          title: 'Error',
+          type: 'error',
+          duration: 5000,
+          position: 'bottom-right',
+          message: err.message,
+        })
       })
     },
     submit(form) {
@@ -925,34 +950,20 @@ export default {
       this.parentDialogVisible = false
       this.nextLevelAgentInfo = []
     },
-    handleChange() {
-      let startNum = (this.currentPage - 1) * this.pageSize
-      let endNum = startNum + this.pageSize
-      if (this.agentInfoFormData.length <= endNum) {
-        endNum = this.agentInfoFormData.length
-      }
-      this.agentInfoTableData = []
-      for (let i = startNum; i < endNum; i++) {
-        this.agentInfoTableData.push(this.agentInfoFormData[i])
-      }
-      this.tablekey++
+    handleCurrentPageChange(currentPage) {
+      this.filterbox.pageNo = currentPage;
+      this.filterbox.pageSize = this.pageSize;
+      this.agentInfoTableData =  []
+      this.search()
+
     },
-    handleSizeChange() {
-      this.currentPage = 1
-      this.agentInfoTableData = []
-      let circleSize = this.pageSize > this.agentInfoFormData.length ? this.agentInfoFormData.length : this.pageSize
-      for (let i = 0; i < circleSize; i++) {
-        this.agentInfoTableData.push(this.agentInfoFormData[i])
-      }
-      this.tablekey++;
+    handleSizeChange(pageSize) {
+      this.currentPage = pageSize
+      this.pageSize = pageSize
+      this.handleCurrentPageChange(1)
     },
     editAgentInfo(val) {
       this.agentInfo = val
-      /*this.agentInfo.agentName = val.agentName
-      this.agentInfo.userName = val.userName
-      this.agentInfo.status = val.status
-      this.agentInfo.loginIps = val.loginIps
-      this.agentInfo.whthdrawIps = val.whthdrawIps*/
       this.dialogTitle = 'edit agentInfo'
       this.dialogFormVisible = true;
       this.modifyType = 'edit'
@@ -963,11 +974,14 @@ export default {
       this.parentDialogVisible = true
       this.parentDialogTitle = '增加下一级代理'*/
       //this.agentInfo = val
+      console.log(JSON.stringify(val.channelDtoList))
+      this.createType = 'nextLevel'
+      this.agentInfo.parentId = val.userId
+      this.agentInfo.topAgentId = val.topAgentId
+      this.agentInfo.parentChannelDtoList = val.channelDtoList
       this.agentInfo.level = val.level + 1
       this.dialogTitle = '新增下级代理'
       this.dialogFormVisible = true;
-      this.createType = 'nextLevel'
-
     },
     deleteAgentInfo() {
       this.$confirm('are you sure deleting this data?', '提示', {

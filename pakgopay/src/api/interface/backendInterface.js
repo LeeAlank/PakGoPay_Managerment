@@ -102,6 +102,32 @@ export async function filterSearchMerchantStatement(form) {
     })
 }
 
+export async function getMerchantInfo(form) {
+    return service({
+        url: '/api/pakGoPay/server/merchant/queryMerchant',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        data: form,
+        responseType: 'json',
+    })
+}
+
+export async function createMerchantInfo(form) {
+    return service({
+        url: '/api/pakGoPay/server/merchant/addMerchant',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        data: form,
+        responseType: 'json',
+    })
+}
+
 export async function roleList(roleName) {
     return service({
         url: '/api/pakGoPay/server/SystemConfig/roleList',

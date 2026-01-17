@@ -2,6 +2,7 @@
 import SvgIcon from "@/components/SvgIcon/index.vue";
 import merchantReport from "@/views/pages/MerchantReport.vue";
 import '@/assets/base.css'
+import {getFormateTimeByTimeBystamp} from "@/api/common.js";
 </script>
 
 <template>
@@ -103,9 +104,11 @@ import '@/assets/base.css'
             label="商户账号"
             v-slot="{row}"
             align="center"
+            width="100px"
+            fixed="left"
         >
           <div>
-            {{row.merchantAccount}}
+            {{row.userId}}
           </div>
         </el-table-column>
         <el-table-column
@@ -113,9 +116,23 @@ import '@/assets/base.css'
             label="商户名称"
             v-slot="{row}"
             align="center"
+            width="150px"
+            fixed="left"
         >
           <div>
             {{row.merchantName}}
+          </div>
+        </el-table-column>
+        <el-table-column
+            prop="merchantLabel"
+            label="商户代码"
+            v-slot="{row}"
+            align="center"
+            width="100px"
+            fixed="left"
+        >
+          <div>
+            {{row.userId}}
           </div>
         </el-table-column>
         <el-table-column
@@ -123,11 +140,23 @@ import '@/assets/base.css'
             label="商户代理"
             v-slot="{row}"
             align="center"
+            width="300px"
         >
-          <div>
-            <div style="display: flex;">一级代理：<div>{{row.merchantAgent.label}}</div></div>
-            <div style="display: flex;" v-if="row.merchantAgent.hasOwnProperty('children')">二级代理：<div>{{row.merchantAgent.children[0].label}}</div></div>
-            <div style="display: flex;" v-if="row.merchantAgent.hasOwnProperty('children') && row.merchantAgent.children[0].hasOwnProperty('children')">三级代理：<div>{{row.merchantAgent.children[0].children[0].label}}</div></div>
+          <div v-for="item in row.agentInfos">
+            <div style="background-color: darkgrey;margin-top: 2px">
+              <div>代理名称: {{item.agentName}}</div>
+              <div>代理账号: {{item.accountName}}</div>
+              <div v-if="row.channelDtoList" style="background-color: lightgreen">
+                <div style="display: flex;align-items: center">
+                  <div style="height:100%;width:150px;align-items: center;justify-items: center;text-align: center;">支付渠道：</div>
+                  <div style="width: 150px;border-left: solid 1px black">
+                    <div style="flex: 2;width: 130px;" v-for="item in item.channelDtoList">
+                      {{item.channelName}}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </el-table-column>
         <el-table-column
@@ -138,44 +167,26 @@ import '@/assets/base.css'
         >
           <div>
             <el-switch
-                v-model="row.merchantStatus"
+                v-model="row.status"
                 active-color="#13ce66"
                 inactive-color="#ff4949"
                 active-text="启用"
                 inactive-text="停用"
+                :inactive-value="0"
+                :active-value="1"
                 disabled
             >
             ></el-switch>
           </div>
         </el-table-column>
         <el-table-column
-            prop="loginIPWhiteList"
-            label="登陆提现IP白名单"
+            prop="currencyType"
+            label="交易币种"
             v-slot="{row}"
             align="center"
         >
           <div>
-            {{row.loginIPWhiteList}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="payingIPWhiteList"
-            label="代付IP白名单"
-            v-slot="{row}"
-            align="center"
-        >
-          <div>
-            {{row.payingIPWhiteList}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="collectingIPWhiteList"
-            label="代收IP白名单"
-            v-slot="{row}"
-            align="center"
-        >
-          <div>
-            {{row.collectingIPWhiteList}}
+            {{row.currencyList ? row.currencyList.toLocaleString() : '-'}}
           </div>
         </el-table-column>
         <el-table-column
@@ -193,29 +204,54 @@ import '@/assets/base.css'
           </div>
         </el-table-column>
         <el-table-column
+            prop="loginIPs"
+            label="登陆提现IP白名单"
+            v-slot="{row}"
+            align="center"
+            width="300px"
+        >
+          <div>
+            {{row.loginIPWhiteList}}
+          </div>
+        </el-table-column>
+        <el-table-column
+            prop="payingIPWhiteList"
+            label="代付IP白名单"
+            v-slot="{row}"
+            align="center"
+            width="300px"
+        >
+          <div>
+            {{row.payWhiteIps}}
+          </div>
+        </el-table-column>
+        <el-table-column
+            prop="collectingIPWhiteList"
+            label="代收IP白名单"
+            v-slot="{row}"
+            align="center"
+            width="300px"
+        >
+          <div>
+            {{row.colWhiteIps}}
+          </div>
+        </el-table-column>
+        <el-table-column
             prop="createTime"
             label="创建时间"
             v-slot="{row}"
             align="center"
         >
           <div>
-            {{row.createTime}}
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="currencyType"
-            label="交易币种"
-            v-slot="{row}"
-            align="center"
-        >
-          <div>
-            {{row.currencyType}}
+            {{row.createTime? getFormateTimeByTimeBystamp(row.createTime) : '-'}}
           </div>
         </el-table-column>
         <el-table-column
             label="操作"
             v-slot="{row}"
             align="center"
+            width="100px"
+            fixed="right"
         >
           <div>
 <!--            <el-button style="background-color: mediumseagreen" @click.prevent="editMerchantInfo(row)">编辑</el-button>
@@ -264,9 +300,10 @@ import '@/assets/base.css'
       :title="dialogAddTitle"
       v-model="dialogAddFormVisible"
       class="dialog"
-      center="true"
+      center
       width="70%"
       height="900px"
+      style="max-width: 70%; overflow-x: auto"
       @open="handleOpen('merchantAddInfo')"
   >
     <el-form ref="merchantAddInfo" style="height: 500px" :model="merchantAddInfo" label-width="100%" class="form" :rules="merchantInfoAddRule" >
@@ -277,25 +314,18 @@ import '@/assets/base.css'
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="登陆密码:" label-width="150px" size="medium" prop="merchantPassword">
-            <el-input v-model="merchantAddInfo.merchantPassword" style="width: 200px"></el-input>
+          <el-form-item label="商户账号:" label-width="150px" size="medium" prop="accountName">
+            <el-input v-model="merchantAddInfo.userId" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="确认密码:" label-width="150px" size="medium" prop="merchantConfirmPassword">
-            <el-input v-model="merchantAddInfo.merchantConfirmPassword" style="width: 200px"></el-input>
+          <el-form-item label="登陆密码:" label-width="150px" size="medium" prop="accountPwd">
+            <el-input v-model="merchantAddInfo.accountPwd" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="启用状态:" label-width="150px" size="medium">
-            <el-switch
-                v-model="merchantAddInfo.isInUse"
-                active-color="#13ce66"
-                inactive-color="#ff4949"
-                active-text="启用"
-                inactive-text="停用"
-            >
-            </el-switch>
+          <el-form-item label="确认密码:" label-width="150px" size="medium" prop="accountConfirmPwd">
+            <el-input v-model="merchantAddInfo.accountConfirmPwd" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -325,6 +355,20 @@ import '@/assets/base.css'
 
       <el-row>
         <el-col :span="6">
+          <el-form-item label="启用状态:" label-width="150px" size="medium">
+            <el-switch
+                v-model="merchantAddInfo.status"
+                active-color="#13ce66"
+                inactive-color="#ff4949"
+                active-text="启用"
+                inactive-text="停用"
+                :inactive-value="0"
+                :active-value="1"
+            >
+            </el-switch>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
           <el-form-item label="启用代理" label-width="150px" size="medium">
             <el-switch
                 v-model="merchantAddInfo.useAgent"
@@ -343,7 +387,7 @@ import '@/assets/base.css'
             <el-select
               :options="channelOptions"
               :props="channelProps"
-              v-model="merchantInfo.channelId"
+              v-model="merchantInfo.channelIds"
               placeholder="请选择渠道"
               style="width: 200px"
               multiple
@@ -353,7 +397,7 @@ import '@/assets/base.css'
         <el-col :span="6" v-if="merchantAddInfo.useAgent===1">
           <el-form-item label="所属代理:" label-width="150px" size="medium" prop="merchantAgent">
             <el-cascader
-              v-model="merchantAddInfo.merchantAgent"
+              v-model="merchantAddInfo.agentList"
               :options="agentOptions"
               style="width: 200px"
               :props="{ checkStrictly: true }"
@@ -383,12 +427,12 @@ import '@/assets/base.css'
       <el-row v-if="merchantAddInfo.supportPaying === 1">
         <el-col :span="6">
           <el-form-item label="代付最大金额:" label-width="150px" size="medium">
-            <el-input v-model="merchantInfo.payingMaxAmount" style="width: 200px"/>
+            <el-input v-model="merchantInfo.payMaxFee" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
-        <el-form-item label="代付IP白名单:" label-width="150px" size="medium">
-          <el-input v-model="merchantAddInfo.payingIPWhiteList" style="width: 200px"/>
+        <el-form-item label="代付IP白名单:" label-width="150px" size="medium" prop="payWhiteIps">
+          <el-input v-model="merchantAddInfo.payWhiteIps" style="width: 200px"/>
         </el-form-item>
         </el-col>
 <!--        <el-col :span="6">
@@ -458,22 +502,24 @@ import '@/assets/base.css'
       <el-row v-if="merchantAddInfo.supportCollection === 1">
         <el-col :span="6">
           <el-form-item label="代收最大金额:" label-width="150px" size="medium">
-            <el-input v-model="merchantAddInfo.collectionMaxAmount" style="width: 200px"/>
+            <el-input v-model="merchantAddInfo.collectionMaxFee" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
           <el-form-item label="代收IP白名单:" label-width="150px" size="medium">
-            <el-input v-model="merchantAddInfo.collectionIPWhiteList" style="width: 200px"/>
+            <el-input v-model="merchantAddInfo.colWhiteIps" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6" style="display: flex;flex-wrap: wrap;">
           <el-form-item label="金额浮动模式:" label-width="150px" size="medium" prop="cashFloatModel">
             <el-switch
-                v-model="merchantAddInfo.cashFloatModel"
+                v-model="merchantAddInfo.isFloat"
                 active-color="#13ce66"
                 inactive-color="#ff4949"
                 active-text="启用"
                 inactive-text="关闭"
+                :inactive-value="0"
+                :active-value="1"
                 @change="handleFloatChange"
             >
             </el-switch>
@@ -531,7 +577,7 @@ import '@/assets/base.css'
       :title="dialogTitle"
       v-model="dialogFormVisible"
       class="dialog"
-      center="true"
+      center
       width="70%"
       height="50%"
       @open="handleOpen('merchantEditInfo')"
@@ -642,7 +688,7 @@ import '@/assets/base.css'
       :title="dialogDeleteTitle"
       v-model="dialogDeleteVisible"
       class="dialog"
-      center="true"
+      center
       width="70%"
       height="60%"
   >
@@ -663,6 +709,7 @@ import '@/assets/base.css'
 </template>
 <script>
 import {isValidIP} from "@/api/common.js";
+import {createMerchantInfo, getMerchantInfo, getPaymentInfo} from "@/api/interface/backendInterface.js";
 export default {
   name: "MerchantInfo",
   data() {
@@ -801,17 +848,17 @@ export default {
       dialogFlag: '',
       merchantInfoFormData: [
         {
-          merchantAccount: '12345678',
+          userId: '12345678',
           merchantName: '测试商户1',
-          merchantAgent: {value: '001', label: "一级代理商1",children: [
+          agentList: {value: '001', label: "一级代理商1",children: [
               {
                 value: '001-001',
                 label: '一级代理商下的二级代理商1'
               }]},
-          merchantStatus: false,
+          status: 1,
           loginIPWhiteList: '127.0.0.1',
-          payingIPWhiteList: '192.168.1.1',
-          collectingIPWhiteList: '192.168.1.1',
+          payWhiteIps: '192.168.1.1',
+          colWhiteIps: '192.168.1.1',
           merchantAccountInfo: {
             totalAmount: 1000000,
             toUseAmount: 990000,
@@ -880,22 +927,27 @@ export default {
         }
       ],
       channelOptions: [
-        {
+        /*{
           channelId: 1,
           channelName: '渠道一'
         },
         {
           channelId: 2,
           channelName: '渠道二'
-        }
+        }*/
       ],
       channelProps: {
-        value: 'channelId',
-        label: 'channelName'
+        value: 'paymentNo',
+        label: 'paymentName'
       }
     }
   },
   methods: {
+    search() {
+      getMerchantInfo(this.filterbox).then(res => {
+          console.log('merchantInfo----'+JSON.stringify(res.data))
+      })
+    },
     handleOpen(form) {
       this.$nextTick(() => {
         /*this.$refs.form.resetFields();*/
@@ -951,21 +1003,35 @@ export default {
       this.deleteMerchantInfo = {}
     },
     editMerchantInfo(rowInfo) {
+      this.merchantAddInfo = rowInfo
+
+      if (this.merchantAddInfo.supportType === 0) {
+        this.merchantAddInfo.supportCollection = 1
+        this.merchantAddInfo.supportPaying = 0
+      } else if(this.merchantAddInfo.supportType === 1) {
+        this.merchantAddInfo.supportCollection = 0
+        this.merchantAddInfo.supportPaying = 1
+      } else {
+        this.merchantAddInfo.supportCollection = 1
+        this.merchantAddInfo.supportPaying = 1
+      }
       this.dialogFlag = 'edit';
-      this.merchantInfo.merchantName = rowInfo.merchantName;
-      this.merchantInfo.merchantAccount = rowInfo.merchantAccount;
-      this.merchantInfo.isInUse = rowInfo.isInUse;
-      this.merchantInfo.loginIpList = rowInfo.loginIPWhiteList
-      this.merchantInfo.payingWhiteList = rowInfo.payingIPWhiteList;
-      this.merchantInfo.collectingWhiteList = rowInfo.collectingIPWhiteList
-      let agents = rowInfo.merchantAgent
+     /* this.merchantAddInfo.merchantName = rowInfo.merchantName;
+      this.merchantAddInfo.accountName = rowInfo.accountName;
+      this.merchantAddInfo.isInUse = rowInfo.isInUse;
+      this.merchantAddInfo.loginIpList = rowInfo.loginIPWhiteList
+      this.merchantAddInfo.payWhiteIps = rowInfo.payWhiteIps;
+      this.merchantAddInfo.colWhiteIps = rowInfo.colWhiteIps*/
+      let agents = rowInfo.agentList
       this.selectedAgent.push(agents.value)
       if(agents.hasOwnProperty("children")) {
         this.getAllAgentId(agents.children)
       }
       //this.selectedAgent = rowInfo.merchantAgent
-      this.dialogFormVisible = true;
-      this.dialogTitle = "修改账户信息"
+      /*this.dialogFormVisible = true;
+      this.dialogTitle = "修改账户信息"*/
+      this.dialogAddFormVisible = true
+      this.dialogAddTitle = "修改商户信息"
 
     },
     getAllAgentId(agents) {
@@ -1013,13 +1079,57 @@ export default {
       })
     },
     submitAddInfo(form) {
+      if (this.dialogFlag === 'create') {
+        if (this.merchantAddInfo.supportPaying === 1) {
+          this.merchantAddInfo.supportType = 1
+        } else if (this.merchantAddInfo.supportCollection === 1) {
+          this.merchantAddInfo.supportType = 0
+        } else {
+          this.merchantAddInfo.supportType = 2
+        }
+      }
+
       this.$refs[form].validate(valid => {
         if (valid) {
           // 校验通过
-          alert("校验通过---"+JSON.stringify(this.merchantAddInfo));
+          // request interface to create merchant
+          createMerchantInfo(this.merchantAddInfo).then(res => {
+            if (res.status === 200 && res.data.code === 0) {
+              this.$notify({
+                title: 'Success',
+                type: 'success',
+                message: 'Create New Merchant Successfully',
+                duration: 4000
+              })
+            } else if (res.status === 200 && res.data.code !== 0) {
+              this.$notify({
+                title: 'Failed',
+                type: 'error',
+                message: res.data.message,
+                duration: 4000
+              })
+            }
+          })
         }
       })
     }
+  },
+  mounted() {
+    getPaymentInfo({pageSize: 1000}).then(res => {
+      if (res.status === 200 && res.data.code === 0) {
+        const allData = JSON.parse(res.data.data).paymentDtoList
+        this.channelOptions = allData
+        this.search()
+      } else {
+        this.$notify({
+          title: 'Error',
+          type: 'error',
+          message: 'get payment failed, please fresh page',
+          duration: 3000
+        })
+      }
+    })
+
   }
 }
 </script>

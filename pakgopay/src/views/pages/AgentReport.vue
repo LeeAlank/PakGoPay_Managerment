@@ -271,13 +271,18 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 
 <script>
 import {ref} from "vue";
-import {exportAgentReport, getAgentReport, getAllCurrencyType} from "@/api/interface/backendInterface.js";
+import {exportAgentReport, getAgentInfo, getAgentReport, getAllCurrencyType} from "@/api/interface/backendInterface.js";
 import {exportExcel, getAgentReportTitle, getFormateTime, getTodayStartTimestamp, loadingBody} from "@/api/common.js";
 
 const filterTimeRange = ref('')
 export default {
   data() {
     return {
+      agentOptions: [],
+      agentProps: {
+        value: 'agentAccount',
+        label: 'agentName'
+      },
       timeRange: [],
       currency: '',
       currencyIcon: '',
@@ -484,6 +489,20 @@ export default {
           let iconKey = this.currency;
           this.currencyIcon = this.currencyIcons[iconKey]
         }
+      }
+    })
+    getAgentInfo({pageSize: 1000}).then(res => {
+      if (res.status === 200 && res.data.code === 0) {
+        const allData = JSON.parse(res.data.data)
+        this.agentOptions = allData.agentInfoDtoList
+      } else {
+        this.$notify({
+          title: 'Error',
+          type: 'error',
+          message: 'get agent info failed, please refresh',
+          position: 'bottom-right',
+          duration: 3000
+        })
       }
     })
     this.startTime = getTodayStartTimestamp()

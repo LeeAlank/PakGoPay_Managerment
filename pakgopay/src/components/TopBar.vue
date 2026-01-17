@@ -20,6 +20,7 @@ export default {
   props: [
       'collapse'
   ],
+  emits: ["changeBar"],
   data() {
     return {
       stomp: null,

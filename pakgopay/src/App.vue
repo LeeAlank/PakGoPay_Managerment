@@ -59,14 +59,15 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
                         router.addRoute(route)
                       })
                     }
+                    router.replace(localStorage.getItem("currentPath"));
                   })
                   /*localStorage.setItem("menu", response.data.menu);*/
                 }
             })
           }else if(res.data === 'success') {
-            router.push(localStorage.getItem("currentPath"));
+            router.replace(localStorage.getItem("currentPath"));
           } else {
-            router.push("/web/login");
+            router.replace("/web/login");
           }
         }
       })

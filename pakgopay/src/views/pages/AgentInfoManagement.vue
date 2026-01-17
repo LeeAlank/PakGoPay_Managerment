@@ -90,6 +90,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             align="center"
             width="300px"
             style="height: 95%;"
+            fixed="left"
         >
           <div style="height: auto;display: flex; justify-content: center;width: 100%;">
             <el-card class="box-card" style="width: 100%">
@@ -114,6 +115,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             v-slot="{row}"
             align="center"
             width="300px"
+            fixed="left"
         >
           <div style="height: auto;display: flex; justify-content: center;width: 100%;">
             <el-card v-if="row.parentUserName" class="box-card" style="width: 100%">
@@ -167,7 +169,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             label="费率"
             v-slot="{row}"
             align="center"
-            width="auto"
+            width="200px"
         >
           <div>
             代收费率:{{row.collectionRate ? row.collectionRate : 0 }}% + {{row.collectionFixedFee? row.collectionFixedFee : 0}}
@@ -187,6 +189,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             label="登陆IP白名单"
             v-slot="{row}"
             align="center"
+            width="150px"
         >
           <div>{{ row.loginIps }}</div>
         </el-table-column>
@@ -194,6 +197,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             label="提现IP白名单"
             v-slot="{row}"
             align="center"
+            width="150px"
         >
           <div>{{ row.withdrawIps }}</div>
         </el-table-column>
@@ -201,13 +205,15 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             label="代理账户余额"
             v-slot="{row}"
             align="center"
+            width="150px"
         >
-          <div>{{ row.loginIPWhiteList }}</div>
+          <div>{{ row.balance }}</div>
         </el-table-column>
         <el-table-column
           label="联系人信息"
           v-slot="{row}"
           align="center"
+          width="300px"
         >
             <div style="background-color: #aaaaaa">
               联系人: {{row.contactName? row.contactName : '-'}}
@@ -239,6 +245,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             v-slot="{row}"
             width="100px"
             style="overflow: auto"
+            fixed="right"
         >
           <el-dropdown trigger="click">
             <SvgIcon name="more" width="30" height="30"/>

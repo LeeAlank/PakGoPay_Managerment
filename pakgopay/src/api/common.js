@@ -109,17 +109,23 @@ export function getFormateTime() {
 }
 
 export function getFormateTimeByTimeBystamp(ts) {
-    if (!ts) {
-        return '';
+    if (!ts || !ts.isNumber) {
+        return '-';
     }
-    const date = new Date(ts * 1000);
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    const hour = date.getHours().toString().padStart(2, '0');
-    const minute = date.getMinutes().toString().padStart(2, '0');
-    const second = date.getSeconds().toString().padStart(2, '0');
-    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+    let validTime = null
+    try {
+        const date = new Date(ts * 1000);
+        const year = date.getFullYear();
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const day = date.getDate().toString().padStart(2, '0');
+        const hour = date.getHours().toString().padStart(2, '0');
+        const minute = date.getMinutes().toString().padStart(2, '0');
+        const second = date.getSeconds().toString().padStart(2, '0');
+        validTime = `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+    } catch (err) {
+        return '-'
+    }
+    return validTime
 }
 
 export function getTimeFromTimestamp(timestamp) {

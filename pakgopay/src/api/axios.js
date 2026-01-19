@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { ElNotification } from 'element-plus'
 import { CloseBold } from '@element-plus/icons-vue'
+import router from "@/router/index.js";
 const service = axios.create({
     //baseURL: '/api',
     timeout: 30000,
@@ -34,7 +35,17 @@ service.interceptors.response.use(response => {
                     position: 'bottom-right',
                     offset: 500
                 })
-                this.router.replace(localStorage.getItem('currentPath'))
+                router.replace(localStorage.getItem('currentPath')).then((result) => {
+                    if (result) {
+                        this.$notify({
+                            title: 'success',
+                            message: 'refresh page successfully',
+                            type: 'success',
+                            position: 'bottom-right',
+                            duration: 1000
+                        })
+                    }
+                })
             }
 
         }

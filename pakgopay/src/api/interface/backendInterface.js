@@ -141,7 +141,7 @@ export async function getMerchantAccount(form) {
     })
 }
 
-export async function modifyMerchantInfo(form) {
+/*export async function modifyMerchantInfo(form) {
     return service({
         url: '/api/pakGoPay/server/merchant/editMerchantAccount',
         method: 'POST',
@@ -152,11 +152,24 @@ export async function modifyMerchantInfo(form) {
         data: form,
         responseType: 'json',
     })
-}
+}*/
 
 export async function createMerchantInfo(form) {
     return service({
         url: '/api/pakGoPay/server/merchant/addMerchant',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        data: form,
+        responseType: 'json',
+    })
+}
+
+export async function modifyMerchantInfo(form) {
+    return service({
+        url: '/api/pakGoPay/server/merchant/editMerchant',
         method: 'POST',
         headers: {
             'Content-Type': 'application/json;charset=UTF-8',

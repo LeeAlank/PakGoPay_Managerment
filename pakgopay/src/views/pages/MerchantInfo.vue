@@ -80,21 +80,21 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             </div>
           </div>
           <div class="main-toolform-item">
-            <div class="main-toolform-line">商户账号：<input v-model="filterbox.merchantAccount"  type="text" class="main-toolform-input" placeholder="商户账号"/></div>
+            <div class="main-toolform-line">商户账号：<input v-model="filterbox.merchantUserName"  type="text" class="main-toolform-input" placeholder="商户账号"/></div>
             <div class="main-toolform-line">商户名称：<input v-model="filterbox.merchantName"  type="text" class="main-toolform-input" placeholder="商户名称"/></div>
             <div class="main-toolform-line">启用状态：
               <el-switch
-                  v-model="filterbox.isInUse"
+                  v-model="filterbox.status"
                   active-color="#13ce66"
                   inactive-color="#ff4949"
                   active-text="启用"
                   inactive-text="停用"
               ></el-switch>
             </div>
-            <div class="main-toolform-line">支持币种：<input v-model="filterbox.supportCurrency" type="text" class="main-toolform-input" placeholder="支持币种"/></div>
+            <div class="main-toolform-line">支持币种：<input v-model="filterbox.currency" type="text" class="main-toolform-input" placeholder="支持币种"/></div>
             <div class="main-toolform-line">所属代理：<!--<input style="width: 150px;" v-model="filterbox.belongAgent" type="text" class="main-toolform-input" placeholder="所属代理"/>-->
               <el-select
-                  v-model="filterbox.belongAgent"
+                  v-model="filterbox.accountName"
                   :options="agentOptions"
                   :props="agentProps"
                   placeholder="select agent"
@@ -107,7 +107,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
     </el-collapse-item>
   </el-collapse>
   <div class="merchantInfos">
-    <form id="merchantInfoForm" class="merchantInfoFormT">
+    <form id="merchantInfoForm" class="merchantInfoFormT" style="height: 100%">
       <el-button @click="addMerchant()" style="width:60px;display: flex; flex-direction: row;justify-content: center;cursor: pointer;align-items: center;float: right;margin-right: 3%">
         <SvgIcon height="20px" width="20px" name="add" style="margin: 0"/>
         <div style="color: black">新增</div>
@@ -115,7 +115,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
       <el-table
           border :data="merchantInfoFormData"
           class="merchantInfos-table"
-          style="width: 97%;height: auto;"
+          style="width: 97%;height: 90%;"
           height="500px"
       >
         <el-table-column
@@ -126,7 +126,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             fixed="left"
         >
           <div>
-            {{row.userId}}
+            {{row.accountName}}
           </div>
         </el-table-column>
         <el-table-column
@@ -205,7 +205,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             width="100px"
             fixed="left"
         >
-          <div v-for="item in row.channelIds ? row.channelIds.split(',') : ''">
+          <div v-for="item in row.channelIds ? row.channelIds.toLocaleString().split(',') : ''">
             <div>{{channelMaps[item]}}</div>
           </div>
         </el-table-column>
@@ -284,21 +284,6 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             fixed="right"
         >
           <div>
-<!--            <el-button style="background-color: mediumseagreen" @click.prevent="editMerchantInfo(row)">编辑</el-button>
-            <el-popconfirm
-                title="Are you sure deleting this data?"
-                confirm-button-text="确认"
-                icon-color="red"
-                cancel-button-text="取消"
-                @confirm="deleteMerchant(row.merchantAccount)"
-                type="warning"
-                width="100px;"
-                >
-              <template #reference>
-                <el-button style="background-color: orangered">删除</el-button>
-              </template>
-            </el-popconfirm>-->
-            <!--<el-button style="background-color: orangered" @click.prevent="delete(row.merchantAccount)">删除</el-button>-->
             <el-dropdown trigger="click">
               <SvgIcon name="more" width="30" height="30" />
               <template #dropdown>
@@ -319,6 +304,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           v-model:page-size="pageSize"
           :page-sizes="pageSizes"
           @current-change="handleCurrentChange"
+          @size-change="handleSizeChange"
           style="float:right; margin-right: 5%;"
       >
       </el-pagination>
@@ -348,12 +334,12 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             <el-input v-model="merchantAddInfo.accountName" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" v-if="dialogFlag !== 'edit'">
           <el-form-item label="登陆密码:" label-width="150px" size="medium" prop="accountPwd">
             <el-input v-model="merchantAddInfo.accountPwd" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="6" v-if="dialogFlag !== 'edit'">
           <el-form-item label="确认密码:" label-width="150px" size="medium" prop="accountConfirmPwd">
             <el-input v-model="merchantAddInfo.accountConfirmPwd" style="width: 200px"></el-input>
           </el-form-item>
@@ -361,23 +347,23 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
       </el-row>
 
       <el-row>
-        <el-col :span="6">
-          <el-form-item label-width="150px" label="联系人:">
+        <el-col :span="6" v-if="dialogFlag !== 'edit'">
+          <el-form-item label-width="150px" label="联系人:" prop="contactName">
             <el-input v-model="merchantAddInfo.contactName" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label-width="150px" label="邮箱:">
+        <el-col :span="6" v-if="dialogFlag !== 'edit'">
+          <el-form-item label-width="150px" label="邮箱:" prop="contactEmail">
             <el-input v-model="merchantAddInfo.contactEmail" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label-width="150px" label="手机号:">
+        <el-col :span="6" v-if="dialogFlag !== 'edit'">
+          <el-form-item label-width="150px" label="手机号:" prop="contactPhone">
             <el-input v-model="merchantAddInfo.contactPhone" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
-        <el-col :span="6">
-          <el-form-item label="登陆提现IP白名单:" label-width="150px" size="medium" prop="loginIps">
+        <el-col :span="6" v-if="dialogFlag !== 'edit'">
+          <el-form-item label="登陆提现IP白名单:" label-width="150px" prop="loginIps">
             <el-input v-model="merchantAddInfo.loginIps" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
@@ -385,7 +371,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
 
       <el-row>
         <el-col :span="6">
-          <el-form-item label="启用状态:" label-width="150px" size="medium">
+          <el-form-item label="启用状态:" label-width="150px" prop="status">
             <el-switch
                 v-model="merchantAddInfo.status"
                 active-color="#13ce66"
@@ -399,7 +385,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="启用代理" label-width="150px" size="medium">
+          <el-form-item label="启用代理" label-width="150px">
             <el-switch
                 v-model="merchantAddInfo.useAgent"
                 active-color="#13ce66"
@@ -413,7 +399,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           </el-form-item>
         </el-col>
         <el-col v-if="merchantAddInfo.useAgent === 0" :span="6">
-          <el-form-item label="渠道:" label-width="150px" size="medium">
+          <el-form-item label="渠道:" label-width="150px" prop="channelIds">
             <el-select
               :options="channelOptions"
               :props="channelProps"
@@ -425,14 +411,13 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           </el-form-item>
         </el-col>
         <el-col :span="6" v-if="merchantAddInfo.useAgent===1">
-          <el-form-item label="所属代理:" label-width="150px">
+          <el-form-item label="所属代理:" label-width="150px" prop="parentId">
             <el-select
                 :options="agentOptions"
                 :props="agentProps"
                 v-model="merchantAddInfo.parentId"
                 placeholder="请选择代理"
                 style="width: 200px"
-                @change="test"
             ></el-select>
           </el-form-item>
         </el-col>
@@ -456,12 +441,12 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
       </el-row>
       <el-row v-if="merchantAddInfo.supportPaying === 1">
         <el-col :span="6">
-          <el-form-item label="代付最小金额:" label-width="150px" size="medium">
+          <el-form-item label="代付最小金额:" label-width="150px" prop="payMinFee">
             <el-input v-model="merchantAddInfo.payMinFee" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="代付最大金额:" label-width="150px" size="medium">
+          <el-form-item label="代付最大金额:" label-width="150px" prop="payMaxFee">
             <el-input v-model="merchantAddInfo.payMaxFee" style="width: 200px"/>
           </el-form-item>
         </el-col>
@@ -488,7 +473,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           </el-form-item>
         </el-col>-->
         <el-col v-if="false" :span="6">
-          <el-form-item label="代付渠道选中模式:" label-width="150px" size="medium">
+          <el-form-item label="代付渠道选中模式:" label-width="150px">
             <el-select disabled v-model="merchantAddInfo.payingChannelModel"
             >
               <el-option key="1" value="1">随机</el-option>
@@ -508,20 +493,20 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         </el-col>-->
 <!--        <el-col :span="6" v-if="merchantAddInfo.payingChargingModel === 2 || merchantAddInfo.payingChargingModel === 3">-->
         <el-col :span="6">
-          <el-form-item label="代付固定费用:" label-width="150px" size="medium">
+          <el-form-item label="代付固定费用:" label-width="150px" prop="payFixedFee">
             <el-input v-model="merchantAddInfo.payFixedFee" style="width: 200px"/>
           </el-form-item>
         </el-col>
 <!--        <el-col :span="6" v-if="merchantAddInfo.payingChargingModel===1 || merchantAddInfo.payingChargingModel === 3">-->
         <el-col :span="6">
-          <el-form-item label="代付比例费率:" label-width="150px" size="medium">
+          <el-form-item label="代付比例费率:" label-width="150px" prop="payRate">
             <el-input v-model="merchantAddInfo.payRate" style="width: 200px"/>
           </el-form-item>
         </el-col>
       </el-row>
       <el-row>
         <el-col :span="6">
-          <el-form-item label="是否开启代收:" label-width="150px" size="medium" prop="supportCollection">
+          <el-form-item label="是否开启代收:" label-width="150px" prop="supportCollection">
             <el-switch
                 v-model="merchantAddInfo.supportCollection"
                 active-color="#13ce66"
@@ -538,22 +523,22 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
       </el-row>
       <el-row v-if="merchantAddInfo.supportCollection === 1">
         <el-col :span="6">
-          <el-form-item label="代收最小金额:" label-width="150px" size="medium">
+          <el-form-item label="代收最小金额:" label-width="150px" prop="collectionMinFee">
             <el-input v-model="merchantAddInfo.collectionMinFee" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="代收最大金额:" label-width="150px" size="medium">
+          <el-form-item label="代收最大金额:" label-width="150px" prop="collectionMaxFee">
             <el-input v-model="merchantAddInfo.collectionMaxFee" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="代收IP白名单:" label-width="150px" size="medium">
+          <el-form-item label="代收IP白名单:" label-width="150px" prop="colWhiteIps">
             <el-input v-model="merchantAddInfo.colWhiteIps" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6" style="display: flex;flex-wrap: wrap;">
-          <el-form-item label="金额浮动模式:" label-width="150px" size="medium" prop="cashFloatModel">
+          <el-form-item label="金额浮动模式:" label-width="150px" prop="isFloat">
             <el-switch
                 v-model="merchantAddInfo.isFloat"
                 active-color="#13ce66"
@@ -568,12 +553,12 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           </el-form-item>
         </el-col>
         <el-col v-if="merchantAddInfo.isFloat" :span="6">
-          <el-form-item  label="浮动金额:" label-width="150px" size="medium" prop="cashFloatNum">
-            <el-input v-model="merchantAddInfo.cashFloatNum" style="width: 200px;" type="number" placeholder="请输入浮动范围"></el-input>
+          <el-form-item  label="浮动金额:" label-width="150px" size="medium" prop="floatRange">
+            <el-input v-model="merchantAddInfo.floatRange" style="width: 200px;" type="number" placeholder="请输入浮动范围"></el-input>
           </el-form-item>
         </el-col>
         <el-col v-if="false" :span="6">
-          <el-form-item label="代收渠道选中模式:" label-width="150px" size="medium">
+          <el-form-item label="代收渠道选中模式:" label-width="150px">
             <el-select disabled v-model="merchantAddInfo.collectionChannelModel"
             >
               <el-option key="1" value="1">随机</el-option>
@@ -592,19 +577,19 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           </el-form-item>
         </el-col>-->
         <el-col :span="6">
-          <el-form-item label="固定费用:" label-width="150px" size="medium">
-            <el-input v-model="merchantAddInfo.collectionFixed" style="width: 200px"/>
+          <el-form-item label="固定费用:" label-width="150px" prop="collectionFixedFee">
+            <el-input v-model="merchantAddInfo.collectionFixedFee" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="比例费率:" label-width="150px" size="medium">
+          <el-form-item label="比例费率:" label-width="150px" prop="collectionRate">
             <el-input v-model="merchantAddInfo.collectionRate" style="width: 200px"/>
           </el-form-item>
         </el-col>
       </el-row>
       <el-row>
         <el-col :span="6">
-          <el-form-item label="谷歌验证码:" label-width="150px" size="medium" prop="googleCode">
+          <el-form-item label="谷歌验证码:" label-width="150px" prop="googleCode">
             <el-input type="number" maxlength="6" minlength="6" v-model="merchantAddInfo.googleCode" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
@@ -683,6 +668,8 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
                 inactive-color="#ff4949"
                 active-text="启用"
                 inactive-text="关闭"
+                :active-value="1"
+                :inactive-value="0"
                 @change="handleFloatChange"
             >
             </el-switch>
@@ -753,16 +740,18 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
 import {isValidIP} from "@/api/common.js";
 import {
   createMerchantInfo, getAgentInfo,
-  getAllCurrencyType,
+  getAllCurrencyType, getChannelInfo,
   getMerchantInfo,
-  getPaymentInfo
+  getPaymentInfo, modifyMerchantInfo
 } from "@/api/interface/backendInterface.js";
 export default {
   name: "MerchantInfo",
   data() {
     const cashFloatNumValidate = (rule, value, callback) => {
-      if (this.merchantInfo.cashFloatModel && (value === '' || value === undefined)) {
+      if (this.merchantAddInfo.isFloat === 1 && !value) {
         callback(new Error('输入浮动金额'))
+      } else {
+        callback()
       }
     };
     const validatePass = (rule, value, callback) => {
@@ -772,11 +761,10 @@ export default {
         callback()
       }
     };
-
     const validatePass2 = (rule, value, callback) => {
       if (value === '' || value === undefined) {
         callback(new Error('type password again'))
-      } else if (value !== this.merchantAddInfo.merchantPassword) {
+      } else if (value !== this.merchantAddInfo.accountPwd) {
         callback(new Error("twice password is different"))
       } else {
         callback()
@@ -791,7 +779,102 @@ export default {
       } else {
         callback()
       }
+    };
 
+    const validAgent = (rule, value, callback) => {
+      if (this.merchantAddInfo.useAagent === 1) {
+        //use agent channel is null and parentId is not null
+        if(!value) {
+          callback(new Err('agent is required'));
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
+    };
+    const validateChannel = (rule, value, callback) => {
+      if (this.merchantAddInfo.useAgent === 0) {
+        if(!value) {
+          callback(new Error('agent is required'));
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
+    };
+    const validPay = (rule, value, callback) => {
+      if (this.merchantAddInfo.supportPaying === 1) {
+        // support pay
+        if(!value) {
+          callback(new Error('pay is required'));
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
+    };
+    const validPayFixedFee = (rule, value, callback) => {
+      if (this.merchantAddInfo.supportPaying === 1) {
+        // support pay
+        if(!value && !this.merchantAddInfo.payRate) {
+          callback(new Error('payFixed or pay Rate need one at least'));
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
+    };
+    const validPayRate = (rule, value, callback) => {
+      if (this.merchantAddInfo.supportPaying === 1) {
+        // support pay
+        if(!value && !this.merchantAddInfo.payFixedFee) {
+          callback(new Error('payFixed or pay Rate need one at least'));
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
+    };
+    const validCollection = (rule, value, callback) => {
+      if (this.merchantAddInfo.supportCollection === 1) {
+        // support pay
+        if(!value) {
+          callback(new Error('pay is required'));
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
+    };
+    const validCollectionFixedFee = (rule, value, callback) => {
+      if (this.merchantAddInfo.supportCollection === 1) {
+        // support pay
+        if(!value && !this.merchantAddInfo.collectionRate) {
+          callback(new Error('collectionFixed or collection Rate need one at least'));
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
+    };
+    const validCollectionRate = (rule, value, callback) => {
+      if (this.merchantAddInfo.supportCollection === 1) {
+        // support pay
+        if(!value && !this.merchantAddInfo.collectionFixedFee) {
+          callback(new Error('collectionFixed or collection Rate need one at least'));
+        } else {
+          callback()
+        }
+      } else {
+        callback()
+      }
     };
     return {
       currency: '',
@@ -814,34 +897,75 @@ export default {
         /*merchantAgent: [
           {required: true, validator: validateAgent, trigger: 'blur'},
         ],*/
-        collectingWhiteList: [
-          {required: true, message: 'collectingWhiteList is required', trigger: 'blur'},
+        accountName: [
+          {
+            required: true, message: 'accountName is required', trigger: 'blur'
+          }
         ],
-
-        loginIpWhiteList: [
-          {required: true, validator: ipValidator, trigger: 'blur'},
+        accountPwd: [
+          {
+            required: true, validator: validatePass, trigger: 'blur'
+          }
         ],
-        payingWhiteList: [
-          {required: true, message: 'payingWhiteList is required', trigger: 'blur'},
+        accountConfirmPwd: [
+          {required: true, validator: validatePass2, trigger: 'blur'}
         ],
-        cashFloatModel: [
-          {required: false, message: 'cashFloatModel is required', trigger: 'blur'},
+        contactName: [
+            {required: true, message: 'contactName is required', trigger: 'blur'}
         ],
-        payingChannel: [
-          {required: false, message: 'payingChannel is required', trigger: 'blur'},
+        contactEmail: [
+            {required: true, message: 'contactEmail is required', trigger: 'blur'}
+        ],
+        contactPhone: [
+            {required: true, message: 'contactPhone is required', trigger: 'blur'}
+        ],
+        loginIps: [
+            {required: true, message: 'loginIp is required', trigger: 'blur'}
+        ],
+        channelIds: [
+          {
+            required: true, validator: validateChannel, trigger: 'blur'
+          }
+        ],
+        parentId: [{
+          required: true,validator: validAgent, trigger: 'blur'
+        }],
+        payMinFee: [{
+          required: true, message: 'payMinFee is required', trigger: 'blur'
+        }],
+        payMaxFee: [{
+          required: true, message: 'payMaxFee is required', trigger: 'blur'
+        }],
+        payWhiteIps: [
+            {required: true, validator: validPay, trigger: 'blur'}
+        ],
+        payFixedFee: [
+            {required: true, validator: validPayFixedFee, trigger: 'blur'}
+        ],
+        payRate: [
+          {required: true, validator: validPayRate, trigger: 'blur'}
+        ],
+        collectionMinFee: [
+            {required: true, message: 'collectionMinFee is required', trigger: 'blur'}
+        ],
+        collectionMaxFee: [
+            {required: true, message: 'collectionMaxFee is required', trigger: 'blur'}
+        ],
+        colWhiteIps: [
+            {required: true, validator: validCollection, trigger: 'blur'}
+        ],
+        collectionFixedFee: [
+            {required: true, validator: validCollectionFixedFee, trigger: 'blur'}
+        ],
+        collectionRate: [
+            {required: true, validator: validCollectionRate, trigger: 'blur'}
         ],
         googleCode: [
           {required: true, message: 'googleCode is required', trigger: 'blur'},
         ],
-        cashFloatNum: [
+        floatRange: [
           {required: true, validator: cashFloatNumValidate, trigger: 'blur'},
         ],
-        merchantPassword: [
-            {required: true, validator: validatePass, trigger: 'blur'},
-        ],
-        merchantConfirmPassword: [
-            {required: true, validator: validatePass2, trigger: 'blur'},
-        ]
       },
       merchantInfoRule: {
         merchantName: [
@@ -860,9 +984,9 @@ export default {
         payingWhiteList: [
             {required: true, message: 'payingWhiteList is required', trigger: 'blur'},
         ],
-        cashFloatModel: [
+       /* cashFloatModel: [
             {required: true, message: 'cashFloatModel is required', trigger: 'blur'},
-        ],
+        ],*/
         payingChannel: [
          {required: true, message: 'payingChannel is required', trigger: 'blur'},
      ],
@@ -926,17 +1050,15 @@ export default {
         }*/
       ],
       channelProps: {
-        value: 'paymentNo',
-        label: 'paymentName'
+        value: 'channelId',
+        label: 'channelName'
       }
     }
   },
   methods: {
-    test(val) {
-      alert(val)
-    },
     search() {
       this.filterbox.isNeedCardData = true
+      this.filterbox.pageSize = this.pageSize
       getMerchantInfo(this.filterbox).then(res => {
          //this.merchantInfoFormData
         if(res.status === 200 && res.data.code === 0) {
@@ -963,8 +1085,17 @@ export default {
         this.$refs[form].resetFields();
       });
     },
-    handleCurrentChange() {
-
+    handleCurrentChange(currentPage) {
+       this.filterbox.pageNo = currentPage;
+       this.filterbox.pageSize = this.pageSize;
+       this.search();
+    },
+    handleSizeChange(size) {
+      this.filterbox.pageNo = 1
+      this.currentPage = 1
+      this.filterbox.pageSize = size
+      this.pageSize = size
+      this.handleCurrentChange()
     },
     reset() {
       this.filterbox.merchantAccount = '';
@@ -1014,7 +1145,9 @@ export default {
     },
     editMerchantInfo(rowInfo) {
       this.merchantAddInfo = rowInfo
-
+      if(rowInfo.agentInfos) {
+        this.merchantAddInfo.useAgent = 1
+      }
       if (this.merchantAddInfo.supportType === 0) {
         this.merchantAddInfo.supportCollection = 1
         this.merchantAddInfo.supportPaying = 0
@@ -1026,20 +1159,6 @@ export default {
         this.merchantAddInfo.supportPaying = 1
       }
       this.dialogFlag = 'edit';
-     /* this.merchantAddInfo.merchantName = rowInfo.merchantName;
-      this.merchantAddInfo.accountName = rowInfo.accountName;
-      this.merchantAddInfo.isInUse = rowInfo.isInUse;
-      this.merchantAddInfo.loginIpList = rowInfo.loginIPWhiteList
-      this.merchantAddInfo.payWhiteIps = rowInfo.payWhiteIps;
-      this.merchantAddInfo.colWhiteIps = rowInfo.colWhiteIps*/
-      let agents = rowInfo.agentList
-      this.selectedAgent.push(agents.value)
-      if(agents.hasOwnProperty("children")) {
-        this.getAllAgentId(agents.children)
-      }
-      //this.selectedAgent = rowInfo.merchantAgent
-      /*this.dialogFormVisible = true;
-      this.dialogTitle = "修改账户信息"*/
       this.dialogAddFormVisible = true
       this.dialogAddTitle = "修改商户信息"
 
@@ -1122,26 +1241,55 @@ export default {
       this.merchantAddInfo.channelIds = this.merchantAddInfo.channelIds ? this.merchantAddInfo.channelIds.toLocaleString() : null
       this.$refs[form].validate(valid => {
         if (valid) {
-          alert('success')
           // 校验通过
           // request interface to create merchant
-          createMerchantInfo(this.merchantAddInfo).then(res => {
-            if (res.status === 200 && res.data.code === 0) {
-              this.$notify({
-                title: 'Success',
-                type: 'success',
-                message: 'Create New Merchant Successfully',
-                duration: 4000
-              })
-            } else if (res.status === 200 && res.data.code !== 0) {
-              this.$notify({
-                title: 'Failed',
-                type: 'error',
-                message: res.data.message,
-                duration: 4000
-              })
-            }
-          })
+          if (this.dialogFlag === 'create') {
+            createMerchantInfo(this.merchantAddInfo).then(res => {
+              if (res.status === 200 && res.data.code === 0) {
+                this.$notify({
+                  title: 'Success',
+                  type: 'success',
+                  message: 'Create New Merchant Successfully',
+                  duration: 4000
+                })
+              } else if (res.status === 200 && res.data.code !== 0) {
+                this.$notify({
+                  title: 'Failed',
+                  type: 'error',
+                  message: res.data.message,
+                  duration: 4000
+                })
+              }
+            })
+          } else if(this.dialogFlag === 'edit') {
+            modifyMerchantInfo(this.merchantAddInfo).then(res => {
+              if (res.status === 200 && res.data.code === 0) {
+                this.$notify({
+                  title: 'Success',
+                  type: 'success',
+                  message: 'Update New Merchant Successfully',
+                  duration: 4000,
+                  position: 'bottom-right'
+                })
+              } else if (res.status === 200 && res.data.code !== 0) {
+                this.$notify({
+                  title: 'Failed',
+                  type: 'error',
+                  message: res.data.message,
+                  duration: 4000,
+                  position: 'bottom-right'
+                })
+              } else {
+                this.$message({
+                  type: 'error',
+                  title: 'Error',
+                  message: 'some error occurred.',
+                  duration: 4000,
+                  position: 'bottom-right'
+                })
+              }
+            })
+          }
         }
       })
     }
@@ -1172,12 +1320,12 @@ export default {
         })
       }
     })
-    getPaymentInfo({pageSize: 1000}).then(res => {
+    getChannelInfo({pageSize: 1000}).then(res => {
       if (res.status === 200 && res.data.code === 0) {
-        const allData = JSON.parse(res.data.data).paymentDtoList
+        const allData = JSON.parse(res.data.data).channelDtoList
         this.channelOptions = allData
         this.channelOptions.forEach(channel => {
-          this.channelMaps[channel.paymentNo] = channel.paymentName
+          this.channelMaps[channel.channelId] = channel.channelName
         })
         this.search()
       } else {

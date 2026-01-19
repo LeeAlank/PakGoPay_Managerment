@@ -66,10 +66,10 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
       </template>
       <!-- 工具栏 -->
       <div class="main-toolbar">
-        <form class="main-toolform">
+        <el-form class="main-toolform" ref="filterboxForm" :model="filterbox">
           <div class="main-toolform-item">
             <div class="main-toolform-line" style="justify-content: right;margin-right: 3%;">
-              <div v-on:click="reset()" style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
+              <div v-on:click="reset('filterboxForm')" style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
                 <SvgIcon height="30px" width="30px" name="reset"/>
                 <div style="width: 50px;color: white">重置</div>
               </div>
@@ -79,35 +79,46 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
               </div>
             </div>
           </div>
-          <div class="main-toolform-item">
-            <div class="main-toolform-line">商户账号：<input v-model="filterbox.merchantUserName"  type="text" class="main-toolform-input" placeholder="商户账号"/></div>
-            <div class="main-toolform-line">商户名称：<input v-model="filterbox.merchantName"  type="text" class="main-toolform-input" placeholder="商户名称"/></div>
-            <div class="main-toolform-line">启用状态：
-              <el-switch
-                  v-model="filterbox.status"
-                  active-color="#13ce66"
-                  inactive-color="#ff4949"
-                  active-text="启用"
-                  inactive-text="停用"
-              ></el-switch>
-            </div>
-            <div class="main-toolform-line">支持币种：<input v-model="filterbox.currency" type="text" class="main-toolform-input" placeholder="支持币种"/></div>
-            <div class="main-toolform-line">所属代理：<!--<input style="width: 150px;" v-model="filterbox.belongAgent" type="text" class="main-toolform-input" placeholder="所属代理"/>-->
-              <el-select
-                  v-model="filterbox.accountName"
-                  :options="agentOptions"
-                  :props="agentProps"
-                  placeholder="select agent"
-              >
-              </el-select>
-            </div>
-          </div>
-        </form>
+          <el-row>
+            <el-col :span="6">
+              <el-form-item label="商户账号:" label-width="150px" prop="merchantUserName">
+                 <el-input  v-model="filterbox.merchantUserName"  type="text" class="main-toolform-input" placeholder="商户账号" style="width: 200px"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+                <el-form-item label="商户名称:" label-width="150px" prop="merchantName">
+                  <el-input  v-model="filterbox.merchantName"  type="text" class="main-toolform-input" placeholder="商户账号" style="width: 200px"/>
+                </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="商户状态:" label-width="150px" prop="status">
+                <el-switch
+                    v-model="filterbox.status"
+                    active-color="#13ce66"
+                    inactive-color="#ff4949"
+                    active-text="启用"
+                    inactive-text="停用"
+                ></el-switch>
+              </el-form-item>
+            </el-col>
+            <el-col :span="6">
+              <el-form-item label="所属代理:" label-width="150px" prop="accountName">
+                <el-select
+                    v-model="filterbox.accountName"
+                    :options="agentOptions"
+                    :props="agentProps"
+                    placeholder="select agent"
+                >
+                </el-select>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
       </div>
     </el-collapse-item>
   </el-collapse>
   <div class="merchantInfos">
-    <form id="merchantInfoForm" class="merchantInfoFormT" style="height: 100%">
+    <form id="merchantInfoForm" class="merchantInfoFormT" style="height: 90%">
       <el-button @click="addMerchant()" style="width:60px;display: flex; flex-direction: row;justify-content: center;cursor: pointer;align-items: center;float: right;margin-right: 3%">
         <SvgIcon height="20px" width="20px" name="add" style="margin: 0"/>
         <div style="color: black">新增</div>
@@ -115,8 +126,8 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
       <el-table
           border :data="merchantInfoFormData"
           class="merchantInfos-table"
-          style="width: 97%;height: 90%;"
-          height="500px"
+          style="width: 97%;"
+          height="100%"
       >
         <el-table-column
             label="商户账号"
@@ -595,7 +606,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         </el-col>
       </el-row>
         <div slot="footer" class="dialog-footer">
-          <el-button @click="cancelAddDialog">取 消</el-button>
+          <el-button @click="cancelAddDialog('merchantAddInfo')">取 消</el-button>
           <el-button type="primary" @click="submitAddInfo('merchantAddInfo')">确 定</el-button>
         </div>
     </el-form>
@@ -737,7 +748,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
   </el-dialog>
 </template>
 <script>
-import {isValidIP} from "@/api/common.js";
+import {isValidIP, loadingBody} from "@/api/common.js";
 import {
   createMerchantInfo, getAgentInfo,
   getAllCurrencyType, getChannelInfo,
@@ -1058,7 +1069,7 @@ export default {
   methods: {
     search() {
       this.filterbox.isNeedCardData = true
-      this.filterbox.pageSize = this.pageSize
+       const loadingInstance = loadingBody(this, 'merchantInfos-table')
       getMerchantInfo(this.filterbox).then(res => {
          //this.merchantInfoFormData
         if(res.status === 200 && res.data.code === 0) {
@@ -1077,6 +1088,7 @@ export default {
             this.statisticsInfo.withdraw = this.currencyIcons[this.currency] + 0
           }
         }
+        loadingInstance.close()
       })
     },
     handleOpen(form) {
@@ -1097,12 +1109,13 @@ export default {
       this.pageSize = size
       this.handleCurrentChange()
     },
-    reset() {
+    reset(form) {
       this.filterbox.merchantAccount = '';
       this.filterbox.isInUse = true;
       this.filterbox.supportCurrency = '';
       this.filterbox.belongAgent = [];
       this.filterbox.merchantName = '';
+      this.$refs[form].resetFields();
     },
     addMerchant() {
       this.merchantInfo = [],
@@ -1131,12 +1144,13 @@ export default {
       this.selectedAgent = []
       this.dialogFlag = ''
     },
-    cancelAddDialog() {
+    cancelAddDialog(form) {
       this.dialogAddFormVisible = false;
       this.dialogAddTitle = '',
       this.merchantInfo = {}
       this.selectedAgent = []
       this.dialogFlag = ''
+      this.$refs[form].resetFields();
     },
     cancelDeleteDialog() {
       this.dialogDeleteTitle = ''
@@ -1246,6 +1260,9 @@ export default {
           if (this.dialogFlag === 'create') {
             createMerchantInfo(this.merchantAddInfo).then(res => {
               if (res.status === 200 && res.data.code === 0) {
+                this.dialogAddFormVisible = false
+                this.dialogTitle = ''
+                this.search()
                 this.$notify({
                   title: 'Success',
                   type: 'success',
@@ -1264,6 +1281,9 @@ export default {
           } else if(this.dialogFlag === 'edit') {
             modifyMerchantInfo(this.merchantAddInfo).then(res => {
               if (res.status === 200 && res.data.code === 0) {
+                this.dialogAddFormVisible = false
+                this.dialogTitle = ''
+                this.search()
                 this.$notify({
                   title: 'Success',
                   type: 'success',

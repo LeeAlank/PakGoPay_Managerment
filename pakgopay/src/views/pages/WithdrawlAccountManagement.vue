@@ -24,7 +24,8 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
       />
     </el-form-item>
   </div>
-  <div class="statistics-container" style="display: flex;justify-content: space-around;height: auto;justify-items: center;align-items: center;margin-top:1%;">
+  <div class="statistics-container"
+       style="display: flex;justify-content: space-around;height: auto;justify-items: center;align-items: center;margin-top:1%;">
     <el-card style="width: 30%;height: 100%;">
       <div style="display: flex;">
         <SvgIcon name="cash" width="100px" height="100px"/>
@@ -81,11 +82,13 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
               >
               </el-date-picker>
               <div style="display: flex;flex-direction: row;">
-                <div v-on:click="reset('filterboxForm')" style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
+                <div v-on:click="reset('filterboxForm')"
+                     style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
                   <SvgIcon height="30px" width="30px" name="reset"/>
                   <div style="width: 50px;color: white">重置</div>
                 </div>
-                <div v-on:click="search()" style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
+                <div v-on:click="search()"
+                     style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
                   <SvgIcon height="30px" width="30px" name="search"/>
                   <div style="width: 50px;color: white">查询</div>
                 </div>
@@ -134,7 +137,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             style="height: 100%;"
         >
           <div>
-            {{row.name}}
+            {{ row.name }}
           </div>
         </el-table-column>
         <el-table-column
@@ -143,7 +146,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             align="center"
         >
           <div>
-            {{row.userName}}
+            {{ row.userName }}
           </div>
         </el-table-column>
         <el-table-column
@@ -153,7 +156,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             align="center"
         >
           <div>
-            {{row.walletAddr}}
+            {{ row.walletAddr }}
           </div>
         </el-table-column>
         <el-table-column
@@ -163,7 +166,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             align="center"
         >
           <div>
-            {{getFormateTimeByTimeBystamp(row.createTime)}}
+            {{ getFormateTimeByTimeBystamp(row.createTime) }}
           </div>
         </el-table-column>
         <el-table-column
@@ -192,7 +195,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             align="center"
         >
           <div>
-            {{row.createBy}}
+            {{ row.createBy }}
           </div>
         </el-table-column>
         <el-table-column
@@ -203,20 +206,21 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         >
           <div>
             <div>
-              <el-button style="background-color: mediumseagreen" @click.prevent="editMerchantInfo(row)">编辑</el-button>
-<!--              <el-popconfirm
-                  title="Are you sure deleting this data?"
-                  confirm-button-text="确认"
-                  icon-color="red"
-                  cancel-button-text="取消"
-                  @confirm="deleteMerchant(row.merchantAccount)"
-                  type="warning"
-                  width="100px;"
-              >
-                <template #reference>
-                  <el-button style="background-color: orangered">删除</el-button>
-                </template>
-              </el-popconfirm>-->
+              <el-button style="background-color: mediumseagreen" @click.prevent="editMerchantInfo(row)">编辑
+              </el-button>
+              <!--              <el-popconfirm
+                                title="Are you sure deleting this data?"
+                                confirm-button-text="确认"
+                                icon-color="red"
+                                cancel-button-text="取消"
+                                @confirm="deleteMerchant(row.merchantAccount)"
+                                type="warning"
+                                width="100px;"
+                            >
+                              <template #reference>
+                                <el-button style="background-color: orangered">删除</el-button>
+                              </template>
+                            </el-popconfirm>-->
               <!--<el-button style="background-color: orangered" @click.prevent="delete(row.merchantAccount)">删除</el-button>-->
             </div>
           </div>
@@ -249,36 +253,51 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
       客服：各列信息由后端返回列表，前端页面下拉选择
       商户：后端返回单列表，下拉结果回显
      -->
-    <el-form :model="withdrawAccountInfo" label-width="100%" class="form" ref="createMerchantAccountForm" :rules="merchantAccountRule">
-          <div class="el-form-line">
-            <el-form-item label="商户名称:" label-width="150px" prop="name">
-<!--              <el-input v-model="withdrawAccountInfo.merchantAccount" style="width: 200px"/>-->
-              <el-select v-model="withdrawAccountInfo.name"
-                         @change="handleChange"
-                         placeholder="请选择商户"
-                         style="width: 200px"
-                         :options="merchantAccountOptions"
-                         :props="merchantAccountProps"
-                         :disabled="selectAccountVisible"
-              >
-<!--                <el-option
-                  v-for = "item in merchantAccountOptions"
-                  :key = "item.value"
-                  :label="item.label"
-                  :value="item.value"
-                  :disabled="selectAccountVisible"
-                />-->
-              </el-select>
-            </el-form-item>
-          </div>
-          <div class="el-form-line">
-            <el-form-item label="商户账号:" label-width="150px" prop="userName">
-              <el-input disabled v-model="withdrawAccountInfo.userName" style="width: 200px"></el-input>
-            </el-form-item>
-          </div>
+    <el-form :model="withdrawAccountInfo" label-width="100%" class="form" ref="createMerchantAccountForm"
+             :rules="merchantAccountRule">
+      <div class="el-form-line">
+        <el-form-item label="商户名称:" label-width="150px" prop="name">
+          <!--              <el-input v-model="withdrawAccountInfo.merchantAccount" style="width: 200px"/>-->
+          <el-select v-model="withdrawAccountInfo.name"
+                     @change="handleChange"
+                     placeholder="请选择商户"
+                     style="width: 200px"
+                     :options="merchantAccountOptions"
+                     :props="merchantAccountProps"
+                     :disabled="selectAccountVisible"
+          >
+            <!--                <el-option
+                              v-for = "item in merchantAccountOptions"
+                              :key = "item.value"
+                              :label="item.label"
+                              :value="item.value"
+                              :disabled="selectAccountVisible"
+                            />-->
+          </el-select>
+        </el-form-item>
+      </div>
+      <div class="el-form-line">
+        <el-form-item label="商户账号:" label-width="150px" prop="userName">
+          <el-input disabled v-model="withdrawAccountInfo.userName" style="width: 200px"></el-input>
+        </el-form-item>
+      </div>
       <div class="el-form-line">
         <el-form-item label="收款账号:" label-width="150px" prop="walletName">
           <el-input v-model="withdrawAccountInfo.walletName" style="width: 200px"></el-input>
+        </el-form-item>
+      </div>
+      <div class="el-form-line">
+        <el-form-item label="是否状态:" label-width="150px" prop="status">
+          <el-switch
+              v-model="withdrawAccountInfo.status"
+              active-color="#13ce66"
+              inactive-color="#ff4949"
+              active-text="启用"
+              inactive-text="停用"
+              :active-value="1"
+              :inactive-value="0"
+              style="width: 200px"
+          />
         </el-form-item>
       </div>
       <div class="el-form-line">
@@ -286,33 +305,12 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           <el-input v-model="withdrawAccountInfo.walletAddr" style="width: 200px"></el-input>
         </el-form-item>
       </div>
-<!--          <div class="el-form-line">
-            <el-form-item label="可用余额:" label-width="150px" size="medium" style="width: 400px;">
-              <el-input disabled v-model="withdrawAccountInfo.balance" style="width: 200px"></el-input>
-            </el-form-item>
-          </div>-->
-<!--          <div class="el-form-line">
-            <el-form-item label="收款账号:" label-width="150px" size="medium" style="width: 400px;">
-              <el-select
-                  v-model="withdrawAccountInfo.walletName"
-                  multiple
-                  placeholder="请选择收款账号"
-                  style="width: 200px"
-              >
-                <el-option
-                    v-for="item in withdrawAccountInfo.withdrawlAccountOptions"
-                    :key="item.value"
-                    :value="item.value"
-                    :label="item.label"
-                ></el-option>
-              </el-select>
-            </el-form-item>
-          </div>-->
-          <div class="el-form-line">
-            <el-form-item label="谷歌验证码:" label-width="150px" prop="googleCode">
-              <el-input type="number" v-model="withdrawAccountInfo.googleCode" style="width: 200px" @mousewheel.native.prevent/>
-            </el-form-item>
-          </div>
+      <div class="el-form-line">
+        <el-form-item label="谷歌验证码:" label-width="150px" prop="googleCode">
+          <el-input type="number" v-model="withdrawAccountInfo.googleCode" style="width: 200px"
+                    @mousewheel.native.prevent/>
+        </el-form-item>
+      </div>
     </el-form>
     <div slot="footer" class="dialog-footer">
       <el-button @click="cancelDialog('createMerchantAccountForm')">取 消</el-button>
@@ -356,20 +354,20 @@ export default {
       selectAccountVisible: true,
       merchantAccountOptions: [],
       merchantAccountProps: {
-        value: 'userId',
-        label: 'merchantName',
+        value: 'accountName',
+        label: 'accountName',
       },
       withdrawAccountFormData: [],
       allMerchantInfo: [
         {
-          merchantName:'123',
-          merchantAccount:'123123',
-          balance:'11',
+          merchantName: '123',
+          merchantAccount: '123123',
+          balance: '11',
         },
         {
-          merchantName:'狗几把',
-          merchantAccount:'leealank4@gmail.com',
-          balance:'100000',
+          merchantName: '狗几把',
+          merchantAccount: 'leealank4@gmail.com',
+          balance: '100000',
         }
       ], /** 客服登陆 后端返回所有商户信息包括 商户名 商户账号 可用余额 。商户进入该页面，后端返回该商户单条信息 */
       withdrawAccountInfo: {
@@ -394,21 +392,21 @@ export default {
         withdrawlAccount: "",
       },
       merchantAccountRule: {
-          name: {
-            required: true, trigger: 'blur'
-          },
-          userName: {
-            required: true, trigger: 'blur'
-          },
-          walletName: {
-            required: true, trigger: 'blur'
-          },
-          walletAddr: {
-            required: true, trigger: 'blur'
-          },
-          googleCode: {
-            required: true, trigger: 'blur'
-          }
+        name: {
+          required: true, trigger: 'blur'
+        },
+        userName: {
+          required: true, trigger: 'blur'
+        },
+        walletName: {
+          required: true, trigger: 'blur'
+        },
+        walletAddr: {
+          required: true, trigger: 'blur'
+        },
+        googleCode: {
+          required: true, trigger: 'blur'
+        }
       },
       totalCount: 0,
       pageSize: 10,
@@ -433,7 +431,7 @@ export default {
             this.statisticsInfo.total = cardInfo.total
             this.statisticsInfo.frozen = cardInfo.frozen
             this.statisticsInfo.withdraw = cardInfo.withdraw
-          }  else {
+          } else {
             this.statisticsInfo.total = this.currencyIcons[this.currency] + 0
             this.statisticsInfo.frozen = this.currencyIcons[this.currency] + 0
             this.statisticsInfo.withdraw = this.currencyIcons[this.currency] + 0
@@ -478,12 +476,14 @@ export default {
       this.dialogFormVisible = true;
       this.dialogTitle = '新增收款账号'
       this.selectAccountVisible = false;
+      this.filterbox.submitType = 'create'
     },
     editMerchantInfo(row) {
       this.withdrawAccountInfo = row
       this.dialogFormVisible = true;
       this.dialogTitle = '新增收款账号'
       this.selectAccountVisible = true;
+      this.filterbox.submitType = 'edit'
     },
     handleChange(val) {
       //选择商户后自动填充商户账号
@@ -494,7 +494,7 @@ export default {
           return
         }
       })*/
-      this.withdrawAccountInfo.name = val
+      this.withdrawAccountInfo.userName = val
     },
     handleCurrentChange(currentPage) {
       this.search()
@@ -512,9 +512,10 @@ export default {
       this.$refs[form].resetFields()
     },
     submitMerchantAccount(form) {
+
       this.$refs[form].validate(validate => {
         if (validate) {
-          if(this.submitType === 'create') {
+          if (this.filterbox.submitType === 'create') {
             createMerchantAccount(this.withdrawAccountInfo).then(res => {
               if (res.status === 200 && res.data.code === 0) {
                 this.$notify({
@@ -527,6 +528,7 @@ export default {
                 this.dialogTitle = ''
                 this.dialogFormVisible = false
                 this.$refs[form].resetFields()
+                this.search()
               } else if (res.status === 200 && res.data.code !== 0) {
                 this.$notify({
                   title: 'Failed',
@@ -545,7 +547,7 @@ export default {
                 })
               }
             })
-          } else if (this.submitType === 'edit') {
+          } else if (this.filterbox.submitType === 'edit') {
             modifyMerchantInfo(this.withdrawAccountInfo).then(res => {
               if (res.status === 200 && res.data.code === 0) {
                 this.$notify({
@@ -555,9 +557,11 @@ export default {
                   duration: 3000,
                   position: 'bottom-right'
                 })
+                this.search()
                 this.dialogTitle = ''
                 this.dialogFormVisible = false
                 this.$refs[form].resetFields()
+                this.search()
               } else if (res.status === 200 && res.data.code !== 0) {
                 this.$notify({
                   title: 'Failed',
@@ -577,6 +581,8 @@ export default {
               }
             })
           }
+        } else {
+
         }
       })
       this.submitType = ''
@@ -587,7 +593,7 @@ export default {
     // get all merchant info
     getMerchantInfo({pageSize: 1000}).then(res => {
       if (res.status === 200 && res.data.code === 0) {
-          this.merchantAccountOptions = JSON.parse(res.data.data).merchantDtoList
+        this.merchantAccountOptions = JSON.parse(res.data.data).merchantInfoDtoList
       } else {
         this.$notify({
           title: 'Error',
@@ -625,6 +631,7 @@ export default {
 <style scoped>
 @import "@/api/common.css";
 @import "@/assets/base.css";
+
 .cash-text-area {
   width: 90%;
   height: 100%;
@@ -637,16 +644,18 @@ export default {
   display: flex;
   justify-content: right;
 }
-.form{
+
+.form {
   margin-top: 3%;
   height: 300px;
 }
+
 .el-form-line {
   display: flex;
   justify-content: center;
 }
 
-input::-webkit-inner-spin-button{
+input::-webkit-inner-spin-button {
   -webkit-appearance: none !important;
 }
 

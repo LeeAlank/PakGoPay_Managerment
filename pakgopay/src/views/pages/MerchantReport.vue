@@ -204,6 +204,7 @@ export default {
       this.filterbox.isNeeded = true
     },
     search(orderType, paneName) {
+      this.filterbox.isNeedCardData = true
       let loadingClass = ''
       if (paneName === '0') {
         loadingClass = 'reportInfo-table1'
@@ -242,9 +243,16 @@ export default {
             this.tab2PageSize = resData.pageSize
           }
           const cardInfo = resData.cardInfo[this.filterbox.currency]
-          this.statisticsInfo.totalAmount = this.currencyIcon + cardInfo.total;
-          this.statisticsInfo.totalWithdrawlAmount = this.currencyIcon + cardInfo.withdraw;
-          this.statisticsInfo.totalFreezeAmount = this.currencyIcon + cardInfo.frozen;
+          if(!cardInfo) {
+            this.statisticsInfo.totalAmount = this.currencyIcon + 0;
+            this.statisticsInfo.totalWithdrawlAmount = this.currencyIcon + 0;
+            this.statisticsInfo.totalFreezeAmount = this.currencyIcon + 0;
+          }else {
+            this.statisticsInfo.totalAmount = this.currencyIcon + cardInfo.total;
+            this.statisticsInfo.totalWithdrawlAmount = this.currencyIcon + cardInfo.withdraw;
+            this.statisticsInfo.totalFreezeAmount = this.currencyIcon + cardInfo.frozen;
+          }
+
         } else if (res.status === 200 && res.data.code !== 0) {
           this.$notify({
             title: 'Error',

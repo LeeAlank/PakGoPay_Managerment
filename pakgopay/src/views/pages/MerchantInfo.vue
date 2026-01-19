@@ -7,6 +7,24 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
 
 <template>
   <div class="main-title">{{$t('route.merchantInfo')}}</div>
+  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0">
+    <el-form-item style="margin-left: 2%;">
+      <template #label>
+          <span style="color: black;font-size: small;align-items: center;">
+            统计币种:
+          </span>
+      </template>
+      <el-select
+          style="width: 100px;align-items: center;text-align: center;"
+          :options="currencyOptions"
+          :props="currencyProps"
+          default-first-option
+          v-model="filterbox.currency"
+          @change="handleCurrencyChange"
+          filterable
+      />
+    </el-form-item>
+  </div>
   <!-- 统计数据展示 -->
   <div class="statistics-container">
     <el-card id="statistics" class="statistics-form">
@@ -14,7 +32,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         <SvgIcon name="cash" width="100px" height="100px"/>
         <div style="display: flex; flex-direction: column;width: 80%;">
           <span>总账户金额:</span>
-          <textarea v-model="merchantReport.merchantAmount" disabled class="cash-text-area"></textarea>
+          <textarea v-model="statisticsInfo.total" disabled class="cash-text-area"></textarea>
         </div>
       </div>
     </el-card>
@@ -24,7 +42,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         <SvgIcon name="tixian" width="90px" height="90px"/>
         <div style="display: flex; flex-direction: column;width: 80%;">
           <span>提现总金额:</span>
-          <textarea v-model="merchantReport.merchantWithdrawlAmount" disabled class="cash-text-area"></textarea>
+          <textarea v-model="statisticsInfo.withdraw" disabled class="cash-text-area"></textarea>
         </div>
       </div>
     </el-card>
@@ -34,7 +52,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         <SvgIcon name="cash-freeze" width="100px" height="100px"/>
         <div style="display: flex; flex-direction: column;width: 80%;">
           <span>冻结总金额:</span>
-          <textarea v-model="merchantReport.merchantFreezeAmount" disabled class="cash-text-area"></textarea>
+          <textarea v-model="statisticsInfo.frozen" disabled class="cash-text-area"></textarea>
         </div>
       </div>
     </el-card>
@@ -75,13 +93,13 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             </div>
             <div class="main-toolform-line">支持币种：<input v-model="filterbox.supportCurrency" type="text" class="main-toolform-input" placeholder="支持币种"/></div>
             <div class="main-toolform-line">所属代理：<!--<input style="width: 150px;" v-model="filterbox.belongAgent" type="text" class="main-toolform-input" placeholder="所属代理"/>-->
-              <el-cascader
+              <el-select
                   v-model="filterbox.belongAgent"
                   :options="agentOptions"
-                  @change="handleAgentChange"
+                  :props="agentProps"
                   placeholder="select agent"
               >
-              </el-cascader>
+              </el-select>
             </div>
           </div>
         </form>
@@ -143,7 +161,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             width="300px"
         >
           <div v-for="item in row.agentInfos">
-            <div style="background-color: darkgrey;margin-top: 2px">
+            <div style="background-color: deepskyblue;margin-top: 2px">
               <div>代理名称: {{item.agentName}}</div>
               <div>代理账号: {{item.accountName}}</div>
               <div v-if="row.channelDtoList" style="background-color: lightgreen">
@@ -180,6 +198,18 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           </div>
         </el-table-column>
         <el-table-column
+            prop="merchantLabel"
+            label="商户渠道"
+            v-slot="{row}"
+            align="center"
+            width="100px"
+            fixed="left"
+        >
+          <div v-for="item in row.channelIds ? row.channelIds.split(',') : ''">
+            <div>{{channelMaps[item]}}</div>
+          </div>
+        </el-table-column>
+        <el-table-column
             prop="currencyType"
             label="交易币种"
             v-slot="{row}"
@@ -198,9 +228,9 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         >
           <div style="width: 100%;">
             <!-- 返回的是json对象 包含总金额、可用金额、冻结金额 -->
-            <div style="background-color: yellow;font-size: 15px;display: flex;width: 100%;justify-content: space-between">账户总金额: <div style="font-size: 20px;float: right">{{row.merchantAccountInfo.totalAmount}}</div></div>
-            <div style="background-color: limegreen;width: 100%;display: flex;justify-content: space-between">账户可用金额: <div style="font-size: 20px;float: right">{{row.merchantAccountInfo.toUseAmount}}</div></div>
-            <div style="background-color: lightgrey;width: 100%;display: flex;justify-content: space-between">冻结金额: <div style="font-size: 20px;float: right">{{row.merchantAccountInfo.freezeAmount}}</div></div>
+            <div style="background-color: yellow;font-size: 15px;display: flex;width: 100%;justify-content: space-between">账户总金额: <div style="font-size: 20px;float: right">{{row.merchantAccountInfo? row.merchantAccountInfo.totalAmount: '-'}}</div></div>
+            <div style="background-color: limegreen;width: 100%;display: flex;justify-content: space-between">账户可用金额: <div style="font-size: 20px;float: right">{{rowmerchantAccountInfo? rowmerchantAccountInfo.toUseAmount: '-'}}</div></div>
+            <div style="background-color: lightgrey;width: 100%;display: flex;justify-content: space-between">冻结金额: <div style="font-size: 20px;float: right">{{row.merchantAccountInfo? row.merchantAccountInfo.freezeAmount : '-'}}</div></div>
           </div>
         </el-table-column>
         <el-table-column
@@ -211,7 +241,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             width="300px"
         >
           <div>
-            {{row.loginIPWhiteList}}
+            {{row.loginIps}}
           </div>
         </el-table-column>
         <el-table-column
@@ -315,7 +345,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         </el-col>
         <el-col :span="6">
           <el-form-item label="商户账号:" label-width="150px" size="medium" prop="accountName">
-            <el-input v-model="merchantAddInfo.userId" style="width: 200px"></el-input>
+            <el-input v-model="merchantAddInfo.accountName" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -347,8 +377,8 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           </el-form-item>
         </el-col>
         <el-col :span="6">
-          <el-form-item label="登陆提现IP白名单:" label-width="150px" size="medium" prop="loginIpWhiteList">
-            <el-input v-model="merchantAddInfo.loginIpWhiteList" style="width: 200px"></el-input>
+          <el-form-item label="登陆提现IP白名单:" label-width="150px" size="medium" prop="loginIps">
+            <el-input v-model="merchantAddInfo.loginIps" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -387,7 +417,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             <el-select
               :options="channelOptions"
               :props="channelProps"
-              v-model="merchantInfo.channelIds"
+              v-model="merchantAddInfo.channelIds"
               placeholder="请选择渠道"
               style="width: 200px"
               multiple
@@ -395,15 +425,15 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
           </el-form-item>
         </el-col>
         <el-col :span="6" v-if="merchantAddInfo.useAgent===1">
-          <el-form-item label="所属代理:" label-width="150px" size="medium" prop="merchantAgent">
-            <el-cascader
-              v-model="merchantAddInfo.agentList"
-              :options="agentOptions"
-              style="width: 200px"
-              :props="{ checkStrictly: true }"
-              placeholder="请选择代理"
-            >
-            </el-cascader>
+          <el-form-item label="所属代理:" label-width="150px">
+            <el-select
+                :options="agentOptions"
+                :props="agentProps"
+                v-model="merchantAddInfo.parentId"
+                placeholder="请选择代理"
+                style="width: 200px"
+                @change="test"
+            ></el-select>
           </el-form-item>
         </el-col>
       </el-row>
@@ -426,8 +456,13 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
       </el-row>
       <el-row v-if="merchantAddInfo.supportPaying === 1">
         <el-col :span="6">
+          <el-form-item label="代付最小金额:" label-width="150px" size="medium">
+            <el-input v-model="merchantAddInfo.payMinFee" style="width: 200px"/>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6">
           <el-form-item label="代付最大金额:" label-width="150px" size="medium">
-            <el-input v-model="merchantInfo.payMaxFee" style="width: 200px"/>
+            <el-input v-model="merchantAddInfo.payMaxFee" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -462,7 +497,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         </el-col>
       </el-row>
       <el-row v-if="merchantAddInfo.supportPaying === 1">
-        <el-col :span="6">
+<!--        <el-col :span="6">
           <el-form-item label="代付计费模式:" label-width="150px" size="medium">
             <el-radio-group v-model="merchantAddInfo.payingChargingModel" size="small">
               <el-radio :value="1">比例</el-radio>
@@ -470,15 +505,17 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
               <el-radio :value="3">混合</el-radio>
             </el-radio-group>
           </el-form-item>
-        </el-col>
-        <el-col :span="6" v-if="merchantAddInfo.payingChargingModel === 2 || merchantAddInfo.payingChargingModel === 3">
-          <el-form-item label="固定费用:" label-width="150px" size="medium">
+        </el-col>-->
+<!--        <el-col :span="6" v-if="merchantAddInfo.payingChargingModel === 2 || merchantAddInfo.payingChargingModel === 3">-->
+        <el-col :span="6">
+          <el-form-item label="代付固定费用:" label-width="150px" size="medium">
             <el-input v-model="merchantAddInfo.payFixedFee" style="width: 200px"/>
           </el-form-item>
         </el-col>
-        <el-col :span="6" v-if="merchantAddInfo.payingChargingModel===1 || merchantAddInfo.payingChargingModel === 3">
-          <el-form-item label="比例费率:" label-width="150px" size="medium">
-            <el-input v-model="merchantInfo.payRate" style="width: 200px"/>
+<!--        <el-col :span="6" v-if="merchantAddInfo.payingChargingModel===1 || merchantAddInfo.payingChargingModel === 3">-->
+        <el-col :span="6">
+          <el-form-item label="代付比例费率:" label-width="150px" size="medium">
+            <el-input v-model="merchantAddInfo.payRate" style="width: 200px"/>
           </el-form-item>
         </el-col>
       </el-row>
@@ -500,6 +537,11 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         </el-col>
       </el-row>
       <el-row v-if="merchantAddInfo.supportCollection === 1">
+        <el-col :span="6">
+          <el-form-item label="代收最小金额:" label-width="150px" size="medium">
+            <el-input v-model="merchantAddInfo.collectionMinFee" style="width: 200px"/>
+          </el-form-item>
+        </el-col>
         <el-col :span="6">
           <el-form-item label="代收最大金额:" label-width="150px" size="medium">
             <el-input v-model="merchantAddInfo.collectionMaxFee" style="width: 200px"/>
@@ -525,7 +567,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
             </el-switch>
           </el-form-item>
         </el-col>
-        <el-col v-if="merchantAddInfo.cashFloatModel" :span="6">
+        <el-col v-if="merchantAddInfo.isFloat" :span="6">
           <el-form-item  label="浮动金额:" label-width="150px" size="medium" prop="cashFloatNum">
             <el-input v-model="merchantAddInfo.cashFloatNum" style="width: 200px;" type="number" placeholder="请输入浮动范围"></el-input>
           </el-form-item>
@@ -540,7 +582,7 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
         </el-col>
       </el-row>
       <el-row v-if="merchantAddInfo.supportCollection === 1">
-        <el-col :span="6">
+<!--        <el-col :span="6">
           <el-form-item label="代收计费模式:" label-width="150px" size="medium">
             <el-radio-group v-model="merchantAddInfo.collectionChargingModel" size="small">
               <el-radio :value="1">比例</el-radio>
@@ -548,13 +590,13 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
               <el-radio :value="3">混合</el-radio>
             </el-radio-group>
           </el-form-item>
-        </el-col>
-        <el-col :span="6" v-if="merchantAddInfo.collectionChargingModel === 2 || merchantAddInfo.collectionChargingModel === 3">
+        </el-col>-->
+        <el-col :span="6">
           <el-form-item label="固定费用:" label-width="150px" size="medium">
             <el-input v-model="merchantAddInfo.collectionFixed" style="width: 200px"/>
           </el-form-item>
         </el-col>
-        <el-col :span="6" v-if="merchantAddInfo.collectionChargingModel===1 || merchantAddInfo.collectionChargingModel === 3">
+        <el-col :span="6">
           <el-form-item label="比例费率:" label-width="150px" size="medium">
             <el-input v-model="merchantAddInfo.collectionRate" style="width: 200px"/>
           </el-form-item>
@@ -709,7 +751,12 @@ import {getFormateTimeByTimeBystamp} from "@/api/common.js";
 </template>
 <script>
 import {isValidIP} from "@/api/common.js";
-import {createMerchantInfo, getMerchantInfo, getPaymentInfo} from "@/api/interface/backendInterface.js";
+import {
+  createMerchantInfo, getAgentInfo,
+  getAllCurrencyType,
+  getMerchantInfo,
+  getPaymentInfo
+} from "@/api/interface/backendInterface.js";
 export default {
   name: "MerchantInfo",
   data() {
@@ -747,14 +794,26 @@ export default {
 
     };
     return {
+      currency: '',
+      currencyIcon: '',
+      currencyIcons: {},
+      currencyOptions: [],
+      currencyProps: {
+        value: 'currencyType',
+        label: 'name'
+      },
+      currencyMaps: {},
+      channelMaps: {},
+      agentMaps: {},
+      statisticsInfo: {},
       merchantReport: {},
       merchantInfoAddRule: {
         merchantName: [
           {required: true, message: 'merchantName is required', trigger: 'blur'},
         ],
-        merchantAgent: [
-          {required: false, message: 'agentName is required', trigger: 'blur'},
-        ],
+        /*merchantAgent: [
+          {required: true, validator: validateAgent, trigger: 'blur'},
+        ],*/
         collectingWhiteList: [
           {required: true, message: 'collectingWhiteList is required', trigger: 'blur'},
         ],
@@ -830,11 +889,7 @@ export default {
       pageSize: 1,
       pageSizes: [1,10, 20, 30, 40],
       filterbox: {
-        merchantAccount: '',
-        merchantName: '',
-        supportCurrency: '',
-        belongAgent: [],
-        isInUse: true,
+
       },
       isUse: [{
         value: true,
@@ -847,85 +902,19 @@ export default {
       value: '',
       dialogFlag: '',
       merchantInfoFormData: [
-        {
-          userId: '12345678',
-          merchantName: '测试商户1',
-          agentList: {value: '001', label: "一级代理商1",children: [
-              {
-                value: '001-001',
-                label: '一级代理商下的二级代理商1'
-              }]},
-          status: 1,
-          loginIPWhiteList: '127.0.0.1',
-          payWhiteIps: '192.168.1.1',
-          colWhiteIps: '192.168.1.1',
-          merchantAccountInfo: {
-            totalAmount: 1000000,
-            toUseAmount: 990000,
-            freezeAmount: 10000,
-          },
-          createTime: '1999-01-01',
-          currencyType: '$',
-        }
       ],
       merchantAddInfo: {},
       merchantInfo: {
-        /*merchantAccount: '',
-        merchantName: '',
-        merchantPassword: '',
-        merchantConfirmPassword: '',
-        isInUse: false,
-        belongAgent: [],
-        collectingWhiteList: '',
-        loginIpList: '',
-        payingWhiteList: '',
-        cashFloatModel: false,
-        payingChannel: '',
-        withdrawlWhiteList: '',
-        verifyCode: '',
-        cashFloatNum: '',
-        supportPaying: 1,
-        supportCollection: 1*/
       },
       dialogTitle: '',
       dialogFormVisible: false,
       selectedAgent: [],
       agentOptions: [
-        {
-          value: '001',
-          label: '一级代理商1',
-          children: [
-            {
-              value: '001-001',
-              label: '一级代理商下的二级代理商1'
-            },
-            {
-              value: '001-002',
-              label: '一级代理商下的二级代理商2',
-              children: [
-                {
-                  value: '001-002-001',
-                  label: '一级代理商下的二级代理商2下的三级代理商1'
-                },
-                {
-                  value: '001-002-002',
-                  label: '一级代理商下的二级代理商2下的三级代理商1'
-                }
-              ]
-            }
-          ],
-        },
-        {
-          value: '002',
-          label: '一级代理商2',
-          children: [
-            {
-              value: '002-001',
-              label: '一级代理商2下的二级代理商1'
-            }
-          ]
-        }
       ],
+      agentProps: {
+        value: 'userId',
+        label: 'agentName'
+      },
       channelOptions: [
         /*{
           channelId: 1,
@@ -943,9 +932,29 @@ export default {
     }
   },
   methods: {
+    test(val) {
+      alert(val)
+    },
     search() {
+      this.filterbox.isNeedCardData = true
       getMerchantInfo(this.filterbox).then(res => {
-          console.log('merchantInfo----'+JSON.stringify(res.data))
+         //this.merchantInfoFormData
+        if(res.status === 200 && res.data.code === 0) {
+          const all = JSON.parse(res.data.data)
+          this.totalCount = all.totalNumber
+          const allList = all.merchantInfoDtoList
+          this.merchantInfoFormData = allList
+          if(all.cardInfo) {
+            const cardInfo = all.cardInfo[this.filterbox.currency]
+            this.statisticsInfo.total = cardInfo.total
+            this.statisticsInfo.frozen = cardInfo.frozen
+            this.statisticsInfo.withdraw = cardInfo.withdraw
+          } else {
+            this.statisticsInfo.total =  this.currencyIcons[this.currency] + 0
+            this.statisticsInfo.frozen = this.currencyIcons[this.currency] + 0
+            this.statisticsInfo.withdraw = this.currencyIcons[this.currency] + 0
+          }
+        }
       })
     },
     handleOpen(form) {
@@ -973,6 +982,7 @@ export default {
       this.merchantAddInfo.supportCollection = 1;
       this.merchantAddInfo.collectionChargingModel = 1;
       this.merchantAddInfo.payingChargingModel = 1;
+      this.dialogFlag = 'create'
     },
     handleAgentChange(val) {
       if (this.merchantInfo.useAgent === 1) {
@@ -1082,15 +1092,37 @@ export default {
       if (this.dialogFlag === 'create') {
         if (this.merchantAddInfo.supportPaying === 1) {
           this.merchantAddInfo.supportType = 1
+          if(!this.merchantAddInfo.payRate) {
+            this.merchantAddInfo.payRate = 0
+          } else if (!this.merchantAddInfo.payFixedFee) {
+            this.merchantAddInfo.payFixedFee = 0
+          }
         } else if (this.merchantAddInfo.supportCollection === 1) {
           this.merchantAddInfo.supportType = 0
+          if(!this.merchantAddInfo.collectionRate) {
+            this.merchantAddInfo.collectionRate = 0
+          } else if (!this.merchantAddInfo.collectionFixedFee) {
+            this.merchantAddInfo.collectionFixedFee = 0
+          }
         } else {
           this.merchantAddInfo.supportType = 2
+          if(!this.merchantAddInfo.payRate) {
+            this.merchantAddInfo.payRate = 0
+          } else if (!this.merchantAddInfo.payFixedFee) {
+            this.merchantAddInfo.payFixedFee = 0
+          }
+
+          if(!this.merchantAddInfo.collectionRate) {
+            this.merchantAddInfo.collectionRate = 0
+          } else if (!this.merchantAddInfo.payFixedFee) {
+            this.merchantAddInfo.collectionFixedFee = 0
+          }
         }
       }
-
+      this.merchantAddInfo.channelIds = this.merchantAddInfo.channelIds ? this.merchantAddInfo.channelIds.toLocaleString() : null
       this.$refs[form].validate(valid => {
         if (valid) {
+          alert('success')
           // 校验通过
           // request interface to create merchant
           createMerchantInfo(this.merchantAddInfo).then(res => {
@@ -1114,11 +1146,39 @@ export default {
       })
     }
   },
-  mounted() {
+  async mounted() {
+
+    await getAllCurrencyType().then(res => {
+      if (res.status === 200) {
+        if (res.data.code === 0) {
+          this.currencyOptions = JSON.parse(res.data.data)
+          this.currency = this.currencyOptions[0].currencyType
+          this.filterbox.currency = this.currencyOptions[0].currencyType
+          this.currencyIcons = {};
+          this.currencyOptions.forEach(currency => {
+            this.currencyIcons[currency.currencyType] = currency.icon
+            this.currencyMaps[currency.currencyType] = currency.name
+          })
+          let iconKey = this.currency;
+          this.currencyIcon = this.currencyIcons[iconKey]
+        }
+      }
+    })
+    await getAgentInfo({pageSize: 1000}).then((res) => {
+      if (res.status === 200 && res.data.code === 0) {
+        this.agentOptions = JSON.parse(res.data.data).agentInfoDtoList
+        this.agentOptions.forEach(agent => {
+          this.agentMaps[agent.agentNo] = agent.agentName
+        })
+      }
+    })
     getPaymentInfo({pageSize: 1000}).then(res => {
       if (res.status === 200 && res.data.code === 0) {
         const allData = JSON.parse(res.data.data).paymentDtoList
         this.channelOptions = allData
+        this.channelOptions.forEach(channel => {
+          this.channelMaps[channel.paymentNo] = channel.paymentName
+        })
         this.search()
       } else {
         this.$notify({

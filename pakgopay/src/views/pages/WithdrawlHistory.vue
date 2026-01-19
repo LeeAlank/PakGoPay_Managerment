@@ -89,7 +89,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       </div>
     </el-collapse-item>
   </el-collapse>
-  <div class="main-views-container" style="height:65%;margin-top: 4%;margin-left:1%;height: 100%">
+  <div class="main-views-container" style="margin-top: 4%;margin-left:1%;height: 100%">
     <div style="display: flex;justify-content: right;margin-right:3%">
       <el-button v-on:click="exportStatements()" style="width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;margin:0">
         <SvgIcon name="export"/>导出
@@ -205,11 +205,27 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <el-form-item
               label="代理名称:"
               label-width="150px"
-              prop="agentName"
+              prop="name"
           >
-            <el-input style="width: 200px" v-model="createAgentAccountModel.agentName"/>
+<!--            <el-input style="width: 200px" v-model="createAgentAccountModel.agentName"/>-->
+            <el-select
+                v-model="createAgentAccountModel.name"
+               :options="agentOptions"
+               :props="agentProps"
+                style="width: 200px"
+                placeholder="select agent"
+            />
           </el-form-item>
         </el-col>
+      <el-col v-if="dialogType !== 'start' && dialogType !== 'stop'" :span="24" class="addDialog">
+        <el-form-item
+            label="账号名称:"
+            label-width="150px"
+            prop="walletName"
+        >
+          <el-input style="width: 200px" v-model="createAgentAccountModel.walletName"/>
+        </el-form-item>
+      </el-col>
       <el-col v-if="dialogType !== 'start' && dialogType !== 'stop'" :span="24" class="addDialog">
         <el-form-item
             label="收款账号:"
@@ -266,13 +282,24 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 </template>
 
 <script>
-import {createAgentAccountInfo, getAgentAccountInfo, getAllCurrencyType} from "@/api/interface/backendInterface.js";
+import {
+  createAgentAccountInfo,
+  getAgentAccountInfo, getAgentInfo,
+  getAllCurrencyType, modifyAgentAccountInfo,
+  modifyAgentInfo
+} from "@/api/interface/backendInterface.js";
 import {loadingBody} from "@/api/common.js";
 
 export default {
   name: 'WithdrawlHistory',
   data() {
     return {
+      agentOptions: [],
+      agentProps: {
+        label: 'agentName',
+        value: 'agentName'
+      },
+      submitType: '',
       currency: '',
       currencyIcon: '',
       currencyIcons: {},
@@ -298,7 +325,7 @@ export default {
       pageSize: 10,
       pageSizes: [5, 10, 15, 20],
       createAccountRules: {
-        agentName: {
+        name: {
           required: true, messages: 'you need to type agent name', trigger: 'blur'
         },
         walletAddr: {
@@ -314,6 +341,9 @@ export default {
     }
   },
   methods: {
+    handleAgentChange(val) {
+      this.createAgentAccountModel.name = val;
+    },
     search() {
       this.filterbox.isNeedCardData = true
       const loadingInstance = loadingBody(this, 'agentAccountTable')
@@ -368,12 +398,15 @@ export default {
     addWithdrawlAccount() {
       this.createAccountVisible = true
       this.createAccountTitle = '新增代理账号'
+      this.dialogType = 'create'
+      this.submitType= 'create'
     },
     editAgentAccount(row) {
       this.createAgentAccountModel = {}
       this.createAgentAccountModel = row
       this.createAccountVisible = true
       this.createAccountTitle = '修改'
+      this.submitType = 'edit'
     },
     startAgentAccount(row) {
       this.createAgentAccountModel = row
@@ -404,13 +437,76 @@ export default {
     submit(form) {
       this.$refs[form].validate(valid => {
         if (valid) {
-          // request interface to create Account
-          createAgentAccountInfo(this.createAgentAccountModel).then(res => {
-              this.createAccountVisible = false
-              this.createAccountTitle = ''
-              this.dialogType = ''
-              this.$refs[form].resetFields()
-          })
+          if (this.submitType === 'create') {
+            // request interface to create Account
+            createAgentAccountInfo(this.createAgentAccountModel).then(res => {
+              if (res.status === 200 && res.data.code === 0) {
+                this.createAccountVisible = false
+                this.createAccountTitle = ''
+                this.dialogType = ''
+                this.$refs[form].resetFields()
+                this.submitType= ''
+                this.search()
+                this.$notify({
+                  title: 'Success',
+                  message: 'Create Account Successfully',
+                  duration: 3000,
+                  position:'bottom-right',
+                  type: 'success'
+                })
+              } else if (res.status === 200 && res.data.code !== 0){
+                this.$notify({
+                  title: 'Error',
+                  message: res.data.message,
+                  duration: 3000,
+                  position:'bottom-right',
+                  type: 'error'
+                })
+              } else {
+                this.$notify({
+                  title: 'Error',
+                  message: 'Create Account Failed',
+                  duration: 3000,
+                  position:'bottom-right',
+                  type: 'error'
+                })
+              }
+            })
+          } else {
+            modifyAgentAccountInfo(this.createAgentAccountModel).then(res => {
+              if (res.status === 200 && res.data.code === 0) {
+                this.createAccountVisible = false
+                this.createAccountTitle = ''
+                this.dialogType = ''
+                this.$refs[form].resetFields()
+                this.submitType= ''
+                this.$notify({
+                  title: 'Success',
+                  message: 'Create Account Successfully',
+                  duration: 3000,
+                  position:'bottom-right',
+                  type: 'success'
+                })
+                this.search()
+              } else if (res.status === 200 && res.data.code !== 0){
+                this.$notify({
+                  title: 'Error',
+                  message: res.data.message,
+                  duration: 3000,
+                  position:'bottom-right',
+                  type: 'error'
+                })
+              } else {
+                this.$notify({
+                  title: 'Error',
+                  message: 'Create Account Failed',
+                  duration: 3000,
+                  position:'bottom-right',
+                  type: 'error'
+                })
+              }
+            })
+          }
         }
       })
     },
@@ -441,6 +537,12 @@ export default {
           let iconKey = this.currency;
           this.currencyIcon = this.currencyIcons[iconKey]
         }
+      }
+    })
+
+    getAgentInfo({pageSize: 1000}).then(res => {
+      if (res.status === 200 && res.data.code === 0) {
+        this.agentOptions = JSON.parse(res.data.data).agentInfoDtoList
       }
     })
     this.search()

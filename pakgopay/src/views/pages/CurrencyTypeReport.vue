@@ -66,13 +66,9 @@ import {getFormateDate} from "@/api/common.js";
                 size="medium"
                 style="width: 150px;"
                 clearable
+                :options="currencyOptions"
+                :props="currencyProps"
             >
-              <el-option
-                  v-for="item in currencyOptions"
-                  :key="item.value"
-                  :value="item.value"
-                  :label="item.label"
-              />
             </el-select>
           </el-form-item>
           <el-form-item>

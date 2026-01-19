@@ -280,7 +280,7 @@ export default {
     return {
       agentOptions: [],
       agentProps: {
-        value: 'agentAccount',
+        value: 'accountName',
         label: 'agentName'
       },
       timeRange: [],

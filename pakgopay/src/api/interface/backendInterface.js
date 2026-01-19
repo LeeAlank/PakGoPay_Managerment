@@ -601,3 +601,15 @@ export function createAgentAccountInfo(form) {
         data: form
     })
 }
+
+export function modifyAgentAccountInfo(form) {
+    return service({
+        url: '/api/pakGoPay/server/editAgentAccount',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form
+    })
+}

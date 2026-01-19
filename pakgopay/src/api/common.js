@@ -89,6 +89,39 @@ export function getPaymentReportTitle(i18n) {
     return Payment_Report_Title
 }
 
+export function getMerchantAccountTitle(i18n) {
+    const Merchant_Account_Title = [
+        {key: 'merchantName', title: '商户名称'},
+        {key: 'accountName', title: '商户账号'},
+        {key: 'walletAddr', title: '提现账号'},
+        {key: 'status', title: '账号状态'},
+        {key: 'createTime', title: '录入时间'},
+        {key: 'createBy', title: '创建人'},
+    ]
+    return Merchant_Account_Title
+}
+
+export function getAgentInfoTitle(i18n) {
+    const Agent_Info_Title = [
+        {key: "agentName", title: "代理名称"},
+        {key: "agentAccountName", title: "代理账号"},
+        {key: "channelInfos", title: "代理渠道信息"},
+        {key: "parentAgentName", title: "上级代理名称"},
+        {key: "parentAccountName", title: "上级代理账号"},
+        {key: "parentChannelInfos", title: "上级代理渠道信息"},
+        {key: "level", title: "代理层级"},
+        {key: "status", title: "代理状态"},
+        {key: "payRate", title: "代付百分比费率"},
+        {key: "payFixedFee", title: "代付固定费用"},
+        {key: "payMinFee", title: "代付单笔最小金额"},
+        {key: "payMaxFee", title: "单笔最大金额"},
+        {key: "collectionRate", title: "代收百分比费率"},
+        {key: "collectionFixedFee", title: "代收固定费用"},
+        {key: "collectionMaxFee", title: "代收单笔最大费用"},
+        {key: "collectionMinFee", title: "代收单笔最小金额"},
+    ]
+}
+
 export function getFormateDate(ts) {
     const d = new Date(ts * 1000);
     const y = d.getFullYear();

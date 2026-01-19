@@ -71,9 +71,9 @@ import {getFormateDate} from "@/api/common.js";
             >
             </el-select>
           </el-form-item>
-          <el-form-item>
+          <el-form-item label="日期:" label-width="150px">
             <el-date-picker
-                v-model="filterDateRange"
+                v-model="filterbox.filterDateRange"
                 type="daterange"
                 range-separator="至"
                 start-placeholder="开始日期"
@@ -208,7 +208,7 @@ import {getFormateDate} from "@/api/common.js";
               align="center"
               v-slot="{row}"
           >
-            <div>row.successQuantity</div>
+            <div>{{row.successQuantity}}</div>
           </el-table-column>
           <el-table-column
               label="代付失败订单数"
@@ -216,7 +216,7 @@ import {getFormateDate} from "@/api/common.js";
               align="center"
               v-slot="{row}"
           >
-            <div>row.orderQuantity-row.successQuantity</div>
+            <div>{{row.orderQuantity-row.successQuantity}}</div>
           </el-table-column>
           <el-table-column
               label="成功率"
@@ -368,7 +368,7 @@ export default {
           let resData = JSON.parse(response.data.data)
           const cardInfo = resData.cardInfo[this.filterbox.currency]
           if (orderType === 0) {
-            this.collectionCurrencyInfo = resData.channelReportDtoList
+            this.collectionCurrencyInfo = resData.currencyReportDtoList
             this.tab1CurrentPage = resData.pageNo
             this.tab1TotalCount = resData.totalNumber
             this.tab1PageSize = resData.pageSize
@@ -376,7 +376,7 @@ export default {
             this.statisticsInfo.collectionCard = true
             this.statisticsInfo.payingCard = false
           } else if (orderType === 1) {
-            this.payingCurrencyInfo = resData.channelReportDtoList
+            this.payingCurrencyInfo = resData.currencyReportDtoList
             this.tab2CurrentPage = resData.pageNo
             this.tab2TotalCount = resData.totalNumber
             this.tab2PageSize = resData.pageSize
@@ -484,8 +484,6 @@ export default {
     this.filterbox.isNeedCardData = true
     this.activeTabPane = '0'
     this.search(0)
-    this.tab1TotalCount = this.collectionCurrencyInfo.length
-    this.tab2TotalCount = this.payingCurrencyInfo.length
   }
 }
 </script>

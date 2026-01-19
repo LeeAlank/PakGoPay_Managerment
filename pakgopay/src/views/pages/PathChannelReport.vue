@@ -221,7 +221,7 @@ export default {
           if (res.data.code === 0) {
             const allData = JSON.parse(res.data.data);
             this.pathChannelOptions = allData.paymentDtoList
-            this.filterbox.paymentId = this.pathChannelOptions[0].paymentId
+            //this.filterbox.paymentId = this.pathChannelOptions[0].paymentId
           }
         }
       })
@@ -322,7 +322,7 @@ export default {
                 <span style="width: 150px">时间范围:</span>
               </template>
               <el-date-picker
-                  v-model="filterDateRange"
+                  v-model="this.filterbox.filterDateRange"
                   type="daterange"
                   range-separator="至"
                   start-placeholder="开始日期"

@@ -234,6 +234,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
           v-model:page-size="pageSize"
           :page-sizes="pageSizes"
           @current-change="handleCurrentChange"
+          @size-change="handleSizeChange"
           style="float:right; margin-right: 5%;"
       >
       </el-pagination>
@@ -503,6 +504,8 @@ export default {
       this.withdrawAccountInfo.userName = val
     },
     handleCurrentChange(currentPage) {
+      this.filterbox.pageNo = currentPage
+      this.filterbox.pageSize = this.pageSize
       this.search()
     },
     handleSizeChange(pageSize) {

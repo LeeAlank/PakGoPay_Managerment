@@ -257,9 +257,9 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
     <el-form :model="withdrawAccountInfo" label-width="100%" class="form" ref="createMerchantAccountForm"
              :rules="merchantAccountRule">
       <div class="el-form-line">
-        <el-form-item label="商户名称:" label-width="150px" prop="name">
+        <el-form-item label="商户名称:" label-width="150px" prop="merchantAgentId">
           <!--              <el-input v-model="withdrawAccountInfo.merchantAccount" style="width: 200px"/>-->
-          <el-select v-model="withdrawAccountInfo.name"
+          <el-select v-model="withdrawAccountInfo.merchantAgentId"
                      @change="handleChange"
                      placeholder="请选择商户"
                      style="width: 200px"
@@ -363,7 +363,7 @@ export default {
       merchantAccountOptions: [],
       merchantAccountProps: {
         value: 'accountName',
-        label: 'accountName',
+        label: 'userId',
       },
       withdrawAccountFormData: [],
       allMerchantInfo: [
@@ -400,7 +400,7 @@ export default {
         withdrawlAccount: "",
       },
       merchantAccountRule: {
-        name: {
+        merchantAgentId: {
           required: true, trigger: 'blur'
         },
         userName: {

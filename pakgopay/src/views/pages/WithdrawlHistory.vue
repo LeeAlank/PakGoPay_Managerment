@@ -205,7 +205,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <el-form-item
               label="代理名称:"
               label-width="150px"
-              prop="name"
+              prop="merchantAgentId"
           >
 <!--            <el-input style="width: 200px" v-model="createAgentAccountModel.agentName"/>-->
             <el-select
@@ -325,8 +325,8 @@ export default {
       pageSize: 10,
       pageSizes: [5, 10, 15, 20],
       createAccountRules: {
-        name: {
-          required: true, messages: 'you need to type agent name', trigger: 'blur'
+        merchantAgentId: {
+          required: true, messages: 'you need to select a merchant', trigger: 'blur'
         },
         walletAddr: {
           required: true, messages: 'you need to type walletAddr', trigger: 'blur'

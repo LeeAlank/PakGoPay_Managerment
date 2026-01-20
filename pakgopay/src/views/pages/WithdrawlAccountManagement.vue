@@ -362,8 +362,8 @@ export default {
       selectAccountVisible: true,
       merchantAccountOptions: [],
       merchantAccountProps: {
-        value: 'accountName',
-        label: 'userId',
+        value: 'userId',
+        label: 'accountName',
       },
       withdrawAccountFormData: [],
       allMerchantInfo: [

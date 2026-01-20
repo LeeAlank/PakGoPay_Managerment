@@ -927,8 +927,8 @@ export default {
         if (validate) {
           createStatementeOrderApply(this.rechargeOrderInfo).then(res => {
             if (res.status === 200 && res.data.code === 0) {
-              this.dialogWithdrawVisible = false
-              this.dialogWithdrawTitle = ''
+              this.dialogRechargeVisible = false
+              this.dialogRechargeTitle = ''
               this.$refs[form].resetFields()
               this.$notify({
                 title: 'Success',

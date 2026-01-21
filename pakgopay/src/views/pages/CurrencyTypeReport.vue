@@ -6,47 +6,6 @@ import {getFormateDate} from "@/api/common.js";
 
 <template>
  <div class="main-title">币种报表</div>
-  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0" >
-    <el-form-item style="margin-left: 2%;">
-      <template #label>
-          <span style="color: black;font-size: small;align-items: center;">
-            统计币种:
-          </span>
-      </template>
-      <el-select
-          style="width: 150px;align-items: center;text-align: center;"
-          :options="currencyOptions"
-          :props="currencyProps"
-          default-first-option
-          v-model="filterbox.currency"
-          @change="handleCurrencyChange"
-          filterable
-          placeholder="select currency"
-      />
-    </el-form-item>
-  </div>
-  <div class="statistics-container"  style="flex-direction: row;justify-content: space-around">
-    <el-card id="statistics" class="statistics-form" v-if="statisticsInfo.collectionCard">
-      <div class="statistics-form-item">
-        <SvgIcon name="tixian" width="100px" height="100px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span style="text-align: left;font-size: x-large">代收总金额:</span>
-          <textarea v-model="statisticsInfo.collectionCurrencyAmount" disabled class="cash-text-area"></textarea>
-        </div>
-      </div>
-    </el-card>
-
-    <el-card id="statistics" class="statistics-form" v-if="statisticsInfo.payingCard">
-      <div class="statistics-form-item">
-        <SvgIcon name="paying" width="90px" height="90px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span style="text-align: left;font-size: x-large">代付总金额:</span>
-          <textarea v-model="statisticsInfo.payingCurrencyAmount" disabled class="cash-text-area"></textarea>
-        </div>
-      </div>
-    </el-card>
-  </div>
-
   <el-collapse v-model="activeTool">
     <el-collapse-item name="1">
       <template #title>
@@ -93,6 +52,45 @@ import {getFormateDate} from "@/api/common.js";
       </div>
     </el-collapse-item>
   </el-collapse>
+  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0">
+    <div style="display: flex;flex-direction: column;gap: 6px;margin-left: 2%;width: 96%;">
+      <span style="color: black;font-size: small;">统计币种:</span>
+      <el-tabs
+          v-model="filterbox.currency"
+          type="card"
+          @tab-click="handleCurrencyChange"
+      >
+        <el-tab-pane
+            v-for="item in currencyOptions"
+            :key="item.currencyType"
+            :label="item.name"
+            :name="item.currencyType"
+        />
+      </el-tabs>
+    </div>
+  </div>
+  <div class="statistics-container"  style="flex-direction: row;justify-content: space-around">
+    <el-card id="statistics" class="statistics-form" v-if="statisticsInfo.collectionCard">
+      <div class="statistics-form-item">
+        <SvgIcon name="tixian" width="100px" height="100px"/>
+        <div style="display: flex; flex-direction: column;width: 80%;">
+          <span style="text-align: left;font-size: x-large">代收总金额:</span>
+          <textarea v-model="statisticsInfo.collectionCurrencyAmount" disabled class="cash-text-area"></textarea>
+        </div>
+      </div>
+    </el-card>
+
+    <el-card id="statistics" class="statistics-form" v-if="statisticsInfo.payingCard">
+      <div class="statistics-form-item">
+        <SvgIcon name="paying" width="90px" height="90px"/>
+        <div style="display: flex; flex-direction: column;width: 80%;">
+          <span style="text-align: left;font-size: x-large">代付总金额:</span>
+          <textarea v-model="statisticsInfo.payingCurrencyAmount" disabled class="cash-text-area"></textarea>
+        </div>
+      </div>
+    </el-card>
+  </div>
+
 
 
   <div class="reportInfo">
@@ -321,7 +319,10 @@ export default {
     reset(form){
       this.$refs[form].resetFields();
     },
-    handleCurrencyChange() {
+    handleCurrencyChange(tab) {
+      if (tab && tab.paneName !== undefined) {
+        this.filterbox.currency = tab.paneName
+      }
       this.currency = this.filterbox.currency;
       this.currencyIcon = this.currencyIcons[this.currency]
       this.filterSearch()

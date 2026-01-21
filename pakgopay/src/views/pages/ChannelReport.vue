@@ -84,7 +84,10 @@ export default {
         this.filterbox.orderType = '0'
       })
     },
-    handleCurrencyChange() {
+    handleCurrencyChange(tab) {
+      if (tab && tab.paneName !== undefined) {
+        this.filterbox.currency = tab.paneName
+      }
       this.currency = this.filterbox.currency;
       this.currencyIcon = this.currencyIcons[this.currency]
       this.filterSearch()
@@ -260,45 +263,6 @@ export default {
 </script>
 <template>
   <div class="main-title">渠道报表</div>
-  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0" >
-    <el-form-item style="margin-left: 2%;">
-      <template #label>
-          <span style="color: black;font-size: small;align-items: center;">
-            统计币种:
-          </span>
-      </template>
-      <el-select
-          style="width: 100px;align-items: center;text-align: center;"
-          :options="currencyOptions"
-          :props="currencyProps"
-          default-first-option
-          v-model="filterbox.currency"
-          @change="handleCurrencyChange"
-          filterable
-      />
-    </el-form-item>
-  </div>
-  <div class="statistics-container"  style="flex-direction: row;justify-content: space-around">
-    <el-card id="statistics" class="statistics-form" v-if="statisticsInfo.collectionCard">
-      <div class="statistics-form-item">
-        <SvgIcon name="tixian" width="100px" height="100px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span style="text-align: left;font-size: x-large">代收金额:</span>
-          <textarea v-model="statisticsInfo.collectionChannelAmount" disabled class="cash-text-area"></textarea>
-        </div>
-      </div>
-    </el-card>
-
-    <el-card id="statistics" class="statistics-form" v-if="statisticsInfo.payingCard">
-      <div class="statistics-form-item">
-        <SvgIcon name="paying" width="90px" height="90px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span style="text-align: left;font-size: x-large">代付总金额:</span>
-          <textarea v-model="statisticsInfo.payingChannelAmount" disabled class="cash-text-area"></textarea>
-        </div>
-      </div>
-    </el-card>
-  </div>
   <el-collapse v-model="activeTool">
     <el-collapse-item name="1">
       <template #title>
@@ -333,17 +297,17 @@ export default {
                       value-format="x"
                   >
                   </el-date-picker>
-                  <el-button @click="reset('filterForm')">
-                    <SvgIcon height="20px" width="20px" name="reset"/>
-                    <div style="color: black">重置</div>
+                  <el-button @click="reset('filterForm')" class="filterButton">
+                    <SvgIcon class="filterButtonSvg" name="reset"/>
+                    <div>重置</div>
                   </el-button>
-                  <el-button type="primary" @click="filterSearch()" style="margin:0">
-                    <SvgIcon height="20px" width="20px" name="search"/>
-                    <div style="color: black">查询</div>
+                  <el-button @click="filterSearch()" class="filterButton">
+                    <SvgIcon class="filterButtonSvg" name="search"/>
+                    <div>查询</div>
                   </el-button>
-                  <el-button @click="exportChannelInfo" style="margin:0">
-                    <SvgIcon height="20px" width="20px" name="export"/>
-                    <div style="color: black">导出</div>
+                  <el-button @click="exportChannelInfo" class="filterButton">
+                    <SvgIcon class="filterButtonSvg" name="export"/>
+                    <div>导出</div>
                   </el-button>
                 </div>
 
@@ -354,6 +318,44 @@ export default {
       </div>
     </el-collapse-item>
   </el-collapse>
+  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0">
+    <div style="display: flex;flex-direction: column;gap: 6px;margin-left: 2%;width: 96%;">
+      <span style="color: black;font-size: small;">统计币种:</span>
+      <el-tabs
+          v-model="filterbox.currency"
+          type="card"
+          @tab-click="handleCurrencyChange"
+      >
+        <el-tab-pane
+            v-for="item in currencyOptions"
+            :key="item.currencyType"
+            :label="item.name"
+            :name="item.currencyType"
+        />
+      </el-tabs>
+    </div>
+  </div>
+  <div class="statistics-container"  style="flex-direction: row;justify-content: space-around">
+    <el-card id="statistics" class="statistics-form" v-if="statisticsInfo.collectionCard">
+      <div class="statistics-form-item">
+        <SvgIcon name="tixian" width="100px" height="100px"/>
+        <div style="display: flex; flex-direction: column;width: 80%;">
+          <span style="text-align: left;font-size: x-large">代收金额:</span>
+          <textarea v-model="statisticsInfo.collectionChannelAmount" disabled class="cash-text-area"></textarea>
+        </div>
+      </div>
+    </el-card>
+
+    <el-card id="statistics" class="statistics-form" v-if="statisticsInfo.payingCard">
+      <div class="statistics-form-item">
+        <SvgIcon name="paying" width="90px" height="90px"/>
+        <div style="display: flex; flex-direction: column;width: 80%;">
+          <span style="text-align: left;font-size: x-large">代付总金额:</span>
+          <textarea v-model="statisticsInfo.payingChannelAmount" disabled class="cash-text-area"></textarea>
+        </div>
+      </div>
+    </el-card>
+  </div>
   <div class="reportInfo">
     <el-tabs @tab-click="handleTabClick" v-model="activeTabPane">
       <el-tab-pane label="代收">

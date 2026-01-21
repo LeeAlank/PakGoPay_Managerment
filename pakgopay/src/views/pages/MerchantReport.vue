@@ -81,7 +81,10 @@ export default {
     }
   },
   methods: {
-    handleCurrencyChange() {
+    handleCurrencyChange(tab) {
+      if (tab && tab.paneName !== undefined) {
+        this.filterbox.currency = tab.paneName
+      }
       this.currency = this.filterbox.currency;
       this.currencyIcon = this.currencyIcons[this.currency]
       this.filtersearch()
@@ -198,6 +201,7 @@ export default {
       //获取所有数据
     },
     filtersearch() {
+      console.log('filterbox----'+JSON.stringify(this.filterbox))
       this.collectingReportInfoData = []
       this.payingReportInfoData = []
       this.activeTabPane = '0'
@@ -327,56 +331,6 @@ export default {
   <div class="main-title">
     商户报表
   </div>
-  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0">
-    <el-form-item style="margin-left: 2%;">
-      <template #label>
-          <span style="color: black;font-size: small;align-items: center">
-            统计币种:
-          </span>
-      </template>
-      <el-select
-          style="width: 100px;align-items: center"
-          :options="currencyOptions"
-          :props="currencyProps"
-          default-first-option
-          v-model="filterbox.currency"
-          @change="handleCurrencyChange"
-          filterable
-      />
-    </el-form-item>
-  </div>
-  <!-- 统计数据展示 -->
-  <div class="statistics-container" style="width: 95%;margin-right: 3%; padding: 0;margin-left: 0">
-    <el-card id="statistics" class="statistics-form">
-      <div class="statistics-form-item">
-        <SvgIcon name="cash" width="100px" height="100px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span style="text-align: left;font-size: x-large">总账户金额:</span>
-          <textarea v-model="statisticsInfo.totalAmount" disabled class="cash-text-area"></textarea>
-        </div>
-      </div>
-    </el-card>
-
-    <el-card id="statistics" class="statistics-form">
-      <div class="statistics-form-item">
-        <SvgIcon name="tixian" width="90px" height="90px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span style="text-align: left;font-size: x-large">提现总金额:</span>
-          <textarea v-model="statisticsInfo.totalWithdrawlAmount" disabled class="cash-text-area"></textarea>
-        </div>
-      </div>
-    </el-card>
-
-    <el-card id="statistics" class="statistics-form">
-      <div class="statistics-form-item">
-        <SvgIcon name="cash-freeze" width="100px" height="100px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span style="text-align: left;font-size: x-large">冻结总金额:</span>
-          <textarea v-model="statisticsInfo.totalFreezeAmount" disabled class="cash-text-area"></textarea>
-        </div>
-      </div>
-    </el-card>
-  </div>
   <el-collapse v-model="activeTool">
     <el-collapse-item name="1">
       <template #title>
@@ -428,6 +382,56 @@ export default {
       </div>
     </el-collapse-item>
   </el-collapse>
+  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0">
+    <div class="currency-tabs">
+      <span class="currency-tabs-label">统计币种:</span>
+      <el-tabs
+          v-model="filterbox.currency"
+          type="card"
+          class="currency-tabs-control"
+          @tab-click="handleCurrencyChange"
+      >
+        <el-tab-pane
+            v-for="item in currencyOptions"
+            :key="item.currencyType"
+            :label="item.name"
+            :name="item.currencyType"
+        />
+      </el-tabs>
+    </div>
+  </div>
+  <!-- 统计数据展示 -->
+  <div class="statistics-container" style="width: 95%;margin-right: 3%; padding: 0;margin-left: 0">
+    <el-card id="statistics" class="statistics-form">
+      <div class="statistics-form-item">
+        <SvgIcon name="cash" width="100px" height="100px"/>
+        <div style="display: flex; flex-direction: column;width: 80%;">
+          <span style="text-align: left;font-size: x-large">总账户金额:</span>
+          <textarea v-model="statisticsInfo.totalAmount" disabled class="cash-text-area"></textarea>
+        </div>
+      </div>
+    </el-card>
+
+    <el-card id="statistics" class="statistics-form">
+      <div class="statistics-form-item">
+        <SvgIcon name="tixian" width="90px" height="90px"/>
+        <div style="display: flex; flex-direction: column;width: 80%;">
+          <span style="text-align: left;font-size: x-large">提现总金额:</span>
+          <textarea v-model="statisticsInfo.totalWithdrawlAmount" disabled class="cash-text-area"></textarea>
+        </div>
+      </div>
+    </el-card>
+
+    <el-card id="statistics" class="statistics-form">
+      <div class="statistics-form-item">
+        <SvgIcon name="cash-freeze" width="100px" height="100px"/>
+        <div style="display: flex; flex-direction: column;width: 80%;">
+          <span style="text-align: left;font-size: x-large">冻结总金额:</span>
+          <textarea v-model="statisticsInfo.totalFreezeAmount" disabled class="cash-text-area"></textarea>
+        </div>
+      </div>
+    </el-card>
+  </div>
   <div class="reportInfo">
     <el-tabs type="border-card" @tab-click="handleTabClick" v-model="activeTabPane">
       <el-tab-pane label="代收报表" style="width: 100%">
@@ -811,6 +815,10 @@ export default {
 
 .toolbarName {
   color: black;
+}
+
+.currency-tabs {
+  margin-left: 1%;
 }
 
 </style>

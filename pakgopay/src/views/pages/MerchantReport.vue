@@ -389,8 +389,7 @@ export default {
           <el-row class="toolform-item">
             <el-col :span="8" class="toolform-line" style="display: flex;justify-content: center;align-items: center;">
               <el-form-item label="商户名称:" label-width="150px" prop="merchantAccount">
-                <el-input v-model="filterbox.merchantName" type="text"
-                          style="width: 200px;display: flex;text-align: center" placeholder="商户账号"/>
+                <el-input v-model="filterbox.merchantName" type="text" placeholder="商户账号"/>
               </el-form-item>
             </el-col>
             <el-col :span="16" class="toolform-line" style="display: flex;justify-content: center;align-items: center;">

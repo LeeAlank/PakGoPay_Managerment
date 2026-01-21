@@ -153,6 +153,32 @@ body {
     margin-left: 1%;
 }
 
+.main-toolbar .el-input__inner,
+.main-toolbar .el-input__wrapper,
+.main-toolbar .el-select__input,
+.main-toolbar .el-select__placeholder,
+.main-toolbar .main-toolform-input {
+    text-align: center;
+}
+
+.main-toolbar .el-input__inner::placeholder,
+.main-toolbar .el-select__input::placeholder {
+    text-align: center;
+}
+
+.toolbar .el-input__inner,
+.toolbar .el-input__wrapper,
+.toolbar .el-select__input,
+.toolbar .el-select__placeholder,
+.toolbar .main-toolform-input {
+    text-align: center;
+}
+
+.toolbar .el-input__inner::placeholder,
+.toolbar .el-select__input::placeholder {
+    text-align: center;
+}
+
 :deep() .filterButton {
     color: lightskyblue;
     margin-left: 0 !important;

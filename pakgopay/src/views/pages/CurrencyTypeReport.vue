@@ -55,37 +55,41 @@ import {getFormateDate} from "@/api/common.js";
         </span>
       </template>
       <div class="toolbar" style="width: 96%">
-        <el-row style="display: flex;justify-content: space-around;">
-          <el-form-item style="display: flex;justify-content: center;color: deepskyblue">
-            <template #label>
-              <span>币种:</span>
-            </template>
-            <el-select
-                v-model="filterbox.selectedCurrency"
-                placeholder="请选择币种"
-                size="medium"
-                style="width: 150px;"
-                clearable
-                :options="currencyOptions"
-                :props="currencyProps"
-            >
-            </el-select>
-          </el-form-item>
-          <el-form-item label="日期:" label-width="150px">
-            <el-date-picker
-                v-model="filterbox.filterDateRange"
-                type="daterange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                format="YYYY/MM/DD"
-                value-format="x"
-            >
-            </el-date-picker>
-            <el-button @click="filterSearch" class="filterButton"><SvgIcon class="filterButtonSvg" name="search"/>搜索</el-button>
-            <el-button @click="exportCurrencyInfo" class="filterButton"><SvgIcon class="filterButtonSvg" name="export"/>导出</el-button>
-          </el-form-item>
-        </el-row>
+        <el-form class="main-toolform" ref="filterForm" :model="filterbox">
+          <el-row style="display: flex;justify-content: space-around;">
+            <el-col :span="8">
+              <el-form-item label="币种:" label-width="150px" prop="currency">
+                <el-select
+                    v-model="filterbox.currency"
+                    placeholder="请选择币种"
+                    size="medium"
+                    style="width: 150px;"
+                    :options="currencyOptions"
+                    :props="currencyProps"
+                >
+                </el-select>
+              </el-form-item>
+            </el-col>
+            <el-col :span="16">
+              <el-form-item label-width="150px" label="日期:" prop="filterDateRange">
+                <el-date-picker
+                    v-model="filterbox.filterDateRange"
+                    type="daterange"
+                    range-separator="至"
+                    start-placeholder="开始日期"
+                    end-placeholder="结束日期"
+                    format="YYYY/MM/DD"
+                    value-format="x"
+                >
+                </el-date-picker>
+                <el-button @click="reset('filterForm')" class="filterButton"><SvgIcon class="filterButtonSvg" name="reset"/>重置</el-button>
+                <el-button @click="filterSearch" class="filterButton"><SvgIcon class="filterButtonSvg" name="search"/>搜索</el-button>
+                <el-button @click="exportCurrencyInfo" class="filterButton"><SvgIcon class="filterButtonSvg" name="export"/>导出</el-button>
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </el-form>
+
       </div>
     </el-collapse-item>
   </el-collapse>
@@ -314,6 +318,9 @@ export default {
     }
   },
   methods: {
+    reset(form){
+      this.$refs[form].resetFields();
+    },
     handleCurrencyChange() {
       this.currency = this.filterbox.currency;
       this.currencyIcon = this.currencyIcons[this.currency]

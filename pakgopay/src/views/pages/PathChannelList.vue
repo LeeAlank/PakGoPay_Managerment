@@ -7,8 +7,8 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
 <template>
   <div class="main-title">通道列表</div>
 
-  <el-collapse style="margin-top: 20px; width: 95%;margin-left: 1%;">
-    <el-collapse-item>
+  <el-collapse v-model="activeTool">
+    <el-collapse-item name="1">
       <template #title>
         <span class="toolbarName">
           工具栏
@@ -41,13 +41,13 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
             <div style="display: flex;flex-direction: row;width: 100%">
               <el-col :span="5">
                 <el-form-item label="通道名称:" label-width="150px" prop="paymentName">
-                  <input v-model="filterbox.paymentName" type="text" class="main-toolform-input"
+                  <el-input v-model="filterbox.paymentName" type="text"
                          placeholder="通道名称" style="width: 200px;height: 100%"/>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
                 <el-form-item label="支付类型:" label-width="150px" prop="supportType">
-                  <el-select v-model="filterbox.supportType" class="main-toolform-input" placeholder="支付方式"
+                  <el-select v-model="filterbox.supportType"  placeholder="支付方式"
                              :options="supportTypeOptions"
                              style="width: 200px;height: 100%"
                              clearable
@@ -56,7 +56,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
               </el-col>
               <el-col :span="6">
                 <el-form-item label="通道类型:" label-width="150px" prop="paymentType">
-                  <el-select v-model="filterbox.paymentType" class="main-toolform-input" placeholder="通道类型"
+                  <el-select v-model="filterbox.paymentType" placeholder="通道类型"
                              :options="paymentTypeOptions" style="width: 200px;height: 100%"
                              clearable
                   />
@@ -1130,6 +1130,7 @@ export default {
     }
 
     return {
+      activeTool: '1',
       createPaymentInfoRules : {
         paymentNo: {
           required: true, messages: 'you need to input paymentNo', trigger: 'blur'
@@ -1561,6 +1562,19 @@ export default {
   display: flex;
   justify-content: right;
   float: right;
+}
+
+.main-toolbar .el-input__inner,
+.main-toolbar .el-input__wrapper,
+.main-toolbar .el-select__input,
+.main-toolbar .el-select__placeholder,
+.main-toolbar .main-toolform-input {
+  text-align: center;
+}
+
+.main-toolbar .el-input__inner::placeholder,
+.main-toolbar .el-select__input::placeholder {
+  text-align: center;
 }
 
 :deep().el-table th.is-leaf {

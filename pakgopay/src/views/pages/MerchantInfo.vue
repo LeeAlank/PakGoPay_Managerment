@@ -82,12 +82,12 @@ import {getFormateDate} from "@/api/common.js";
           <el-row>
             <el-col :span="6">
               <el-form-item label="商户账号:" label-width="150px" prop="merchantUserName">
-                 <el-input  v-model="filterbox.merchantUserName"  type="text" class="main-toolform-input" placeholder="商户账号" style="width: 200px"/>
+                 <el-input  v-model="filterbox.merchantUserName"  type="text" placeholder="商户账号" style="width: 200px"/>
               </el-form-item>
             </el-col>
             <el-col :span="6">
                 <el-form-item label="商户名称:" label-width="150px" prop="merchantName">
-                  <el-input  v-model="filterbox.merchantName"  type="text" class="main-toolform-input" placeholder="商户账号" style="width: 200px"/>
+                  <el-input  v-model="filterbox.merchantName"  type="text" placeholder="商户账号" style="width: 200px"/>
                 </el-form-item>
             </el-col>
             <el-col :span="6">
@@ -98,6 +98,8 @@ import {getFormateDate} from "@/api/common.js";
                     inactive-color="#ff4949"
                     active-text="启用"
                     inactive-text="停用"
+                    :active-value="1"
+                    :inactive-value="0"
                 ></el-switch>
               </el-form-item>
             </el-col>

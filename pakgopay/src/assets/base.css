@@ -180,9 +180,32 @@ body {
 }
 
 :deep() .filterButton {
-    color: lightskyblue;
-    margin-left: 0 !important;
+    color: dodgerblue;
+    margin: 0 !important;
     display: flex;
+}
+
+:deep(.el-switch.is-disabled .el-switch__core){
+    background-color: #c0c4cc;
+    border-color: #c0c4cc;
+}
+
+:deep(.el-switch.is-disabled.is-checked .el-switch__core){
+    background-color: #07c160;
+    border-color: #07c160;
+}
+
+:deep(.el-switch){
+    --el-switch-on-color: #07c160;
+    --el-switch-off-color: #c0c4cc;
+}
+
+:deep(.el-switch .el-switch__label) {
+    color: #c0c4cc;
+}
+
+:deep(.el-switch.is-checked .el-switch__label.is-active) {
+    color: #07c160;
 }
 
 .filterButtonSvg {
@@ -222,6 +245,7 @@ body {
     width: 96%;
     margin-left: 1%;
     margin-top: 20px;
+    height: 100%;
 }
 
 :deep() .el-tabs {

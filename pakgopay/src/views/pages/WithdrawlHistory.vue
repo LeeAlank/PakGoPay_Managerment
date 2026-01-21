@@ -1,6 +1,7 @@
 <script setup>
 
 import SvgIcon from "@/components/SvgIcon/index.vue";
+import {getFormateDate} from "@/api/common.js";
 </script>
 
 <template>
@@ -23,110 +24,160 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       />
     </el-form-item>
   </div>
-  <div style="display: flex;height: 12vh;justify-content: space-between;margin-right: 10%;margin-left: 10%;">
-    <el-card style="width: 30%;height: 100%;margin-top: 2%;">
-      <div style="display: flex;">
-        <SvgIcon name="cash" width="100px" height="100px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span class="reportLabel">总账户金额:</span>
-          <textarea v-model="agentTotalAmount" disabled class="cash-text-area" style="text-align: right"></textarea>
+  <!--  <div style="display: flex;height: 12vh;justify-content: space-between;margin-right: 10%;margin-left: 10%;">
+      <el-card style="width: 30%;height: 100%;margin-top: 2%;">
+        <div style="display: flex;">
+          <SvgIcon name="cash" width="100px" height="100px"/>
+          <div style="display: flex; flex-direction: column;width: 80%;">
+            <span class="reportLabel">总账户金额:</span>
+            <textarea v-model="agentTotalAmount" disabled class="cash-text-area" style="text-align: right"></textarea>
+          </div>
         </div>
-      </div>
-    </el-card>
-    <el-card style="width: 30%;height: 100%;margin-top: 2%;">
-      <div style="display: flex;">
-        <SvgIcon name="cash-freeze" width="100px" height="100px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span class="reportLabel">冻结总金额:</span>
-          <textarea v-model="agentFreezeAmount" disabled class="cash-text-area" style="text-align: right"></textarea>
+      </el-card>
+      <el-card style="width: 30%;height: 100%;margin-top: 2%;">
+        <div style="display: flex;">
+          <SvgIcon name="cash-freeze" width="100px" height="100px"/>
+          <div style="display: flex; flex-direction: column;width: 80%;">
+            <span class="reportLabel">冻结总金额:</span>
+            <textarea v-model="agentFreezeAmount" disabled class="cash-text-area" style="text-align: right"></textarea>
+          </div>
         </div>
-      </div>
-    </el-card>
-    <el-card style="width: 30%;height: 100%;margin-top: 2%;">
-      <div style="display: flex;">
-        <SvgIcon name="tixian" width="90px" height="90px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span class="reportLabel">可用余额:</span>
-          <textarea v-model="agentAvailableBalance" disabled class="cash-text-area" style="text-align: right"></textarea>
+      </el-card>
+      <el-card style="width: 30%;height: 100%;margin-top: 2%;">
+        <div style="display: flex;">
+          <SvgIcon name="tixian" width="90px" height="90px"/>
+          <div style="display: flex; flex-direction: column;width: 80%;">
+            <span class="reportLabel">可用余额:</span>
+            <textarea v-model="agentAvailableBalance" disabled class="cash-text-area" style="text-align: right"></textarea>
+          </div>
         </div>
-      </div>
-    </el-card>
-  </div>
-  <el-collapse style="margin-top: 3%; width: 95%;margin-left: 1%;margin-right: 3%;">
-    <el-collapse-item>
+      </el-card>
+    </div>-->
+  <el-collapse v-model="activeTool">
+    <el-collapse-item name="1">
       <template #title>
          <span class="toolbarName">
           工具栏
         </span>
       </template>
       <div class="main-toolbar" style="height: auto;">
-        <el-form class="main-toolform" style="height: 100%;display:flex;margin-left:3%" ref="filteboxForm" :model="filterbox">
-          <div class="main-toolform-item" style="height: 100%;display: flex;justify-content: space-around;width: 100%">
-            <div class="main-toolform-line">创建时间:<el-date-picker
-                v-model="filterbox.filterDateRange"
-                type="datetimerange"
-                range-separator="至"
-                start-placeholder="开始日期"
-                end-placeholder="结束日期"
-                format="YYYY/MM/DD HH:mm:ss"
-                value-format="x"
-                clearable
-                style="width: 100px;height: 70%"
-                class="main-toolform-input"
-            >
-            </el-date-picker></div>
-            <div class="main-toolform-line">收款账号地址:<el-input v-model="filterbox.walletAddr" placeholder="收款账号地址" class="main-toolform-input"/></div>
-            <div class="main-toolform-line">代理名称:<el-input v-model="filterbox.name" clearable  type="text" class="main-toolform-input" placeholder="代理名称">
-              <template #append>
-                <el-button style="font-size: 15px">
-                  <SvgIcon name="search"/>搜索
-                </el-button>
-              </template>
-            </el-input>
+        <el-form class="main-toolform" style="height: 100%;display:flex;margin-left:3%" ref="filteboxForm"
+                 :model="filterbox">
+          <el-row>
+            <el-col :span="7">
+              <el-form-item label="创建时间:" label-width="150px" prop="filterDateRange">
+                <el-date-picker
+                    v-model="filterbox.filterDateRange"
+                    type="daterange"
+                    range-separator="至"
+                    start-placeholder="开始日期"
+                    end-placeholder="结束日期"
+                    format="YYYY/MM/DD"
+                    value-format="x"
+                    clearable
+                >
+                </el-date-picker>
+              </el-form-item>
+            </el-col>
+            <el-col :span="7">
+              <el-form-item label="收款账号地址:" label-width="150px" prop="walletAddr">
+                <el-input style="width: 200px" v-model="filterbox.walletAddr" placeholder="收款账号地址"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="8">
+              <el-form-item label="代理名称:" label-width="150px" prop="name">
+                <div style="display: flex;flex-direction: row">
+                  <el-input v-model="filterbox.name" clearable type="text" placeholder="代理名称" style="width:300px">
+                  </el-input>
+                  <el-button class="filterButton" @click="reset('filteboxForm')">
+                    <SvgIcon class="filterButtonSvg" name="search"/>
+                    <div>重置</div>
+                  </el-button>
+                  <el-button class="filterButton" @click="search">
+                    <SvgIcon class="filterButtonSvg" name="search"/>
+                    <div>搜索</div>
+                  </el-button>
+                </div>
+              </el-form-item>
+            </el-col>
+          </el-row>
+<!--          <div class="main-toolform-item" style="height: 100%;display: flex;justify-content: space-around;width: 100%">
+            <div class="main-toolform-line">创建时间:
+              <el-date-picker
+                  v-model="filterbox.filterDateRange"
+                  type="datetimerange"
+                  range-separator="至"
+                  start-placeholder="开始日期"
+                  end-placeholder="结束日期"
+                  format="YYYY/MM/DD HH:mm:ss"
+                  value-format="x"
+                  clearable
+                  style="width: 100px;height: 70%"
+                  class="main-toolform-input"
+              >
+              </el-date-picker>
             </div>
-          </div>
+            <div class="main-toolform-line">收款账号地址:
+              <el-input v-model="filterbox.walletAddr" placeholder="收款账号地址" class="main-toolform-input"/>
+            </div>
+            <div class="main-toolform-line">代理名称:
+              <el-input v-model="filterbox.name" clearable type="text" class="main-toolform-input"
+                        placeholder="代理名称">
+                <template #append>
+                  <el-button class="filterButton">
+                    <SvgIcon class="filterButtonSvg" name="search"/>
+                    <div>搜索</div>
+                  </el-button>
+                </template>
+              </el-input>
+            </div>
+          </div>-->
         </el-form>
       </div>
     </el-collapse-item>
   </el-collapse>
-  <div class="main-views-container" style="margin-top: 4%;margin-left:1%;height: 100%">
-    <div style="display: flex;justify-content: right;margin-right:3%">
-      <el-button v-on:click="exportAgentStatement()" style="width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;margin:0">
-        <SvgIcon name="export"/>导出
+  <div class="reportInfo">
+    <div style="display: flex;justify-content: right;">
+      <el-button @click="exportAgentStatement()" class="filterButton">
+        <SvgIcon class="filterButtonSvg" name="export"/>
+        导出
       </el-button>
-      <el-button v-on:click="addWithdrawlAccount" style="width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;margin:0">
-        <SvgIcon name="add"/>新增
+      <el-button @click="addWithdrawlAccount" class="filterButton">
+        <SvgIcon name="add" class="filterButtonSvg"/>
+        新增
       </el-button>
-      <el-button v-on:click="createWithdrawlApply" style="width:100px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;margin:0;background-color: lightgreen">
-        <SvgIcon name="withdrawl"/>提现申请
+      <el-button @click="createWithdrawlApply" class="filterButton">
+        <SvgIcon name="withdrawl" class="filterButtonSvg"/>
+        提现申请
       </el-button>
     </div>
     <form class="main-views-form" style="height: 100%">
       <el-table
           border :data="withdrawAccountData"
           class="agentAccountTable"
-          style="width: 97%;height: auto;"
+          style="height: auto;"
+          :key="tableKey"
       >
         <el-table-column
-          v-slot="{row}"
-          label="代理名称"
-          align="center"
+            v-slot="{row}"
+            label="代理名称"
+            align="center"
         >
-          <div>{{row.name}}</div>
+          <div>{{ row.name }}</div>
         </el-table-column>
         <el-table-column
             v-slot="{row}"
             label="代理账号"
             align="center"
         >
-          <div>{{row.userName}}</div>
+          <div>{{ row.userName }}</div>
         </el-table-column>
         <el-table-column
             v-slot="{row}"
             label="代理提现账户"
             align="center"
         >
-          <div>{{row.walletAddr}}</div>
+          <div>{{ row.walletAddr }}</div>
         </el-table-column>
         <el-table-column
             v-slot="{row}"
@@ -135,14 +186,14 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
         >
           <div>
             <el-switch
-              v-model="row.status"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-text="启用"
-              inactive-text="停用"
-              :active-value="1"
-              :inactive-value="0"
-              disabled
+                v-model="row.status"
+                active-color="#13ce66"
+                inactive-color="#ff4949"
+                active-text="启用"
+                inactive-text="停用"
+                :active-value="1"
+                :inactive-value="0"
+                disabled
             />
           </div>
         </el-table-column>
@@ -151,14 +202,14 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             label="录入时间"
             align="center"
         >
-          <div>{{row.createTime}}</div>
+          <div>{{ getFormateDate(row.createTime) }}</div>
         </el-table-column>
         <el-table-column
             v-slot="{row}"
             label="创建人"
             align="center"
         >
-          <div>{{row.createBy}}</div>
+          <div>{{ row.createBy }}</div>
         </el-table-column>
         <el-table-column
             v-slot="{row}"
@@ -193,30 +244,31 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
   </div>
 
   <el-dialog
-    :title="createAccountTitle"
-    v-model="createAccountVisible"
-    class="dialog"
-    center="true"
-    width="40%"
-    style="height:400px;"
+      :title="createAccountTitle"
+      v-model="createAccountVisible"
+      class="dialog"
+      center="true"
+      width="40%"
+      style="height:400px;"
   >
-    <el-form ref="createAccountForm" :model="createAgentAccountModel" :rules="createAccountRules" style="margin-top: 8%;">
-        <el-col v-if="dialogType === 'create'" :span="24" class="addDialog">
-          <el-form-item
-              label="代理名称:"
-              label-width="150px"
-              prop="merchantAgentId"
-          >
-<!--            <el-input style="width: 200px" v-model="createAgentAccountModel.agentName"/>-->
-            <el-select
-                v-model="createAgentAccountModel.merchantAgentId"
-               :options="agentOptions"
-               :props="agentProps"
-                style="width: 200px"
-                placeholder="select agent"
-            />
-          </el-form-item>
-        </el-col>
+    <el-form ref="createAccountForm" :model="createAgentAccountModel" :rules="createAccountRules"
+             style="margin-top: 8%;">
+      <el-col v-if="dialogType === 'create'" :span="24" class="addDialog">
+        <el-form-item
+            label="代理名称:"
+            label-width="150px"
+            prop="merchantAgentId"
+        >
+          <!--            <el-input style="width: 200px" v-model="createAgentAccountModel.agentName"/>-->
+          <el-select
+              v-model="createAgentAccountModel.merchantAgentId"
+              :options="agentOptions"
+              :props="agentProps"
+              style="width: 200px"
+              placeholder="select agent"
+          />
+        </el-form-item>
+      </el-col>
       <el-col v-if="dialogType !== 'start' && dialogType !== 'stop'" :span="24" class="addDialog">
         <el-form-item
             label="钱包名称:"
@@ -235,15 +287,15 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <el-input style="width: 200px" v-model="createAgentAccountModel.walletAddr"/>
         </el-form-item>
       </el-col>
-<!--      <el-col v-if="dialogType !== 'start' && dialogType !== 'stop'" :span="24" class="addDialog">
-        <el-form-item
-            label="钱包名称:"
-            label-width="150px"
-            prop="walletName"
-        >
-          <el-input style="width: 200px" v-model="createAgentAccountModel.walletName"/>
-        </el-form-item>
-      </el-col>-->
+      <!--      <el-col v-if="dialogType !== 'start' && dialogType !== 'stop'" :span="24" class="addDialog">
+              <el-form-item
+                  label="钱包名称:"
+                  label-width="150px"
+                  prop="walletName"
+              >
+                <el-input style="width: 200px" v-model="createAgentAccountModel.walletName"/>
+              </el-form-item>
+            </el-col>-->
       <el-col v-if="dialogType !== 'start' && dialogType !== 'stop'" :span="24" class="addDialog">
         <el-form-item
             label="是否启用:"
@@ -294,6 +346,8 @@ export default {
   name: 'WithdrawlHistory',
   data() {
     return {
+      tableKey: 0,
+      activeTool: '1',
       agentOptions: [],
       agentProps: {
         label: 'agentName',
@@ -315,7 +369,7 @@ export default {
       },
       createAccountTitle: '',
       createAccountVisible: false,
-      withdrawAccountData:[],
+      withdrawAccountData: [],
       createAgentAccountModel: {},
       agentTotalAmount: '10',
       agentAvailableBalance: '0.1',
@@ -341,6 +395,9 @@ export default {
     }
   },
   methods: {
+    reset(form) {
+      this.$refs[form].resetFields();
+    },
     exportAgentStatement() {
       this.filterbox.columns = getAgentAccountTitle(this)
       let timeRange = null
@@ -360,32 +417,37 @@ export default {
     },
     search() {
       this.filterbox.isNeedCardData = true
+      if(this.filterbox.filterDateRange) {
+        this.filterbox.startTime = this.filterbox.filterDateRange[0]/1000
+        this.filterbox.endTime = this.filterbox.filterDateRange[1]/1000
+      }
       const loadingInstance = loadingBody(this, 'agentAccountTable')
       getAgentAccountInfo(this.filterbox).then(res => {
         if (res.status === 200 && res.data.code === 0) {
           let allData = JSON.parse(res.data.data)
-            this.withdrawAccountData = allData.withdrawalAccountsDtoList;
-            this.totalCount = allData.totalNumber
-            this.pageNo = allData.pageNo
-            this.pageSize = allData.pageSize
-          console.log(allData.cardInfo)
-            if(allData.cardInfo) {
-              const cardInfo = allData.cardInfo[this.filterbox.currency]
-              this.agentTotalAmount = cardInfo.total
-              this.agentFreezeAmount = cardInfo.frozen
-              this.agentAvailableBalance = cardInfo.withdraw
-            } else {
-              this.agentTotalAmount =  this.currencyIcons[this.currency] + 0
-              this.agentFreezeAmount = this.currencyIcons[this.currency] + 0
-              this.agentAvailableBalance = this.currencyIcons[this.currency] + 0
-            }
+          this.withdrawAccountData = allData.withdrawalAccountsDtoList;
+          this.totalCount = allData.totalNumber
+          this.pageNo = allData.pageNo
+          this.pageSize = allData.pageSize
+          this.tableKey++
+
+          /*if(allData.cardInfo) {
+            const cardInfo = allData.cardInfo[this.filterbox.currency]
+            this.agentTotalAmount = cardInfo.total
+            this.agentFreezeAmount = cardInfo.frozen
+            this.agentAvailableBalance = cardInfo.withdraw
+          } else {
+            this.agentTotalAmount =  this.currencyIcons[this.currency] + 0
+            this.agentFreezeAmount = this.currencyIcons[this.currency] + 0
+            this.agentAvailableBalance = this.currencyIcons[this.currency] + 0
+          }*/
 
         } else if (res.status === 200 && res.data.code !== 0) {
           this.$notify({
             title: 'Error',
             message: res.data.message,
             duration: 3000,
-            position:'bottom-right',
+            position: 'bottom-right',
             type: 'error'
           })
         } else {
@@ -393,7 +455,7 @@ export default {
             title: 'Error',
             message: 'something went wrong!',
             duration: 3000,
-            position:'bottom-right',
+            position: 'bottom-right',
             type: 'error'
           })
         }
@@ -404,7 +466,7 @@ export default {
           title: 'Error',
           message: err.message,
           duration: 3000,
-          position:'bottom-right',
+          position: 'bottom-right',
           type: 'error'
         })
       })
@@ -413,7 +475,7 @@ export default {
       this.createAccountVisible = true
       this.createAccountTitle = '新增代理账号'
       this.dialogType = 'create'
-      this.submitType= 'create'
+      this.submitType = 'create'
     },
     editAgentAccount(row) {
       this.createAgentAccountModel = {}
@@ -459,21 +521,21 @@ export default {
                 this.createAccountTitle = ''
                 this.dialogType = ''
                 this.$refs[form].resetFields()
-                this.submitType= ''
+                this.submitType = ''
                 this.search()
                 this.$notify({
                   title: 'Success',
                   message: 'Create Account Successfully',
                   duration: 3000,
-                  position:'bottom-right',
+                  position: 'bottom-right',
                   type: 'success'
                 })
-              } else if (res.status === 200 && res.data.code !== 0){
+              } else if (res.status === 200 && res.data.code !== 0) {
                 this.$notify({
                   title: 'Error',
                   message: res.data.message,
                   duration: 3000,
-                  position:'bottom-right',
+                  position: 'bottom-right',
                   type: 'error'
                 })
               } else {
@@ -481,7 +543,7 @@ export default {
                   title: 'Error',
                   message: 'Create Account Failed',
                   duration: 3000,
-                  position:'bottom-right',
+                  position: 'bottom-right',
                   type: 'error'
                 })
               }
@@ -493,21 +555,21 @@ export default {
                 this.createAccountTitle = ''
                 this.dialogType = ''
                 this.$refs[form].resetFields()
-                this.submitType= ''
+                this.submitType = ''
                 this.$notify({
                   title: 'Success',
                   message: 'Create Account Successfully',
                   duration: 3000,
-                  position:'bottom-right',
+                  position: 'bottom-right',
                   type: 'success'
                 })
                 this.search()
-              } else if (res.status === 200 && res.data.code !== 0){
+              } else if (res.status === 200 && res.data.code !== 0) {
                 this.$notify({
                   title: 'Error',
                   message: res.data.message,
                   duration: 3000,
-                  position:'bottom-right',
+                  position: 'bottom-right',
                   type: 'error'
                 })
               } else {
@@ -515,7 +577,7 @@ export default {
                   title: 'Error',
                   message: 'Create Account Failed',
                   duration: 3000,
-                  position:'bottom-right',
+                  position: 'bottom-right',
                   type: 'error'
                 })
               }
@@ -566,6 +628,7 @@ export default {
 <style scoped>
 @import "@/api/common.css";
 @import "@/assets/base.css";
+
 .cash-text-area {
   width: 90%;
   height: 100%;
@@ -578,14 +641,6 @@ export default {
 .reportLabel {
   font-size: x-large;
   text-align: right;
-}
-
-:deep().el-table th.is-leaf {
-
-  background-color: lightskyblue;
-  color: white;
-  font-weight: bold;
-  font-size: larger;
 }
 
 .main-toolform-input {

@@ -24,38 +24,38 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
       />
     </el-form-item>
   </div>
-  <div class="statistics-container"
-       style="display: flex;justify-content: space-around;height: auto;justify-items: center;align-items: center;margin-top:1%;">
-    <el-card style="width: 30%;height: 100%;">
-      <div style="display: flex;">
-        <SvgIcon name="cash" width="100px" height="100px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span>总账户金额:</span>
-          <textarea v-model="statisticsInfo.total" disabled class="cash-text-area"></textarea>
+  <!--  <div class="statistics-container"
+         style="display: flex;justify-content: space-around;height: auto;justify-items: center;align-items: center;margin-top:1%;">
+      <el-card style="width: 30%;height: 100%;">
+        <div style="display: flex;">
+          <SvgIcon name="cash" width="100px" height="100px"/>
+          <div style="display: flex; flex-direction: column;width: 80%;">
+            <span>总账户金额:</span>
+            <textarea v-model="statisticsInfo.total" disabled class="cash-text-area"></textarea>
+          </div>
         </div>
-      </div>
-    </el-card>
-    <el-card style="width: 30%;height: 100%;">
-      <div style="display: flex;">
-        <SvgIcon name="cash-freeze" width="100px" height="100px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span>冻结总金额:</span>
-          <textarea v-model="statisticsInfo.frozen" disabled class="cash-text-area"></textarea>
+      </el-card>
+      <el-card style="width: 30%;height: 100%;">
+        <div style="display: flex;">
+          <SvgIcon name="cash-freeze" width="100px" height="100px"/>
+          <div style="display: flex; flex-direction: column;width: 80%;">
+            <span>冻结总金额:</span>
+            <textarea v-model="statisticsInfo.frozen" disabled class="cash-text-area"></textarea>
+          </div>
         </div>
-      </div>
-    </el-card>
-    <el-card style="width: 30%;height: 100%;">
-      <div style="display: flex;">
-        <SvgIcon name="tixian" width="90px" height="90px"/>
-        <div style="display: flex; flex-direction: column;width: 80%;">
-          <span>提现总金额:</span>
-          <textarea v-model="statisticsInfo.withdraw" disabled class="cash-text-area"></textarea>
+      </el-card>
+      <el-card style="width: 30%;height: 100%;">
+        <div style="display: flex;">
+          <SvgIcon name="tixian" width="90px" height="90px"/>
+          <div style="display: flex; flex-direction: column;width: 80%;">
+            <span>提现总金额:</span>
+            <textarea v-model="statisticsInfo.withdraw" disabled class="cash-text-area"></textarea>
+          </div>
         </div>
-      </div>
-    </el-card>
-  </div>
-  <el-collapse style="margin-top: 20px; width: 95%;margin-left: 1%;margin-right: 3%;">
-    <el-collapse-item>
+      </el-card>
+    </div>-->
+  <el-collapse v-model="activeTool">
+    <el-collapse-item name="1">
       <template #title>
          <span class="toolbarName">
           工具栏
@@ -65,10 +65,10 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
         <el-form class="main-toolform" ref="filterboxForm" :model="filterbox">
           <el-row style="display: flex;justify-content: space-around;">
             <el-form-item label="商户账号" label-width="150px" prop="name">
-              <el-input style="width: 200px" v-model="filterbox.name"/>
+              <el-input style="width: 200px" v-model="filterbox.name" placeholder="商户账号"/>
             </el-form-item>
             <el-form-item label="收款账号" label-width="150px" prop="walletAddr">
-              <el-input style="width: 200px" v-model="filterbox.walletAddr"/>
+              <el-input style="width: 200px" v-model="filterbox.walletAddr" placeholder="收款账号"/>
             </el-form-item>
             <el-form-item label="录入时间" label-width="150px" prop="filterDateRange">
               <el-date-picker
@@ -100,12 +100,12 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
     </el-collapse-item>
   </el-collapse>
 
-  <div class="reportInfo" style="margin-left: 1%;margin-right: 3%;margin-top: 1%;width: 95%;">
+  <div class="reportInfo">
     <!--
      商户展示为一条 提现账户展示多条
      客服/管理员展示所有商户下的所有账号
      -->
-    <form class="main-views-form" style="height: auto;width: 100%;">
+    <form>
       <div style="display: flex;flex-direction: row;float: right">
         <el-button @click="exportStatements()">
           <template #icon>
@@ -227,26 +227,10 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
             label="操作"
             v-slot="{row}"
             align="center"
+            width="100px"
         >
-          <div>
-            <div>
-              <el-button style="background-color: mediumseagreen" @click.prevent="editMerchantInfo(row)">编辑
-              </el-button>
-              <!--              <el-popconfirm
-                                title="Are you sure deleting this data?"
-                                confirm-button-text="确认"
-                                icon-color="red"
-                                cancel-button-text="取消"
-                                @confirm="deleteMerchant(row.merchantAccount)"
-                                type="warning"
-                                width="100px;"
-                            >
-                              <template #reference>
-                                <el-button style="background-color: orangered">删除</el-button>
-                              </template>
-                            </el-popconfirm>-->
-              <!--<el-button style="background-color: orangered" @click.prevent="delete(row.merchantAccount)">删除</el-button>-->
-            </div>
+          <div style="display: flex;align-items: center;justify-content: center;">
+            <el-button class="filterButton" @click.prevent="editMerchantInfo(row)">编辑</el-button>
           </div>
         </el-table-column>
       </el-table>
@@ -345,7 +329,8 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
       width="50%"
       height="50%"
   >
-    <el-form :model="withdrawOrderInfo" label-width="100%" class="form" ref="withdrawOrderInfoForm" :rules="withdrawOrderRule">
+    <el-form :model="withdrawOrderInfo" label-width="100%" class="form" ref="withdrawOrderInfoForm"
+             :rules="withdrawOrderRule">
       <div class="el-form-line">
         <el-form-item label="商户名称:" label-width="150px" prop="merchantUserId">
           <el-select
@@ -402,11 +387,11 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
       <div class="el-form-line">
         <el-form-item label="充值商户:" label-width="150px" prop="merchantAgentId">
           <el-select
-            :options="merchantAccountOptions"
-            :props = "merchantAccountProps"
-            v-model="rechargeOrderInfo.merchantAgentId"
-            style="width: 200px"
-            @change="handleRechargeMerchantChange"
+              :options="merchantAccountOptions"
+              :props="merchantAccountProps"
+              v-model="rechargeOrderInfo.merchantAgentId"
+              style="width: 200px"
+              @change="handleRechargeMerchantChange"
           >
           </el-select>
         </el-form-item>
@@ -414,10 +399,10 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
       <div class="el-form-line">
         <el-form-item label="充值币种:" label-width="150px" prop="currency">
           <el-select
-            :options="currencyOptions"
-            :props="currencyProps"
-            v-model="rechargeOrderInfo.currency"
-            style="width: 200px"
+              :options="currencyOptions"
+              :props="currencyProps"
+              v-model="rechargeOrderInfo.currency"
+              style="width: 200px"
           >
           </el-select>
         </el-form-item>
@@ -457,7 +442,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
         <el-form-item label="商户:" label-width="150px" prop="merchantUserId">
           <el-select
               :options="merchantAccountOptions"
-              :props = "merchantAccountProps"
+              :props="merchantAccountProps"
               v-model="manualAccountAdjustmentOrderInfo.merchantUserId"
               style="width: 200px"
           >
@@ -472,7 +457,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
               inactive-color="#ff4949"
               active-text="增加"
               inactive-text="减少"
-              :active-value = "1"
+              :active-value="1"
               :inactive-value="0"
               style="width: 200px"
           >
@@ -493,7 +478,8 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
     </el-form>
     <div slot="footer" class="dialog-footer" style="margin-right: 3%">
       <el-button @click="cancelManualAccountAdjustment('manualAccountAdjustmentOrderInfoForm')">取 消</el-button>
-      <el-button type="primary" @click="submitManualAccountAdjustment('manualAccountAdjustmentOrderInfoForm')">确 定</el-button>
+      <el-button type="primary" @click="submitManualAccountAdjustment('manualAccountAdjustmentOrderInfoForm')">确 定
+      </el-button>
     </div>
   </el-dialog>
 </template>
@@ -506,7 +492,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
 import {ref} from "vue";
 import {
   createMerchantAccount, createStatementeOrderApply,
- exportMerchantAccount, getAllCurrencyType, getMerchantAccount,
+  exportMerchantAccount, getAllCurrencyType, getMerchantAccount,
   getMerchantInfo, modifyMerchantAccount,
 } from "@/api/interface/backendInterface.js";
 import {
@@ -520,6 +506,7 @@ const filterDateRange = ref('')
 export default {
   data() {
     return {
+      activeTool: '1',
       currency: '',
       currencyIcon: '',
       currencyIcons: {},
@@ -530,7 +517,7 @@ export default {
       },
       currencyMaps: {},
       submitType: '',
-      statisticsInfo: {},
+      /*  statisticsInfo: {},*/
       dialogFormVisible: false,
       dialogTitle: '',
       selectedMerchentName: '',
@@ -631,7 +618,7 @@ export default {
       manualAccountAdjustmentOrderInfo: {},
       dialogManualAccountAdjustmentRule: {
         merchantUserId: {
-          required: true, trigger: 'blur',message: 'you need to select merchant'
+          required: true, trigger: 'blur', message: 'you need to select merchant'
         },
         amount: {
           required: true, trigger: 'blur', message: 'type amount'
@@ -648,15 +635,15 @@ export default {
   },
   methods: {
     handleMerchantChange(value) {
-      let opt= {};
-      opt= this.merchantAccountOptions.find((item)=>{
+      let opt = {};
+      opt = this.merchantAccountOptions.find((item) => {
         return item.merchantAgentId === value;
       });
       this.withdrawOrderInfo.mercahntAgentName = opt.name;
     },
     handleRechargeMerchantChange(value) {
-      let opt= {};
-      opt= this.merchantAccountOptions.find((item)=>{
+      let opt = {};
+      opt = this.merchantAccountOptions.find((item) => {
         return item.merchantAgentId === value;
       });
       this.rechargeOrderInfo.merchantAgentName = opt.name;
@@ -692,7 +679,7 @@ export default {
           const all = JSON.parse(res.data.data)
           const allData = all.withdrawalAccountsDtoList
           this.merchantAccountOptions = allData
-          const allCardData = all.cardInfo
+          /*const allCardData = all.cardInfo
           if (allCardData) {
             const cardInfo = allCardData[this.currency]
             this.statisticsInfo.total = cardInfo.total
@@ -702,7 +689,7 @@ export default {
             this.statisticsInfo.total = this.currencyIcons[this.currency] + 0
             this.statisticsInfo.frozen = this.currencyIcons[this.currency] + 0
             this.statisticsInfo.withdraw = this.currencyIcons[this.currency] + 0
-          }
+          }*/
           this.totalCount = all.totalNumber
           this.withdrawAccountFormData = allData
         } else if (res.status === 200 && res.data.code !== 0) {
@@ -1056,13 +1043,5 @@ export default {
 
 input::-webkit-inner-spin-button {
   -webkit-appearance: none !important;
-}
-
-:deep().el-table th.is-leaf {
-
-  background-color: lightskyblue;
-  color: white;
-  font-weight: bold;
-  font-size: larger;
 }
 </style>

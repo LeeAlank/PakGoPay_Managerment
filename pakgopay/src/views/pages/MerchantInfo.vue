@@ -68,7 +68,7 @@ import {getFormateDate} from "@/api/common.js";
       <div class="main-toolbar">
         <el-form class="main-toolform" ref="filterboxForm" :model="filterbox">
           <div class="main-toolform-item">
-            <div class="main-toolform-line" style="justify-content: right;margin-right: 3%;">
+            <div class="main-toolform-line" style="justify-content: right;">
               <el-button @click="reset('filterboxForm')">
                 <SvgIcon class="filterButtonSvg" name="reset"/>
                 <div>重置</div>
@@ -92,15 +92,17 @@ import {getFormateDate} from "@/api/common.js";
             </el-col>
             <el-col :span="6">
               <el-form-item label="商户状态:" label-width="150px" prop="status">
-                <el-switch
+<!--                <el-switch
                     v-model="filterbox.status"
-                    active-color="#13ce66"
-                    inactive-color="#ff4949"
                     active-text="启用"
                     inactive-text="停用"
                     :active-value="1"
                     :inactive-value="0"
-                ></el-switch>
+                ></el-switch>-->
+                <el-select v-model="filterbox.status" clearable>
+                  <el-option label="启用" :value="1">启用</el-option>
+                  <el-option label="停用" :value="0">停用</el-option>
+                </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="6">
@@ -120,7 +122,7 @@ import {getFormateDate} from "@/api/common.js";
     </el-collapse-item>
   </el-collapse>
   <div class="reportInfo">
-    <form id="merchantInfoForm" class="merchantInfoFormT">
+    <form id="merchantInfoForm" class="merchantInfoFormT" style="height: auto">
       <el-button @click="addMerchant()" class="filterButton" style="float: right">
         <SvgIcon name="add" class="filterButtonSvg"/>
         <div>新增</div>
@@ -128,7 +130,8 @@ import {getFormateDate} from "@/api/common.js";
       <el-table
           border :data="merchantInfoFormData"
           class="merchantInfos-table"
-          height="100%"
+          height="auto"
+          :key="tableKey"
       >
         <el-table-column
             label="商户账号"
@@ -173,7 +176,7 @@ import {getFormateDate} from "@/api/common.js";
             width="300px"
         >
           <div v-for="item in row.agentInfos">
-            <div style="background-color: deepskyblue;margin-top: 2px">
+            <div class="agent-info-card">
               <div>代理名称: {{item.agentName}}</div>
               <div>代理账号: {{item.accountName}}</div>
               <div v-if="row.channelDtoList" style="background-color: lightgreen">
@@ -194,12 +197,13 @@ import {getFormateDate} from "@/api/common.js";
             label="商户状态"
             v-slot="{row}"
             align="center"
+            width="100px"
         >
           <div>
             <el-switch
                 v-model="row.status"
-                active-color="#13ce66"
-                inactive-color="#ff4949"
+                active-color="#07c160"
+                inactive-color="#c0c4cc"
                 active-text="启用"
                 inactive-text="停用"
                 :inactive-value="0"
@@ -215,7 +219,6 @@ import {getFormateDate} from "@/api/common.js";
             v-slot="{row}"
             align="center"
             width="100px"
-            fixed="left"
         >
           <div v-for="item in row.channelIds ? row.channelIds.toLocaleString().split(',') : ''">
             <div>{{channelMaps[item]}}</div>
@@ -226,6 +229,7 @@ import {getFormateDate} from "@/api/common.js";
             label="交易币种"
             v-slot="{row}"
             align="center"
+            width="100px"
         >
           <div>
             {{row.currencyList ? row.currencyList.toLocaleString() : '-'}}
@@ -240,9 +244,9 @@ import {getFormateDate} from "@/api/common.js";
         >
           <div style="width: 100%;">
             <!-- 返回的是json对象 包含总金额、可用金额、冻结金额 -->
-            <div style="background-color: yellow;font-size: 15px;display: flex;width: 100%;justify-content: space-between">账户总金额: <div style="font-size: 20px;float: right">{{row.merchantAccountInfo? row.merchantAccountInfo.totalAmount: '-'}}</div></div>
-            <div style="background-color: limegreen;width: 100%;display: flex;justify-content: space-between">账户可用金额: <div style="font-size: 20px;float: right">{{rowmerchantAccountInfo? rowmerchantAccountInfo.toUseAmount: '-'}}</div></div>
-            <div style="background-color: lightgrey;width: 100%;display: flex;justify-content: space-between">冻结金额: <div style="font-size: 20px;float: right">{{row.merchantAccountInfo? row.merchantAccountInfo.freezeAmount : '-'}}</div></div>
+            <div class="account-info-row account-total">账户总金额: <div class="account-info-value">{{row.merchantAccountInfo? row.merchantAccountInfo.totalAmount: '-'}}</div></div>
+            <div class="account-info-row account-usable">账户可用金额: <div class="account-info-value">{{rowmerchantAccountInfo? rowmerchantAccountInfo.toUseAmount: '-'}}</div></div>
+            <div class="account-info-row account-frozen">冻结金额: <div class="account-info-value">{{row.merchantAccountInfo? row.merchantAccountInfo.freezeAmount : '-'}}</div></div>
           </div>
         </el-table-column>
         <el-table-column
@@ -283,6 +287,7 @@ import {getFormateDate} from "@/api/common.js";
             label="创建时间"
             v-slot="{row}"
             align="center"
+            width="200px"
         >
           <div>
             {{row.createTime? getFormateDate(row.createTime) : '-'}}
@@ -889,6 +894,7 @@ export default {
       }
     };
     return {
+      tableKey: 0,
       activeTool: "1",
       currency: '',
       currencyIcon: '',
@@ -1076,10 +1082,12 @@ export default {
          //this.merchantInfoFormData
         if(res.status === 200 && res.data.code === 0) {
           const all = JSON.parse(res.data.data)
+          this.pageSize = all.pageSize
           this.totalCount = all.totalNumber
           const allList = all.merchantInfoDtoList
           this.merchantInfoFormData = allList
-          if(all.cardInfo) {
+          this.tableKey++
+          /*if(all.cardInfo) {
             const cardInfo = all.cardInfo[this.filterbox.currency]
             this.statisticsInfo.total = cardInfo.total
             this.statisticsInfo.frozen = cardInfo.frozen
@@ -1088,7 +1096,7 @@ export default {
             this.statisticsInfo.total =  this.currencyIcons[this.currency] + 0
             this.statisticsInfo.frozen = this.currencyIcons[this.currency] + 0
             this.statisticsInfo.withdraw = this.currencyIcons[this.currency] + 0
-          }
+          }*/
         }
         loadingInstance.close()
       })
@@ -1391,6 +1399,50 @@ export default {
 
   .toolbarName{
     color: black;
+  }
+
+  .agent-info-card{
+    background-color: #f5f5f5;
+    margin-top: 6px;
+    border-radius: 6px;
+    padding: 4px 6px;
+    box-shadow: 0 3px 8px rgba(24, 24, 24, 0.18);
+  }
+
+  .account-info-row{
+    font-size: 15px;
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+  }
+
+  .account-info-value{
+    font-size: 20px;
+  }
+
+  .account-total{
+    background-color: #e8f2ff;
+  }
+
+  .account-usable{
+    background-color: #e9f6ee;
+  }
+
+  .account-frozen{
+    background-color: #f0f2f5;
+  }
+
+  :deep(.el-switch.is-disabled .el-switch__core){
+    background-color: #c0c4cc;
+    border-color: #c0c4cc;
+  }
+
+  :deep(.el-switch.is-disabled.is-checked .el-switch__core){
+    background-color: #07c160;
+    border-color: #07c160;
   }
 
 </style>

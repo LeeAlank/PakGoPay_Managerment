@@ -5,31 +5,31 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 
 <template>
   <div class="main-title">代理信息管理</div>
-  <el-collapse style="margin-top: 1%; width: 95%;margin-left: 1%;margin-right: 3%;">
-    <el-collapse-item>
+  <el-collapse v-model="activeTool">
+    <el-collapse-item name="1">
       <template #title>
         <span class="toolbarName">
           工具栏
         </span>
       </template>
       <div class="main-toolbar" style="height: 100px;">
-        <el-form class="main-toolform" style="display: grid;align-items: center;" ref="filterboxForm" :model="filterbox">
-          <el-row>
-            <el-col :span="6">
+        <el-form class="main-toolform" style="display: grid;align-items: center;width: 100%;" ref="filterboxForm" :model="filterbox">
+          <el-row style="width: 100%;">
+            <el-col :span="8">
               <div>
                 <el-form-item label="代理名称:" label-width="150px" prop="agentName">
                   <el-input v-model="filterbox.agentName" style="width: 200px;" />
                 </el-form-item>
               </div>
             </el-col>
-            <el-col :span="6">
+            <el-col :span="8">
               <div>
                 <el-form-item label="代理账号:" label-width="150px" prop="accountName">
                   <el-input v-model="filterbox.accountName" style="width: 200px;"/>
                 </el-form-item>
               </div>
             </el-col>
-            <el-col :span="6">
+            <el-col :span="8">
               <div>
                 <el-form-item label="状态:" label-width="150px" prop="status">
                   <el-select
@@ -40,47 +40,57 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                     <el-option label="停用" :value="0">停用</el-option>
                     <el-option label="启用" :value="1">启用</el-option>
                   </el-select>
+                  <div style="display: flex; flex-direction: row;">
+                    <el-button @click="reset('filterboxForm')" class="filterButton">
+                      <SvgIcon class="filterButtonSvg" name="reset"/>
+                      <div>重置</div>
+                    </el-button>&nbsp;
+                    <el-button @click="search()"
+                               class="filterButton">
+                      <SvgIcon class="filterButtonSvg" name="search"/>
+                      <div>查询</div>
+                    </el-button>&nbsp;
+                  </div>
                 </el-form-item>
               </div>
             </el-col>
-            <el-col :span="6">
+<!--            <el-col :span="6">
               <el-form-item>
                 <div style="display: flex; flex-direction: row;">
-                  <el-button @click="reset('filterboxForm')" type="danger"
-                             style="width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
-                    <SvgIcon height="20px" width="20px" name="reset"/>
-                    <div style="color: black;">重置</div>
+                  <el-button @click="reset('filterboxForm')" class="filterButton">
+                    <SvgIcon class="filterButtonSvg" name="reset"/>
+                    <div>重置</div>
                   </el-button>&nbsp;
                   <el-button @click="search()"
-                             style="background-color: deepskyblue;margin: 0">
-                    <SvgIcon height="20px" width="20px" name="search"/>
-                    <div style="color: white;font-size: 13px;">查询</div>
+                             class="filterButton">
+                    <SvgIcon class="filterButtonSvg" name="search"/>
+                    <div>查询</div>
                   </el-button>&nbsp;
                 </div>
               </el-form-item>
-            </el-col>
+            </el-col>-->
           </el-row>
         </el-form>
       </div>
     </el-collapse-item>
   </el-collapse>
 
-  <div class="main-views-container" style="height:65%;margin-top: 2%;margin-left:1%;height: 100%">
+  <div class="reportInfo">
     <form class="main-views-form" style="height: 100%;overflow: visible;">
-      <div style="display: flex;flex-direction: row;width: 97%;justify-content: right;margin-left: 0">
-        <el-button type="success" @click="addFistLevelAgent" style="margin: 0">
-          <SvgIcon height="20px" width="20px" name="add"/>
-          <div style="color: black;">新增一级代理</div>
+      <div style="display: flex;flex-direction: row;justify-content: right;margin-left: 0">
+        <el-button @click="addFistLevelAgent" class="filterButton">
+          <SvgIcon class="filterButtonSvg" name="add"/>
+          <div>新增一级代理</div>
         </el-button>
-        <el-button v-on:click="exportAgent" style="margin:0">
+<!--        <el-button @click="exportAgent" style="margin:0">
           <SvgIcon height="20px" width="20px" name="export"/>
           <div style="color: black;font-size: 13px;">导出</div>
-        </el-button>
+        </el-button>-->
       </div>
       <el-table
           border :data="agentInfoTableData"
           class="agentInfoTable"
-          style="width: 97%;height: auto;"
+          style="height: auto;"
           :key="tablekey"
       >
         <el-table-column
@@ -94,9 +104,9 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
         >
           <div style="height: auto;display: flex; justify-content: center;width: 100%;">
             <el-card class="box-card" style="width: 100%">
-              <div style="background-color: darkgrey">账号：{{ row.accountName }}</div>
-              <div style="background-color: lightblue">名称：{{ row.agentName }}</div>
-              <div v-if="row.channelDtoList" style="background-color: lightgreen">
+              <div class="agent-card-row agent-card-account">账号：{{ row.accountName }}</div>
+              <div class="agent-card-row agent-card-name">名称：{{ row.agentName }}</div>
+              <div v-if="row.channelDtoList" class="agent-card-row agent-card-channel">
                 <div style="display: flex;align-items: center">
                   <div style="height:100%;width:150px;align-items: center;justify-items: center;text-align: center;">支付渠道：</div>
                   <div style="width: 150px;border-left: solid 1px black">
@@ -119,9 +129,9 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
         >
           <div style="height: auto;display: flex; justify-content: center;width: 100%;">
             <el-card v-if="row.parentUserName" class="box-card" style="width: 100%">
-              <div style="background-color: darkgrey;width: 100%">账号：{{ row.parentUserName }}</div>
-              <div style="background-color: lightblue;width: 100%">名称：{{ row.parentAgentName }}</div>
-              <div style="background-color: lightgreen">
+              <div class="agent-card-row agent-card-account">账号：{{ row.parentUserName }}</div>
+              <div class="agent-card-row agent-card-name">名称：{{ row.parentAgentName }}</div>
+              <div class="agent-card-row agent-card-channel">
                 <div style="display: flex;align-items: center">
                   <div style="height:100%;width:150px;align-items: center;justify-items: center;text-align: center;">支付渠道：</div>
                   <div style="width: 150px;border-left: solid 1px black">
@@ -215,13 +225,13 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
           width="300px"
         >
-            <div style="background-color: #aaaaaa">
+            <div class="agent-card-row agent-card-account">
               联系人: {{row.contactName? row.contactName : '-'}}
             </div>
-          <div style="background-color: lightskyblue">
+          <div class="agent-card-row agent-card-name">
             手机号: {{row.contactPhone ? row.contactPhone: '-'}}
           </div>
-          <div style="background-color: lightgreen">
+          <div class="agent-card-row agent-card-channel">
             邮箱: {{row.contactEmail ? row.contactEmail: '-'}}
           </div>
         </el-table-column>
@@ -686,6 +696,7 @@ export default {
       }
     }
     return {
+      activeTool: '1',
       createType: '',
       modifyType: '',
       tablekey: 0,
@@ -1122,5 +1133,23 @@ export default {
 .el-form-line {
   display: flex;
   justify-content: center;
+}
+
+.agent-card-row{
+  padding: 4px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.agent-card-account{
+  background-color: #e8f2ff;
+}
+
+.agent-card-name{
+  background-color: #e9f6ee;
+}
+
+.agent-card-channel{
+  background-color: #f0f2f5;
 }
 </style>

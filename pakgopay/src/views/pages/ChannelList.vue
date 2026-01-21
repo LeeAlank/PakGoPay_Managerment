@@ -7,82 +7,88 @@ import {getTimeFromTimestamp} from "@/api/common.js";
 <template>
 <div class="main-title">渠道列表</div>
 
-  <div class="main-toolbar" style="height: 120px;">
-    <el-form class="main-toolform" ref="filterboxForm" :model="filterbox">
-      <el-row style="width: 100%;">
-        <el-col :span="24">
-          <div style="display: flex;flex-direction: row;justify-content: right;margin-right:3%">
-            <div v-on:click="search()"
-                 style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
-              <SvgIcon height="30px" width="30px" name="search"/>
-              <div style="width: 50px;color: white">查询</div>
+  <el-collapse v-model="activeTool">
+    <el-collapse-item name="1">
+      <template #title>
+        <span class="toolbarName">工具栏</span>
+      </template>
+      <div class="main-toolbar" style="height: 130px;">
+        <el-form class="main-toolform" ref="filterboxForm" :model="filterbox">
+          <el-row style="width: 100%;">
+            <el-col :span="24">
+              <div style="display: flex;flex-direction: row;justify-content: right;margin-right:3%">
+                <el-button @click="search()"
+                           class="filterButton">
+                  <SvgIcon class="filterButtonSvg" name="search"/>
+                  <div>查询</div>
+                </el-button>
+                <el-button @click="reset('filterboxForm')"
+                           class="filterButton">
+                  <SvgIcon class="filterButtonSvg" name="reset"/>
+                  <div>重置</div>
+                </el-button>
+                <el-button @click="exportPathChannelInfos"
+                           class="filterButton">
+                  <SvgIcon class="filterButtonSvg" name="export"/>
+                  <div>导出</div>
+                </el-button>
+              </div>
+            </el-col>
+          </el-row>
+          <el-row style="width: 100%;margin-top:10px">
+            <div style="display: flex;flex-direction: row;width: 100%;justify-content: space-around">
+              <el-col :span="5">
+                <el-form-item label="通道:" label-width="150px" prop="paymentId">
+                  <el-select
+                      :options="paymentOptions"
+                      :props="paymentProps"
+                      filterable
+                      v-model="filterbox.paymentId"
+                      style="height: 100%;width: 200px"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="渠道名称:" label-width="150px" prop="channelName">
+                  <el-input v-model="filterbox.channelName" placeholder="渠道名称" style="width: 200px;height: 100%" />
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="启用状态:" label-width="150px" prop="status">
+                  <el-select v-model="filterbox.status" placeholder="渠道状态"
+                             style="width: 200px;height: 100%"
+                             clearable
+                             :options="channelStatusOptions"
+                  >
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
+                <el-form-item label="币种:" label-width="150px" prop="currency">
+                  <el-select v-model="filterbox.currency" placeholder="币种"
+                             style="width: 200px;height: 100%"
+                             clearable
+                             :options="currencyOptions"
+                             :props="currencyProps"
+                  />
+                </el-form-item>
+              </el-col>
             </div>
-            <div v-on:click="reset('filterboxForm')"
-                 style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
-              <SvgIcon height="30px" width="30px" name="reset"/>
-              <div style="width: 50px;color: white">重置</div>
-            </div>
-            <div v-on:click="exportPathChannelInfos"
-                 style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;">
-              <SvgIcon height="30px" width="30px" name="export"/>
-              <div style="width: 50px;color: white">导出</div>
-            </div>
-          </div>
-        </el-col>
-      </el-row>
-      <el-row style="width: 100%;margin-top:10px">
-        <div style="display: flex;flex-direction: row;width: 100%;justify-content: space-around">
-          <el-col :span="5">
-            <el-form-item label="通道:" label-width="150px" prop="paymentId">
-              <el-select
-                :options="paymentOptions"
-                :props="paymentProps"
-                filterable
-                v-model="filterbox.paymentId"
-                class="main-toolform-input"
-                style="height: 100%;width: 200px"
-              />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="渠道名称:" label-width="150px" prop="channelName">
-              <el-input v-model="filterbox.channelName" placeholder="渠道名称" class="main-toolform-input" style="width: 200px;height: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="启用状态:" label-width="150px" prop="status">
-              <el-select v-model="filterbox.status" class="main-toolform-input" placeholder="渠道状态"
-                         style="width: 200px;height: 100%"
-                         clearable
-                         :options="channelStatusOptions"
-              >
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="6">
-            <el-form-item label="币种:" label-width="150px" prop="currency">
-              <el-select v-model="filterbox.currency" class="main-toolform-input" placeholder="币种"
-                         style="width: 200px;height: 100%"
-                         clearable
-                         :options="currencyOptions"
-                         :props="currencyProps"
-              />
-            </el-form-item>
-          </el-col>
-        </div>
-      </el-row>
-    </el-form>
-  </div>
+          </el-row>
+        </el-form>
+      </div>
+    </el-collapse-item>
+  </el-collapse>
 
-  <div class="main-views-container" style="height: 90%">
-    <div class="main-views-form" style="height: 100%">
-      <div style="float: right;display: flex;margin-right: 3%">
+  <div class="reportInfo">
+    <div class="main-views-form" style="height: 700px">
+      <div style="float: right;display: flex;">
         <el-button @click="createNewChannel"><SvgIcon name="add" style="width: 20px;height: 20px"/>新增渠道</el-button>
       </div>
       <el-table
           border :data="channelTableInfo"
           class="channelTable"
-          style="width: 97%;height: 80%;"
+          style="height: 100%"
           :key="tableKey"
       >
         <el-table-column
@@ -312,6 +318,7 @@ export default {
   name: 'ChannelList',
   data() {
     return {
+      activeTool: '1',
       submitType: "",
       currency: '',
       currencyIcon: '',
@@ -654,17 +661,5 @@ export default {
 }
 </script>
 <style scoped>
-:deep().el-table th.is-leaf {
-
-  background-color: lightskyblue;
-  color: white;
-  font-weight: bold;
-  font-size: larger;
-}
-
-:deep() .el-switch is-disabled is-checked {
-
-}
-
-
+@import "@/assets/base.css";
 </style>

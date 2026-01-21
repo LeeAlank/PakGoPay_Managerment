@@ -18,22 +18,19 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
         <el-form style="width: 100%" ref="filterboxForm" :model="filterbox">
           <el-row style="width: 100%;">
             <el-col :span="24">
-              <div style="display: flex;flex-direction: row;justify-content: right;margin-right:20px">
-                <div v-on:click="search()"
-                     style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
-                  <SvgIcon height="30px" width="30px" name="search"/>
-                  <div style="width: 50px;color: white">查询</div>
-                </div>
-                <div v-on:click="reset('filterboxForm')"
-                     style="background-color: red;width:60px;display: flex; flex-direction: row;justify-content: center;color: lightskyblue;cursor: pointer;align-items: center;">
-                  <SvgIcon height="30px" width="30px" name="reset"/>
-                  <div style="width: 50px;color: white">重置</div>
-                </div>
-                <div v-on:click="exportPathChannelInfos"
-                     style="background-color: deepskyblue;width:60px;display: flex; flex-direction: row;justify-content: center;cor: lightskyblue;cursor: pointer;align-items: center;">
-                  <SvgIcon height="30px" width="30px" name="export"/>
-                  <div style="width: 50px;color: white">导出</div>
-                </div>
+              <div style="display: flex;flex-direction: row;justify-content: right;">
+                <el-button @click="search()" class="filterButton">
+                  <SvgIcon class="filterButtonSvg" name="search"/>
+                  <div>查询</div>
+                </el-button>
+                <el-button @click="reset('filterboxForm')" class="filterButton">
+                  <SvgIcon class="filterButtonSvg" name="reset"/>
+                  <div>重置</div>
+                </el-button>
+                <el-button @click="exportPathChannelInfos" class="filterButton">
+                  <SvgIcon class="filterButtonSvg" name="export"/>
+                  <div>导出</div>
+                </el-button>
               </div>
             </el-col>
           </el-row>
@@ -74,7 +71,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
               <el-col :span="3">
                 <el-form-item label="币种:" label-width="100px" prop="currency">
                   <el-select
-                      style="width: 100px;align-items: center;text-align: center;"
+                      style="width: 200px;align-items: center;text-align: center;"
                       :options="currencyOptions"
                       :props="currencyProps"
                       default-first-option
@@ -91,9 +88,9 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
     </el-collapse-item>
   </el-collapse>
 
-  <div class="main-views-container" style="height: 100%;margin-left: 1%">
+  <div class="reportInfo">
     <div class="main-views-form" style="height: 100%">
-      <div style="width: 97%">
+      <div style="width: 100%">
         <el-button @click="createPathChannel" style="float: right">
           <svgIcon height="25px" width="25px" name="add"/>
           <div>新增</div>
@@ -103,7 +100,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
       <el-table
           border :data="PathChannelTableInfo"
           class="paymentList"
-          style="width: 97%;height: 80%;"
+          style="height:auto;"
           :key="tableKey"
       >
         <el-table-column
@@ -1386,6 +1383,7 @@ export default {
           this.currentPage = allData.pageNo
           this.totalCount = allData.totalNumber
           this.pageSize = allData.pageSize
+          this.tableKey++
         } else {
           this.$notify({
             title:'Error',

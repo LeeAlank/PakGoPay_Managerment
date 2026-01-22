@@ -1,7 +1,17 @@
 <template>
   <div v-if="isVisible" class="modal">
     <div class="modal-content">
-      <div class="close" @click="closeModal">&times;</div>
+      <button class="close" type="button" @click="closeModal" aria-label="Close">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M6 6l12 12M18 6L6 18"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
       <img style="width: 100%;height: 100%;" alt="QrCode" :src="imgUrl"/>
     </div>
   </div>
@@ -46,16 +56,24 @@ export default {
   height:400px;
 }
 .close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-  margin: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .close:hover,
 .close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
+  color: #111827;
+  outline: none;
+}
+.close svg {
+  width: 18px;
+  height: 18px;
 }
 </style>

@@ -1330,7 +1330,7 @@ export default {
           } else if (!this.merchantAddInfo.collectionFixedFee) {
             this.merchantAddInfo.collectionFixedFee = 0
           }
-        } else {
+        } else if (this.merchantAddInfo.supportCollection === 1 && this.merchantAddInfo.supportPaying === 1){
           this.merchantAddInfo.supportType = 2
           if(!this.merchantAddInfo.payRate) {
             this.merchantAddInfo.payRate = 0

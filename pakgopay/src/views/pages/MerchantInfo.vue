@@ -1345,7 +1345,7 @@ export default {
           }
         }
       }
-      this.merchantAddInfo.channelIds = this.merchantAddInfo.channelIds ? this.merchantAddInfo.channelIds.toLocaleString() : null
+      this.merchantAddInfo.channelIds = this.merchantAddInfo.channelIds ? this.merchantAddInfo.channelIds : []
       this.$refs[form].validate(valid => {
         if (valid) {
           // 校验通过

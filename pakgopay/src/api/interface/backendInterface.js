@@ -702,4 +702,18 @@ export function getWsMessages() {
     })
 }
 
+export function markReadMessage(messageId) {
+    return service({
+        url: '/api/pakGoPay/server/notation/markNotation',
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        params: {
+            messageId: messageId
+        }
+    })
+}
+
 

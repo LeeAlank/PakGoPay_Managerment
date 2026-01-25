@@ -626,9 +626,29 @@ export default {
       this.stopDialogVisible = false
       this.stopDialogTitle = ''
       this.$refs[form].resetFields()
+    },
+    applyChannelNameFromRoute() {
+      let channelName = this.$route?.query?.["filterbox.channelName"]
+      if (Array.isArray(channelName)) {
+        channelName = channelName[0]
+      }
+      if (typeof channelName === "string" && channelName.trim() !== "") {
+        this.filterbox.channelName = channelName
+      }
+    }
+  },
+  watch: {
+    "$route.query"(newQuery, oldQuery) {
+      if (newQuery?.["filterbox.channelName"] === oldQuery?.["filterbox.channelName"]) {
+        return
+      }
+      this.applyChannelNameFromRoute()
+      this.search()
     }
   },
   async mounted() {
+    this.applyChannelNameFromRoute()
+
     await getAllCurrencyType().then(res => {
       if (res.status === 200) {
         if (res.data.code === 0) {

@@ -170,62 +170,61 @@ window.addEventListener('load', () => {
     }
 });*/
 
-router.beforeEach((to, from, next) => {
-    if (to.path === "/web/login"){
+let asyncRoutesLoaded = false;
+
+router.beforeEach(async (to, from, next) => {
+    if (to.path === "/web/login") {
         next()
-    } else if (to.path === "/") {
+        return
+    }
+    if (to.path === "/") {
         next("/web/login")
-    } else if (!localStorage.getItem("token")) {
+        return
+    }
+    if (!localStorage.getItem("token")) {
         next("/web/login")
-    } else {
-        localStorage.setItem("currentPath", to.path)
-        next()
+        return
     }
 
-});
-
-window.addEventListener('load', () => {
-    const currentPath = localStorage.getItem("currentPath");
-    const isLoginPage = window.location?.pathname === "/web/login";
-    if (isLoginPage || !localStorage.getItem("token")) {
-        if (currentPath && !isLoginPage) {
-            router.push(currentPath).then(r => {});
-        }
-        return;
-    }
-    menu().then(res => {
-        if (res.status === 200 && res.data.data) {
-            let menuJson = JSON.parse(res.data.data)
-            let menu = JSON.stringify(JSON.parse(res.data.data))
-            localStorage.setItem('menu', menu)
-            // 根据菜单提取路由
-            getAsyncRoutes(menuJson).forEach((route) => {
-                router.addRoute(route)
-            })
-        } else if (res.status === 401) {
-            // token过期，重新刷新token
-            refreshAccessToken(localStorage.getItem('refreshToken')).then(res => {
-                if (res.data.code === 1008) {
-                    router.push("/web/login").then(r => {})
+    if (!asyncRoutesLoaded) {
+        try {
+            const res = await menu()
+            if (res.status === 200 && res.data.data) {
+                let menuJson = JSON.parse(res.data.data)
+                let menuString = JSON.stringify(menuJson)
+                localStorage.setItem('menu', menuString)
+                getAsyncRoutes(menuJson).forEach((route) => {
+                    router.addRoute(route)
+                })
+                asyncRoutesLoaded = true
+                next({ ...to, replace: true })
+                return
+            }
+            if (res.status === 401) {
+                const refreshRes = await refreshAccessToken(localStorage.getItem('refreshToken'))
+                if (refreshRes.data.code === 1008) {
+                    next("/web/login")
+                    return
                 }
-            localStorage.setItem("token", res.data.data.token);
-             menu().then(res => {
-                 let menuJson = JSON.parse(res.data.data)
-                 let menu = JSON.stringify(JSON.parse(res.data.data))
-                 localStorage.setItem('menu', menu)
-                 // 根据菜单提取路由
-                 getAsyncRoutes(menuJson).forEach((route) => {
-                     router.addRoute(route)
-                     location.reload();
-                 })
-
-             })
-            })
+                localStorage.setItem("token", refreshRes.data.data.token)
+                const menuRes = await menu()
+                let menuJson = JSON.parse(menuRes.data.data)
+                let menuString = JSON.stringify(menuJson)
+                localStorage.setItem('menu', menuString)
+                getAsyncRoutes(menuJson).forEach((route) => {
+                    router.addRoute(route)
+                })
+                asyncRoutesLoaded = true
+                next({ ...to, replace: true })
+                return
+            }
+        } catch (error) {
+            next(false)
+            return
         }
-        if (currentPath) {
-            router.push(currentPath).then(r => {});
-        }
-    })
+    }
 
+    localStorage.setItem("currentPath", to.path)
+    next()
 });
 export default router

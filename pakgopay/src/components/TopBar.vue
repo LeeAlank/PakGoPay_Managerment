@@ -1,8 +1,9 @@
 <script>
-import {getWsMessages, heart, logOut, refreshAccessToken} from "@/api/interface/backendInterface.js";
+import {getWsMessages, heart, logOut, markReadMessage, refreshAccessToken, menu} from "@/api/interface/backendInterface.js";
 import router from "@/router/index.js";
 import SvgIcon from "@/components/SvgIcon/index.vue";
 import { connectWebSocket, disconnectWebSocket } from "@/util/websocket.js"
+import { getAsyncRoutes } from "@/router/asyncRouter.js";
 
 const showNewMessage = (message) => {
   this.$notify({
@@ -62,6 +63,7 @@ export default {
       this.logOut()
     }*/
    /* this.heartBeat();*/
+    this.fetchWsMessages()
   },
   beforeUnmount() {
     if (this.stomp) {
@@ -116,52 +118,91 @@ export default {
       }
     },
     showNewMessage(message) {
-      let messageData = JSON.parse(message).content
-      this.$notify({
+      let messageData = JSON.parse(message)
+      /*this.$notify({
         title: 'new message',
         dangerouslyUseHTMLString: true,
         customClass: 'noticeMessage',
         message: messageData.content,
         type: "info",
-        duration: 0,
-        position: "top-right",
+        duration: 5000,
+        position: "bottom-right",
         onClick: () => {
           router.push({
             name: "CollectingOrder"
           })
         }
-      })
+      })*/
       this.notifications.unshift({
         id: messageData.id,
-        text: messageData.content,
+        content: messageData.content,
         read: false
       })
+      this.fetchWsMessages()
       this.textToSpeak = messageData.content;
       this.playNotice()
       this.speak()
     },
-    async playNotice() {
-      this.$refs.noticePlayer.muted=false
-      await this.$refs.noticePlayer.play()
-    },
-    handleNotificationClick(notification) {
-      console.log('messagessss--'+JSON.stringify(notification));
-      this.notifications = this.notifications.filter(item => item.id !== notification.id);
-      router.push({
-        name: "CollectingOrder"
-      })
-    },
-    unreadCount() {
+    fetchWsMessages() {
       getWsMessages().then(res => {
         if (res.status === 200 && res.data.code === 0) {
           let data = JSON.parse(res.data.data)
           this.messageCount = data.messageCount
-          this.messages = data.messages
+          this.notifications = data.messages
         }
       })
-      console.log('messagecount----'+this.messageCount)
+    },
+    async playNotice() {
+      this.$refs.noticePlayer.muted=true
+      this.$refs.noticePlayer.muted=false
+      await this.$refs.noticePlayer.play()
+    },
+    async handleNotificationClick(notification) {
+      console.log('messagessss--'+notification.id);
+      markReadMessage(notification.id).then(res => {
+        if(res.status === 200 && res.data.code === 0) {
+          this.messageCount = JSON.parse(res.data.data).messageCount
+          this.notifications = JSON.parse(res.data.data).messages
+        }
+        //this.unreadCount()
+      })
+      await this.ensureRouteLoaded("ChannelList")
+      await router.push({
+        name: "ChannelList",
+        query: {
+          "filterbox.channelName": "New Channel By Front"
+        }
+      })
+      /*router.push('/web/OrderManagement/ChannelList')*/
+    },
+    async ensureRouteLoaded(routeName) {
+      if (router.hasRoute(routeName)) {
+        return
+      }
+      let menuJson = null
+      const menuString = localStorage.getItem("menu")
+      if (menuString) {
+        try {
+          menuJson = JSON.parse(menuString)
+        } catch (error) {
+          menuJson = null
+        }
+      }
+      if (!menuJson) {
+        const res = await menu()
+        if (res.status === 200 && res.data.data) {
+          menuJson = JSON.parse(res.data.data)
+          localStorage.setItem("menu", JSON.stringify(menuJson))
+        }
+      }
+      if (menuJson) {
+        getAsyncRoutes(menuJson).forEach((route) => {
+          router.addRoute(route)
+        })
+      }
+    },
+    unreadCount() {
       return this.messageCount
-      //return this.notifications.filter(item => !item.read).length;
     },
     viewDetail() {
       alert("出发")
@@ -220,9 +261,8 @@ export default {
                 <el-dropdown-item
                   v-for="item in notifications"
                   :key="item.id"
-                  @click="handleNotificationClick(item)"
                 >
-                  <span :class="{ 'notice-unread': !item.read }">{{ item.text }}</span>
+                  <span @click="handleNotificationClick(item)" :class="{ 'notice-unread': !item.read }">{{ item.content }}</span>
                 </el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -294,6 +334,8 @@ export default {
 
 .notice-menu {
   width: 260px;
+  max-height: 260px;
+  overflow-y: auto;
 }
 
 .notice-unread {

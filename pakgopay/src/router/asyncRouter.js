@@ -8,6 +8,9 @@ export function getAsyncRoutes(routes) {
         if(route.children && route.children.length > 0) {
             route.children.forEach(child => {
                 if (child.parentId) {
+                   /* if (child.component === 'CollectingOrder') {
+                        alert(child.path)
+                    }*/
                     routesMap.push({
                         path: child.path,
                         name: child.component,

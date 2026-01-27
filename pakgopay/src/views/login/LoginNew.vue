@@ -13,13 +13,53 @@
           autocomplete="username"
         />
         <label class="login-label">Password</label>
-        <input
-          v-model="loginForm.password"
-          class="login-input"
-          type="password"
-          placeholder="Password"
-          autocomplete="current-password"
-        />
+        <div class="password-field">
+          <input
+            v-model="loginForm.password"
+            class="login-input"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="Password"
+            autocomplete="current-password"
+          />
+          <button class="toggle-password" type="button" @click="showPassword = !showPassword" aria-label="Toggle password visibility">
+            <svg v-if="!showPassword" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 5c-5 0-9 4-10 7 1 3 5 7 10 7s9-4 10-7c-1-3-5-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"
+                fill="currentColor"
+              />
+              <circle cx="12" cy="12" r="2" fill="currentColor" />
+            </svg>
+            <svg v-else viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M3 5l16 16"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M12 5c-5 0-9 4-10 7 1 2.1 3.4 4.9 7 6.2"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M9.5 9.5A3.5 3.5 0 0 1 14.5 14.5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M14.5 14.5C19 13.2 21 10 21 12c-1 3-5 7-10 7"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+            </svg>
+          </button>
+        </div>
         <label class="login-label">Verification Code</label>
         <input
           v-model="loginForm.code"
@@ -59,6 +99,7 @@ export default {
         password: "",
         code: ""
       },
+      showPassword: false,
       isQrCode: true,
       qrCodeUrl: ""
     };
@@ -202,6 +243,36 @@ export default {
   background: #ffffff;
   color: #1f2a37;
   cursor: pointer;
+}
+
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-field .login-input {
+  width: 100%;
+  padding-right: 70px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 8px;
+  height: 28px;
+  width: 28px;
+  border: none;
+  background: #eef2f7;
+  color: #1f2a37;
+  border-radius: 6px;
+  padding: 0;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.toggle-password svg {
+  width: 16px;
+  height: 16px;
 }
 
 :deep(.qr-modal.modal) {

@@ -185,7 +185,17 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
         </el-table-column>
         <el-table-column
             prop="merchantWithdrawAccount"
-            label="商户提现账户"
+            label="商户钱包名"
+            v-slot="{row}"
+            align="center"
+        >
+          <div>
+            {{ row.walletName }}
+          </div>
+        </el-table-column>
+        <el-table-column
+            prop="merchantWithdrawAccount"
+            label="商户钱包地址"
             v-slot="{row}"
             align="center"
         >
@@ -609,7 +619,7 @@ export default {
       },
       merchantWalletProps: {
         value: 'walletAddr',
-        label: 'walletName',
+        label: 'walletAddr',
       },
       withdrawAccountFormData: [],
       allMerchantInfo: [

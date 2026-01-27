@@ -786,13 +786,17 @@ export default {
         this.filterbox.startTime = null
         this.filterbox.endTime = null
       }
+      this.updateMerchantAccount(loadingInstance)
+    },
+    updateMerchantAccount(loadingInstance) {
       getMerchantAccount(this.filterbox).then(res => {
         if (res.status === 200 && res.data.code === 0) {
           const all = JSON.parse(res.data.data)
           const allData = all.withdrawalAccountsDtoList
-          if (this.merchantAccountOptions.length === 0) {
+          this.merchantAccountOptions = allData
+          /*if (this.merchantAccountOptions.length === 0) {
             this.merchantAccountOptions = allData
-          }
+          }*/
           /*const allCardData = all.cardInfo
           if (allCardData) {
             const cardInfo = allCardData[this.currency]
@@ -823,9 +827,9 @@ export default {
             position: "bottom-right"
           })
         }
-        loadingInstance.close()
+        loadingInstance !== null ? loadingInstance.close() : ''
       }).catch(err => {
-        loadingInstance.close()
+        loadingInstance !== null ? loadingInstance.close() : ''
         this.$notify({
           title: 'Error',
           type: 'error',
@@ -880,6 +884,7 @@ export default {
       this.dialogFormVisible = false;
       this.dialogTitle = ''
       this.$refs[form].resetFields()
+      this.updateMerchantAccount()
     },
     cancelMerchantGoogle() {
       this.merchantGoogleVisible = false;
@@ -975,6 +980,7 @@ export default {
       this.$refs[form].resetFields()
       this.dialogWithdrawTitle = ''
       this.dialogWithdrawVisible = false
+      this.updateMerchantAccount(null)
     },
     submitWithdraw(form) {
       this.$refs[form].validate(validate => {

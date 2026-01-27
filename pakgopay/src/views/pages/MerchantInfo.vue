@@ -106,9 +106,9 @@ import {getFormateDate} from "@/api/common.js";
               </el-form-item>
             </el-col>
             <el-col :span="6">
-              <el-form-item label="所属代理:" label-width="150px" prop="accountName">
+              <el-form-item label="所属代理:" label-width="150px" prop="parentAgentId">
                 <el-select
-                    v-model="filterbox.accountName"
+                    v-model="filterbox.parentAgentId"
                     :options="agentOptions"
                     :props="agentProps"
                     placeholder="select agent"

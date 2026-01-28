@@ -271,7 +271,7 @@ import {getTimeFromTimestamp} from "@/api/common.js";
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
             :page-sizes="pageSizes"
-            style="float:right; margin-right: 5%;"
+            style="float:right; margin-right: 5%;margin-top:20px"
             @current-change="handleChange"
             @size-change="handleSizeChange"
         >

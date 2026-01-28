@@ -16,7 +16,7 @@ import {getTimeFromTimestamp} from "@/api/common.js";
         </span>
         </template>
         <div class="main-toolbar" style="height: 150px;width: 97%;">
-          <el-form class="main-toolform" style="height: 100%;">
+          <el-form class="main-toolform" style="height: 100%;" ref="filterboxForm" :model="filterbox">
             <el-row>
               <el-col :offset="18" :span="6">
                 <div class="toolbar-action-row">
@@ -24,7 +24,7 @@ import {getTimeFromTimestamp} from "@/api/common.js";
                     <SvgIcon class="filterButtonSvg" name="search"/>
                     <div>查询</div>
                   </el-button>
-                  <el-button @click="reset()" class="filterButton">
+                  <el-button @click="reset('filterboxForm')" class="filterButton">
                     <SvgIcon class="filterButtonSvg" name="reset"/>
                     <div>重置</div>
                   </el-button>
@@ -38,7 +38,7 @@ import {getTimeFromTimestamp} from "@/api/common.js";
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-form-item label-width="150px" label="用户类型:">
+                <el-form-item label-width="150px" label="用户类型:" prop="userType">
                   <el-radio-group v-model="filterbox.userType" style="display: flex; flex-direction: row;">
                     <el-radio label="商户" :value="1"></el-radio>
                     <el-radio label="代理" :value="2"></el-radio>
@@ -394,8 +394,22 @@ export default {
     }
   },
   methods: {
+    reset(form) {
+      this.$refs[form].resetFields();
+      this.filterbox.userType = 1
+      this.filterbox.filterDateRangeUtc = []
+      this.filterbox.startTime = null
+      this.filterbox.endTime = null
+    },
     search() {
       this.filterbox.orderType = 2
+      const range = (this.filterbox.filterDateRangeUtc && this.filterbox.filterDateRangeUtc.length === 2)
+          ? this.filterbox.filterDateRangeUtc
+          : this.filterbox.filterDateRange;
+      if (range && range.length === 2) {
+        this.filterbox.startTime = Number(range[0]) / 1000;
+        this.filterbox.endTime = Number(range[1]) / 1000;
+      }
       getWithdrawStatementeOrder(this.filterbox).then(res => {
         if (res.status === 200 && res.data.code === 0) {
           let allData = JSON.parse(res.data.data)
@@ -554,6 +568,22 @@ export default {
     },
   },
   async mounted() {
+
+    this._timeZoneListener = (event) => {
+      const nextZone = event.detail || localStorage.getItem("timeZone") || "UTC+8";
+      const prevZone = this.timeZoneKey;
+      let utcRange = this.filterbox.filterDateRangeUtc;
+      if ((!utcRange || utcRange.length !== 2) && this.filterbox.filterDateRange?.length === 2) {
+        utcRange = this.toUtcRange(this.filterbox.filterDateRange, prevZone);
+      }
+      this.timeZoneKey = nextZone;
+      if (utcRange && utcRange.length === 2) {
+        this.filterbox.filterDateRangeUtc = utcRange;
+        this.filterbox.filterDateRange = this.toDisplayRange(utcRange, nextZone);
+      }
+      this.tableKey++;
+    };
+    window.addEventListener("timezone-change", this._timeZoneListener);
     await getAllCurrencyType().then(res => {
       if (res.status === 200 && res.data.code === 0) {
         this.currencyOptions = JSON.parse(res.data.data);
@@ -595,6 +625,12 @@ export default {
     }*/
     this.handleChange(this.currentPage);
     this.tableKey++
+  },
+
+  beforeUnmount() {
+    if (this._timeZoneListener) {
+      window.removeEventListener("timezone-change", this._timeZoneListener);
+    }
   }
 }
 </script>

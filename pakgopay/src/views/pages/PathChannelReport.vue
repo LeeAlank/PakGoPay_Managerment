@@ -128,15 +128,15 @@ export default {
       //export data
       this.filterbox.orderType = null
       this.filterbox.columns = getPaymentListTitle(this)
-      //let timeRange = null
-     /* if (this.filterbox.filterDateRange) {
+      let timeRange = null
+      if (this.filterbox.filterDateRange) {
         timeRange = new String(this.filterbox.filterDateRange)
         this.filterbox.startTime = timeRange.split(',')[0] / 1000
-        this.filterbox.endTime = timeRange.split(',')[1] / 1000
+        this.filterbox.endTime = timeRange.split(',')[1] / 1000 + 86399
       } else {
-        this.filterbox.startTime = getTodayStartTimestamp(this.filterbox.startTime)
-        this.filterbox.endTime = getTodayStartTimestamp()
-      }*/
+        this.filterbox.startTime = getTodayStartTimestamp()
+        this.filterbox.endTime = getTodayStartTimestamp() + 86399
+      }
       exportPayment(this.filterbox).then(async res => {
          /*const fileName = this.$t('exportPaymentReportName') + getFormateTime()*/
         const fileName = "通道列表" + getFormateTime()
@@ -165,10 +165,10 @@ export default {
       let timeRange = new String(this.filterbox.filterDateRange)
       if (!this.filterbox.filterDateRange) {
         this.filterbox.startTime = getTodayStartTimestamp()
-        this.filterbox.endTime = getTodayStartTimestamp()
+        this.filterbox.endTime = getTodayStartTimestamp() + 86399
       } else {
         this.filterbox.startTime = timeRange.split(',')[0] / 1000
-        this.filterbox.endTime = timeRange.split(',')[1] / 1000
+        this.filterbox.endTime = timeRange.split(',')[1] / 1000 + 86399
       }
       if (!orderType) {
         this.filterbox.orderType = 0;

@@ -37,15 +37,32 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                 </el-form-item>
               </el-col>
               <el-col :span="6">
-                <el-radio-group v-model="filterbox.userType">
-                  <el-radio label="商户" :value="1"></el-radio>
-                  <el-radio label="代理" :value="2"></el-radio>
-                </el-radio-group>
-                <el-form-item label="商户：" label-width="150px" prop="userId">
-                  <el-input v-model="filterbox.userId" style="width: 200px"/>
+                <el-form-item label-width="150px" label="用户类型:">
+                  <el-radio-group v-model="filterbox.userType" style="display: flex; flex-direction: row;">
+                    <el-radio label="商户" :value="1"></el-radio>
+                    <el-radio label="代理" :value="2"></el-radio>
+                  </el-radio-group>
                 </el-form-item>
               </el-col>
-              <el-col :span="11">
+              <el-col v-if="filterbox.userType === 1" :span="6">
+                <el-form-item label="商户：" label-width="150px" prop="userId">
+                  <el-select
+                    :options="merchantOptions"
+                    :props="merchantInfoProps"
+                    v-model="filterbox.userId"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col v-if="filterbox.userType === 2" :span="6">
+                <el-form-item label="代理：" label-width="150px" prop="userId">
+                  <el-select
+                      :options="agentOptions"
+                      :props="agentProps"
+                      v-model="filterbox.userId"
+                  />
+                </el-form-item>
+              </el-col>
+              <el-col :span="6">
                 <el-form-item label="创建时间：" label-width="150px" prop="filterDateRange">
                   <!--                  <el-input v-model="filterbox.requestTime"style="width: 200px"/>-->
                   <el-date-picker
@@ -264,7 +281,12 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 </template>
 
 <script>
-import {getAllCurrencyType, getWithdrawStatementeOrder} from "@/api/interface/backendInterface.js";
+import {
+  getAgentInfo,
+  getAllCurrencyType,
+  getMerchantInfo,
+  getWithdrawStatementeOrder
+} from "@/api/interface/backendInterface.js";
 
 export default {
   name: "WithdrawlOrder",
@@ -297,6 +319,16 @@ export default {
         value: 'currencyType',
         label: 'name'
       },
+      merchantOptions: [],
+      merchantInfoProps: {
+        value: 'userId',
+        label: 'accountName',
+      },
+      agentOptions: [],
+      agentProps: {
+        value: "userId",
+        label: "agentName"
+      },
       staticsData: {
         orderTotalCount: 10000,
         ordereSuccessRate: '99.9%',
@@ -316,6 +348,17 @@ export default {
     }
   },
   methods: {
+    search() {
+      getWithdrawStatementeOrder(this.filterbox).then(res => {
+        if (res.status === 200 && res.data.code === 0) {
+          let allData = JSON.parse(res.data.data)
+          this.withdrawlOrderTableInfo = allData.accountStatementsDtoList
+          this.totalCount = allData.totalNumber
+          this.pageSize = allData.pageSize
+          this.currentPage = allData.pageNo
+        }
+      })
+    },
     handleDateRangeChange(val) {
       if (!val || val.length !== 2) {
         this.filterbox.filterDateRangeUtc = [];
@@ -410,17 +453,21 @@ export default {
         }
       }
     });
-    this.applyCurrencyToStatics();
-    this.filterbox.orderType = 2
-    getWithdrawStatementeOrder(this.filterbox).then(res => {
+    this.filterbox.userType = 1
+    await getMerchantInfo({pageSize: 1000}).then(res => {
       if (res.status === 200 && res.data.code === 0) {
-        let allData = JSON.parse(res.data.data)
-        this.withdrawlOrderTableInfo = allData.accountStatementsDtoList
-        this.totalCount = allData.totalNumber
-        this.pageSize = allData.pageSize
-        this.currentPage = allData.pageNo
+        this.merchantOptions = JSON.parse(res.data.data).merchantInfoDtoList
       }
     })
+
+    getAgentInfo({pageSize: 1000}).then(res => {
+      if (res.status === 200 && res.data.code === 0) {
+        this.agentOptions = JSON.parse(res.data.data).agentInfoDtoList
+      }
+    })
+
+    this.search()
+
    /* this.totalCount = this.withdrawlOrderTableInfo.length;
     if (this.totalCount===0) {
       return;

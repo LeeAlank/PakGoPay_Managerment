@@ -457,7 +457,7 @@ export default {
           : this.filterbox.filterDateRange;
       if (range && range.length === 2) {
         this.filterbox.startTime = Number(range[0]) / 1000;
-        this.filterbox.endTime = Number(range[1]) / 1000;
+        this.filterbox.endTime = Number(range[1]) / 1000 + 86399;
       }
       getPayingOrder(this.filterbox).then(res => {
         if (res.status === 200 && res.data.code === 0) {

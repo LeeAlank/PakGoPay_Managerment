@@ -284,7 +284,7 @@ export default {
                 />
               </el-form-item>
             </el-col>
-            <el-col :span="16">
+            <el-col :span="8">
               <el-form-item label="时间范围:" label-width="150px" prop="filterDateRange">
                 <div style="display: flex; flex-direction: row;">
                   <el-date-picker

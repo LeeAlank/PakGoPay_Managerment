@@ -380,8 +380,13 @@ import {getFormateDate} from "@/api/common.js";
           </el-form-item>
         </el-col>
         <el-col :span="6" v-if="dialogFlag !== 'edit'">
-          <el-form-item label="登陆提现IP白名单:" label-width="150px" prop="loginIps">
+          <el-form-item label="登陆IP白名单:" label-width="150px" prop="loginIps">
             <el-input v-model="merchantAddInfo.loginIps" style="width: 200px"></el-input>
+          </el-form-item>
+        </el-col>
+        <el-col :span="6" v-if="dialogFlag !== 'edit'">
+          <el-form-item label="提现IP白名单:" label-width="150px" prop="withdrawalIps">
+            <el-input v-model="merchantAddInfo.withdrawalIps" style="width: 200px"></el-input>
           </el-form-item>
         </el-col>
       </el-row>
@@ -968,6 +973,9 @@ export default {
         loginIps: [
             {required: true, message: 'loginIp is required', trigger: 'blur'}
         ],
+        withdrawalIps: [
+            {required: true, message: 'withdrawalIp is required', trigger: 'blur'}
+        ],
         channelIds: [
           {
             required: true, validator: validateChannel, trigger: 'blur'
@@ -1264,9 +1272,7 @@ export default {
       this.deleteMerchantInfo = {}
     },
     editMerchantInfo(rowInfo) {
-      console.log('rowInfo----'+JSON.stringify(rowInfo))
       this.merchantAddInfo = Object.assign({},rowInfo)
-      console.log('addInfo----'+JSON.stringify(this.merchantAddInfo))
       this.merchantAddInfo.merchantUserId = rowInfo.userId
       this.merchantAddInfo.channelIds = this.merchantAddInfo.channelIds ? this.merchantAddInfo.channelIds.split(',') : []
       if(rowInfo.agentInfos) {

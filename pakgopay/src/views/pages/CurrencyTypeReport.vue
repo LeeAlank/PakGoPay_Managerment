@@ -15,21 +15,30 @@ import {getFormateDate} from "@/api/common.js";
       </template>
       <div class="toolbar" style="width: 96%">
         <el-form class="main-toolform" ref="filterForm" :model="filterbox">
-          <el-row style="display: flex;justify-content: space-around;">
-            <el-col :span="8">
+          <el-row>
+            <el-col :offset="16" :span="8">
+              <div style="display: flex; flex-direction: row;float: right">
+                <el-button @click="reset('filterForm')" class="filterButton"><SvgIcon class="filterButtonSvg" name="reset"/>重置</el-button>
+                <el-button @click="filterSearch" class="filterButton"><SvgIcon class="filterButtonSvg" name="search"/>搜索</el-button>
+                <el-button @click="exportCurrencyInfo" class="filterButton"><SvgIcon class="filterButtonSvg" name="export"/>导出</el-button>
+              </div>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :offset="4" :span="8">
               <el-form-item label="币种:" label-width="150px" prop="currency">
                 <el-select
                     v-model="filterbox.currency"
                     placeholder="请选择币种"
 
-                    style="width: 150px;"
+                    style="width: 200px;"
                     :options="currencyOptions"
                     :props="currencyProps"
                 >
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :span="16">
+            <el-col :span="8">
               <el-form-item label-width="150px" label="日期:" prop="filterDateRange">
                 <el-date-picker
                     v-model="filterbox.filterDateRange"
@@ -41,9 +50,6 @@ import {getFormateDate} from "@/api/common.js";
                     value-format="x"
                 >
                 </el-date-picker>
-                <el-button @click="reset('filterForm')" class="filterButton"><SvgIcon class="filterButtonSvg" name="reset"/>重置</el-button>
-                <el-button @click="filterSearch" class="filterButton"><SvgIcon class="filterButtonSvg" name="search"/>搜索</el-button>
-                <el-button @click="exportCurrencyInfo" class="filterButton"><SvgIcon class="filterButtonSvg" name="export"/>导出</el-button>
               </el-form-item>
             </el-col>
           </el-row>

@@ -262,7 +262,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item @click="editAgentInfo(row)">编辑</el-dropdown-item>
-                <el-dropdown-item @click="deleteAgentInfo(row)">删除</el-dropdown-item>
+<!--                <el-dropdown-item @click="deleteAgentInfo(row)">删除</el-dropdown-item>-->
                 <el-dropdown-item v-if="row.level !== 3" @click="addNextLevelAgent(row)">增加下一级代理
                 </el-dropdown-item>
               </el-dropdown-menu>
@@ -419,8 +419,8 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             </el-col>
             <el-col :span="8">
               <div class="el-form-line">
-                <el-form-item label="提现ip白名单:" label-width="150px" prop="withdrawIps">
-                  <el-input autocomplete="new-password" v-model="agentInfo.withdrawIps"
+                <el-form-item label="提现ip白名单:" label-width="150px" prop="withdrawalIps">
+                  <el-input autocomplete="new-password" v-model="agentInfo.withdrawalIps"
                             style="width: 200px"></el-input>
                 </el-form-item>
               </div>
@@ -901,6 +901,12 @@ export default {
           required: true, trigger: 'blur',
         },
         payMinFee: {
+          required: true, trigger: 'blur',
+        },
+        loginIps: {
+          required: true, trigger: 'blur',
+        },
+        withdrawalIps: {
           required: true, trigger: 'blur',
         }
       },

@@ -52,6 +52,7 @@ import {getTimeFromTimestamp} from "@/api/common.js";
                     :props="merchantInfoProps"
                     v-model="filterbox.userId"
                     :disabled="filterAvaiable"
+                    style="width: 200px"
                   />
                 </el-form-item>
               </el-col>

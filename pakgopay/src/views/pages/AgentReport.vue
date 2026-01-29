@@ -158,7 +158,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                 align="center"
                 prop="successRate"
             >
-              <div>{{ ((row.successQuantity/row.orderQuantity)*100).toFixed(2) }}%</div>
+              <div>{{ row.orderQuantity === 0 ? 0 : ((row.successQuantity/row.orderQuantity)*100).toFixed(2) }}%</div>
             </el-table-column>
             <el-table-column
                 label="代收订单佣金"
@@ -238,7 +238,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                 align="center"
                 prop="successRate"
             >
-              <div>{{ ((row.successQuantity/row.orderQuantity)*100).toFixed(2) }}%</div>
+              <div>{{ row.orderQuantity === 0 ? 0 : ((row.successQuantity/row.orderQuantity)*100).toFixed(2) }}%</div>
             </el-table-column>
             <el-table-column
                 label="代付订单佣金"

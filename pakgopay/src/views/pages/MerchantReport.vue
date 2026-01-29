@@ -469,7 +469,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%
+                {{ row.orderQuantity === 0 ? 0 :((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%
               </div>
             </el-table-column>
             <el-table-column
@@ -592,7 +592,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%
+                {{ row.orderQuantity === 0 ? 0 : ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%
               </div>
             </el-table-column>
             <el-table-column

@@ -147,7 +147,7 @@ import {getFormateDate} from "@/api/common.js";
               align="center"
               v-slot="{row}"
           >
-            <div>{{((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%</div>
+            <div>{{row.orderQuantity===0 ? 0 : ((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%</div>
           </el-table-column>
           <el-table-column
               label="代收商户手续费"
@@ -232,7 +232,7 @@ import {getFormateDate} from "@/api/common.js";
               align="center"
               v-slot="{row}"
           >
-            <div>{{((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%</div>
+            <div>{{row.orderQuantity === 0 ? 0 : ((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%</div>
           </el-table-column>
           <el-table-column
               label="代付商户手续费"

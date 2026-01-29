@@ -168,11 +168,15 @@ body {
 }
 
 .toolbar-action-row {
-    width: 350px;
+    /*width: 350px;
     display: flex;
     flex-direction: row;
     justify-content: flex-end;
-    margin-bottom: 12px;
+    margin-bottom: 12px;*/
+    display: flex;
+    flex-direction: row;
+    float: right;
+    margin-bottom: 10px;
 }
 
 .currency-tabs {

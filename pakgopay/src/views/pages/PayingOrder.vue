@@ -15,7 +15,14 @@ import {getOrderStatus, getOrderStatusOptions, getTimeFromTimestamp} from "@/api
         </span>
         </template>
         <div class="main-toolbar" style="height: 230px;width: 97%;">
-          <el-form class="main-toolform" style="height: 100%;" ref="filterboxForm" :model="filterbox">
+          <el-form
+              class="main-toolform"
+              style="height: 100%;"
+              ref="filterboxForm"
+              :model="filterbox"
+              label-width="150px"
+              label-position="right"
+          >
             <el-row>
               <el-col :offset="18" :span="6">
                 <div class="toolbar-action-row">
@@ -115,8 +122,8 @@ import {getOrderStatus, getOrderStatusOptions, getTimeFromTimestamp} from "@/api
                   <el-input type="number" v-model="filterbox.amount" style="width: 200px"/>
                 </el-form-item>
               </el-col>
-              <el-col :span="9">
-                <el-form-item label="创建时间：" label-width="150px">
+              <el-col :span="6">
+                <el-form-item label="创建时间：">
                   <el-date-picker
                       v-model="filterbox.filterDateRange"
                       type="datetimerange"
@@ -676,6 +683,8 @@ export default {
 .status-other {
   background-color: #9ca3af;
 }
+
+
 </style>
 <style>
 

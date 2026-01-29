@@ -119,7 +119,7 @@ import {
                   />
                 </el-form-item>
               </el-col>
-              <el-col :span="12">
+              <el-col :span="6">
                 <el-form-item label="创建时间：" label-width="150px" prop="filterDateRange">
 <!--                  <el-input v-model="filterbox.requestTime"style="width: 200px"/>-->
                   <el-date-picker

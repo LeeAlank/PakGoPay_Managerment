@@ -212,12 +212,20 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <div>{{ row.withdrawIps }}</div>
         </el-table-column>
         <el-table-column
-            label="代理账户余额"
+            label="代理账户信息"
             v-slot="{row}"
             align="center"
-            width="150px"
+            width="300px"
         >
-          <div>{{ row.balance }}</div>
+          <div class="account-info-wrap">
+            <!-- 返回的是json对象 包含总金额、可用金额、冻结金额 -->
+            <div class="account-info-card" v-for="(value, key, index) in row.balanceInfo" :key="key">
+              <div class="account-info-row account-info-key">{{key}}:</div>
+              <div class="account-info-row account-total">账户总金额: <div class="account-info-value">{{value.total ? value.total: '-'}}</div></div>
+              <div class="account-info-row account-usable">账户可用金额: <div class="account-info-value">{{value.available? value.available: '-'}}</div></div>
+              <div class="account-info-row account-frozen">冻结金额: <div class="account-info-value">{{value.frozen? value.frozen : '-'}}</div></div>
+            </div>
+          </div>
         </el-table-column>
         <el-table-column
           label="联系人信息"
@@ -612,7 +620,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       </div>
     </el-dialog>
   </div>
-  <div style="display:flex;float: right;margin-right: 5%;height: 5%">
+<!--  <div style="display:flex;float: right;margin-right: 5%;height: 5%">
     <el-pagination class="pageTool"
         background
         layout="sizes, prev, pager, next, jumper, total"
@@ -625,7 +633,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
         @size-change="handleSizeChange"
     >
     </el-pagination>
-  </div>
+  </div>-->
 </template>
 
 <script>
@@ -1156,6 +1164,43 @@ export default {
 }
 
 .agent-card-channel{
+  background-color: #f0f2f5;
+}
+
+.account-info-row{
+  font-size: 15px;
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.account-info-key {
+  background-color: #eef2ff;
+  border-radius: 6px;
+  padding: 2px 6px;
+  display: inline-block;
+  text-align: left;
+}
+.account-info-card {
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.account-total{
+  background-color: #e8f2ff;
+}
+
+.account-usable{
+  background-color: #e9f6ee;
+}
+
+.account-frozen{
   background-color: #f0f2f5;
 }
 </style>

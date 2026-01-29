@@ -149,13 +149,22 @@ import {getFormateDate} from "@/api/common.js";
           >
             <div>{{row.orderQuantity===0 ? 0 : ((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%</div>
           </el-table-column>
+
+          <el-table-column
+              label="订单总金额"
+              prop="orderBalance"
+              align="center"
+              v-slot="{row}"
+          >
+            <div>{{currencyIcon + row.orderBalance}}</div>
+          </el-table-column>
           <el-table-column
               label="代收商户手续费"
               prop="merchantFee"
               align="center"
               v-slot="{row}"
           >
-            <div>{{row.merchantFee}}</div>
+            <div>{{currencyIcon + row.merchantFee}}</div>
           </el-table-column>
           <el-table-column
               label="代收总利润"
@@ -163,7 +172,7 @@ import {getFormateDate} from "@/api/common.js";
               align="center"
               v-slot="{row}"
           >
-            <div>{{row.orderProfit}}</div>
+            <div>{{currencyIcon + row.orderProfit}}</div>
           </el-table-column>
           <el-table-column
               label="日期"
@@ -235,6 +244,14 @@ import {getFormateDate} from "@/api/common.js";
             <div>{{row.orderQuantity === 0 ? 0 : ((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%</div>
           </el-table-column>
           <el-table-column
+              label="订单总金额"
+              prop="orderBalance"
+              align="center"
+              v-slot="{row}"
+          >
+            <div>{{currencyIcon + row.orderBalance}}</div>
+          </el-table-column>
+          <el-table-column
               label="代付商户手续费"
               prop="merchantFee"
               align="center"
@@ -248,7 +265,7 @@ import {getFormateDate} from "@/api/common.js";
               align="center"
               v-slot="{row}"
           >
-            <div>{{row.orderProfit}}</div>
+            <div>{{currencyIcon + row.orderProfit}}</div>
           </el-table-column>
           <el-table-column
               label="日期"

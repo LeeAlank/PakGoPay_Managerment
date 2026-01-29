@@ -166,7 +166,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                 align="center"
                 prop="commission"
             >
-              <div>{{ row.commission }}</div>
+              <div>{{ currencyIcon + row.commission }}</div>
             </el-table-column>
           </el-table>
           <el-pagination class="pageTool"
@@ -246,7 +246,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                 align="center"
                 prop="commission"
             >
-              <div>{{ row.commission }}</div>
+              <div>{{ currencyIcon + row.commission }}</div>
             </el-table-column>
 
           </el-table>

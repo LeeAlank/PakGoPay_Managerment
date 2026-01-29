@@ -482,6 +482,16 @@ export default {
                 {{ row.successQuantity }}
               </div>
             </el-table-column>
+<!--            <el-table-column
+                prop="commission"
+                label="订单金额"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{ this.currencyIcon + row.orderBalance }}
+              </div>
+            </el-table-column>-->
             <el-table-column
                 prop="merchantFee"
                 label="代收商户手续费"
@@ -605,6 +615,16 @@ export default {
                 {{ row.successQuantity }}
               </div>
             </el-table-column>
+<!--            <el-table-column
+                prop="commission"
+                label="订单金额"
+                v-slot="{row}"
+                align="center"
+            >
+              <div>
+                {{ this.currencyIcon + row.orderBalance }}
+              </div>
+            </el-table-column>-->
             <el-table-column
                 prop="commission"
                 label="代付商户手续费"

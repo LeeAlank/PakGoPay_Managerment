@@ -121,18 +121,20 @@ import {getFormateDate} from "@/api/common.js";
       </div>
     </el-collapse-item>
   </el-collapse>
-  <div class="reportInfo">
-    <form id="merchantInfoForm" class="merchantInfoFormT" style="height: auto">
-      <el-button v-if="isAdmin" @click="addMerchant()" class="filterButton" style="float: right">
+  <div class="reportInfo merchant-info-report">
+    <form id="merchantInfoForm" class="merchantInfoFormT merchant-info-form" style="height: 88%">
+      <el-button v-if="isAdmin" @click="addMerchant()" class="filterButton merchant-info-add" style="float: right">
         <SvgIcon name="add" class="filterButtonSvg"/>
         <div>新增</div>
       </el-button>
-      <el-table
-          border :data="merchantInfoFormData"
-          class="merchantInfos-table"
-          height="auto"
-          :key="tableKey"
-      >
+      <div class="merchant-info-table-wrapper">
+        <el-table
+            border
+            :data="merchantInfoFormData"
+            class="merchantInfos-table"
+            height="100%"
+            :key="tableKey"
+        >
         <el-table-column
             label="商户账号"
             v-slot="{row}"
@@ -240,13 +242,16 @@ import {getFormateDate} from "@/api/common.js";
             label="账户信息"
             v-slot="{row}"
             align="center"
-            width="200px;"
+            width="300px;"
         >
-          <div style="width: 100%;">
+          <div class="account-info-wrap">
             <!-- 返回的是json对象 包含总金额、可用金额、冻结金额 -->
-            <div class="account-info-row account-total">账户总金额: <div class="account-info-value">{{row.merchantAccountInfo? row.merchantAccountInfo.totalAmount: '-'}}</div></div>
-            <div class="account-info-row account-usable">账户可用金额: <div class="account-info-value">{{row.merchantAccountInfo? rowmerchantAccountInfo.toUseAmount: '-'}}</div></div>
-            <div class="account-info-row account-frozen">冻结金额: <div class="account-info-value">{{row.merchantAccountInfo? row.merchantAccountInfo.freezeAmount : '-'}}</div></div>
+            <div class="account-info-card" v-for="(value, key, index) in row.balanceInfo" :key="key">
+              <div class="account-info-row account-info-key">{{key}}:</div>
+              <div class="account-info-row account-total">账户总金额: <div class="account-info-value">{{value.total ? value.total: '-'}}</div></div>
+              <div class="account-info-row account-usable">账户可用金额: <div class="account-info-value">{{value.available? value.available: '-'}}</div></div>
+              <div class="account-info-row account-frozen">冻结金额: <div class="account-info-value">{{value.frozen? value.frozen : '-'}}</div></div>
+            </div>
           </div>
         </el-table-column>
         <el-table-column
@@ -294,6 +299,22 @@ import {getFormateDate} from "@/api/common.js";
           </div>
         </el-table-column>
         <el-table-column
+            label="联系人信息"
+            v-slot="{row}"
+            align="center"
+            width="300px"
+        >
+          <div class="agent-card-row agent-card-account">
+            联系人: {{row.contactName? row.contactName : '-'}}
+          </div>
+          <div class="agent-card-row agent-card-name">
+            手机号: {{row.contactPhone ? row.contactPhone: '-'}}
+          </div>
+          <div class="agent-card-row agent-card-channel">
+            邮箱: {{row.contactEmail ? row.contactEmail: '-'}}
+          </div>
+        </el-table-column>
+        <el-table-column
             label="操作"
             v-slot="{row}"
             align="center"
@@ -312,8 +333,9 @@ import {getFormateDate} from "@/api/common.js";
             </el-dropdown>
           </div>
         </el-table-column>
-      </el-table>
-      <el-pagination class="pageTool"
+        </el-table>
+      </div>
+      <el-pagination class="pageTool merchant-info-pagination"
           background
           layout="sizes, prev, pager, next, jumper, total"
           :total="totalCount"
@@ -1484,6 +1506,60 @@ export default {
     color: black;
   }
 
+  .merchant-info-report {
+    height: calc(100vh - 300px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .merchant-info-form {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .merchant-info-table-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .merchant-info-pagination {
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .merchant-info-add {
+    align-self: flex-end;
+    margin-bottom: 8px;
+    padding: 4px 12px;
+    height: 32px;
+    line-height: 20px;
+  }
+
+  .account-info-wrap {
+    text-align: left;
+  }
+
+  .account-info-key {
+    background-color: #eef2ff;
+    border-radius: 6px;
+    padding: 2px 6px;
+    display: inline-block;
+    text-align: left;
+  }
+
+  .account-info-card {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+
   .agent-info-card{
     background-color: #f5f5f5;
     margin-top: 6px;
@@ -1527,5 +1603,23 @@ export default {
     background-color: #07c160;
     border-color: #07c160;
   }
+
+.agent-card-row{
+  padding: 4px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.agent-card-account{
+  background-color: #e8f2ff;
+}
+
+.agent-card-name{
+  background-color: #e9f6ee;
+}
+
+.agent-card-channel{
+  background-color: #f0f2f5;
+}
 
 </style>

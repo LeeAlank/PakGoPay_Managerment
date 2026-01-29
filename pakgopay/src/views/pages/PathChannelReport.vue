@@ -413,12 +413,20 @@ export default {
               <div>{{ row.orderQuantity === 0 ? 0 : ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%</div>
             </el-table-column>
             <el-table-column
+                prop="orderBalance"
+                label="订单金额"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{currencyIcon + row.orderBalance }}</div>
+            </el-table-column>
+            <el-table-column
                 prop="collectionChannelMerchantCommission"
                 label="代收商户手续费"
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{ this.currencyIcon + row.merchantFee }}</div>
+              <div>{{currencyIcon + row.merchantFee }}</div>
             </el-table-column>
             <el-table-column
                 prop="collectionChannelProfit"
@@ -426,7 +434,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{ this.currencyIcon + row.orderProfit }}</div>
+              <div>{{currencyIcon + row.orderProfit }}</div>
             </el-table-column>
             <el-table-column
                 prop="recordDate"
@@ -495,12 +503,20 @@ export default {
               <div>{{ row.orderQuantity === 0 ? 0 : ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%</div>
             </el-table-column>
             <el-table-column
+                prop="orderBalance"
+                label="订单金额"
+                align="center"
+                v-slot="{row}"
+            >
+              <div>{{currencyIcon + row.orderBalance }}</div>
+            </el-table-column>
+            <el-table-column
                 prop="merchantFee"
                 label="代付商户手续费"
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{ this.currencyIcon + row.merchantFee }}</div>
+              <div>{{ currencyIcon + row.merchantFee }}</div>
             </el-table-column>
             <el-table-column
                 prop="orderBalance"
@@ -508,7 +524,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{ this.currencyIcon + row.orderProfit }}</div>
+              <div>{{ currencyIcon + row.orderProfit }}</div>
             </el-table-column>
             <el-table-column
                 prop="time"

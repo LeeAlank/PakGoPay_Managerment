@@ -14,33 +14,29 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             <span>币种:</span>
           </template>
           <el-select
-              v-model="filterbox.selectedCurrency"
+              v-model="filterbox.id"
               placeholder="请选择币种"
-
               style="width: 150px;"
               clearable
+              :props="currencyProps"
+              :options="currencyOptions"
+              filterable
           >
-            <el-option
-                v-for="item in currencyOptions"
-                :key="item.id"
-                :value="item.id"
-                :label="item.name"
-            />
           </el-select>
-          <el-button @click="search" style="color: deepskyblue">搜索</el-button>
+          <el-button @click="search" style="color: dodgerblue">搜索</el-button>
         </el-form-item>
       </el-row>
     </div>
 
-  <div class="main-views-container">
-    <div style="width: 96%;display:flex;justify-content: right;">
+  <div class="reportInfo">
+    <div style="display:flex;justify-content: right;">
       <el-button @click="createNewCurrency"><SvgIcon name="add"/>新增</el-button>
     </div>
     <el-form style="height: 650px">
       <el-table
         :data="currencyTypeData"
         border
-        style="height: auto;width: 96%"
+        style="height: auto;"
         :key="tableKey"
       >
         <el-table-column
@@ -174,7 +170,10 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 </template>
 
 <script>
-import {addCurrencyType, getAllCurrencyType, getCurrencyById} from "@/api/interface/backendInterface.js";
+import {
+  addCurrencyType, getAllCurrencyType,
+  getCurrencyTypeByPage
+} from "@/api/interface/backendInterface.js";
 
 export default {
   name: 'CurrencyTypeList',
@@ -195,15 +194,19 @@ export default {
         /*{createTime: 1767082270000,currencyType:"US",exchangeRate:0.900000,icon:"$",id:1,isRate:1,name:"美金"}*/
       ],
       currencyOptions: [
-        {
+        /*{
           value: 1,
           label: '马币'
         },
         {
           value: 2,
           label: '美元'
-        }
+        }*/
       ],
+      currencyProps: {
+        value: 'id',
+        label: 'name'
+      },
       filterbox: {
 
       },
@@ -245,13 +248,22 @@ export default {
   },
   methods: {
     getCurrencyTypeList() {
-      getAllCurrencyType().then(res => {
+      getCurrencyTypeByPage(this.filterbox).then(res => {
         if (res.status === 200) {
            if (res.data.code === 0) {
-             this.currencyTypeData = JSON.parse(res.data.data)
-             this.currencyOptions = JSON.parse(res.data.data)
+             let allData =  JSON.parse(res.data.data)
+             this.currencyTypeData = allData.currencyTypeDTOList
+             this.currentPage = allData.pageNo
+             this.pageSize = allData.pageSize
+             this.totalCount = allData.totalNumber
            } else {
-            // this.$notify.error(res.data.message)
+            this.$notify({
+              title: 'error',
+              message: res.data.message,
+              duration: 3000,
+              type: 'error',
+              position: "bottom-right"
+            })
            }
         } else {
           this.$notify({
@@ -264,28 +276,9 @@ export default {
       })
     },
     search() {
-        getCurrencyById(this.filterbox.selectedCurrency).then(res => {
-          if (res.status === 200) {
-            if (res.data.code !== 0) {
-              this.$notify({
-                title: 'Failed',
-                message: 'get currency failed',
-                type: 'error',
-                position: 'bottom-right'
-              })
-            } else {
-              this.currencyTypeData = JSON.parse(res.data.data)
-            }
-            }
-          else {
-            this.$notify({
-              title: 'Failed',
-              message: 'get currency failed, try again',
-              type: 'error',
-              position: 'bottom-right'
-            })
-          }
-        })
+        this.filterbox.pageNo = this.currentPage
+        this.filterbox.pageSize = this.pageSize
+        this.getCurrencyTypeList()
     },
     createNewCurrency() {
       this.addCurrencyTypeInfo.isRate = 2
@@ -333,11 +326,17 @@ export default {
     }
   },
   mounted() {
+    getAllCurrencyType().then(res => {
+      if (res.status === 200 && res.data.code === 0) {
+        this.currencyOptions = JSON.parse(res.data.data).currencyTypeDTOList
+      }
+    })
     this.getCurrencyTypeList();
   }
 }
 </script>
 <style scoped>
+@import "@/assets/base.css";
 .toolbar {
   margin-left: 2%;
   margin-top: 1%;

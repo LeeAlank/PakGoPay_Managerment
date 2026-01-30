@@ -321,11 +321,24 @@ export function deleteRole(form) {
 export function getAllCurrencyType() {
     return service({
         url: '/api/pakGoPay/server/CurrencyTypeManagement/currencyTypeInfo',
-        method: 'GET',
+        method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
             'Content-Type': 'application/json;charset=UTF-8',
         },
+        data: {},
+    })
+}
+
+export function getCurrencyTypeByPage(form) {
+    return service({
+        url: '/api/pakGoPay/server/CurrencyTypeManagement/currencyTypeInfo',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form,
     })
 }
 
@@ -349,6 +362,7 @@ export function addCurrencyType(form) {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
         },
         data: form,
     })

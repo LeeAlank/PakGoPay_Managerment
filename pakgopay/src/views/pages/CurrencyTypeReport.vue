@@ -21,6 +21,7 @@ import {getFormateDate} from "@/api/common.js";
                 <el-button @click="reset('filterForm')" class="filterButton"><SvgIcon class="filterButtonSvg" name="reset"/>重置</el-button>
                 <el-button @click="filterSearch" class="filterButton"><SvgIcon class="filterButtonSvg" name="search"/>搜索</el-button>
                 <el-button @click="exportCurrencyInfo" class="filterButton"><SvgIcon class="filterButtonSvg" name="export"/>导出</el-button>
+<!--                <el-button @click="openAddDialog" class="filterButton"><SvgIcon class="filterButtonSvg" name="add"/>新增</el-button>-->
               </div>
             </el-col>
           </el-row>
@@ -291,11 +292,99 @@ import {getFormateDate} from "@/api/common.js";
       </el-tab-pane>
     </el-tabs>
   </div>
+
+  <el-dialog
+      v-model="addDialogVisible"
+      title="新增币种"
+      class="dialog"
+      center
+      width="60%"
+  >
+    <el-form ref="addFormRef" :model="addCurrencyForm" :rules="addRules" class="form">
+      <el-row style="display: flex;justify-content: center;">
+        <el-col :span="24" style="display: flex;justify-content: center;">
+          <el-form-item label="币种英文简称:" label-width="150px" prop="currencyType">
+            <el-input v-model="addCurrencyForm.currencyType" style="width: 200px"/>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row style="display: flex;justify-content: center;">
+        <el-col :span="24" style="display: flex;justify-content: center;">
+          <el-form-item label="币种名称:" label-width="150px" prop="name">
+            <el-input v-model="addCurrencyForm.name" style="width: 200px"/>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row style="display: flex;justify-content: center;">
+        <el-col :span="24" style="display: flex;justify-content: center;">
+          <el-form-item label="币种符号:" label-width="150px" prop="icon">
+            <el-input v-model="addCurrencyForm.icon" style="width: 200px"/>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row style="display: flex;justify-content: center;">
+        <el-col :span="24" style="display: flex;justify-content: center;">
+          <el-form-item label="币种最小单位:" label-width="150px" prop="currencyAccuracy">
+            <el-input type="number" v-model="addCurrencyForm.currencyAccuracy" style="width: 200px"/>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row style="display: flex;justify-content: center;">
+        <el-col :span="24" style="display: flex;justify-content: center;">
+          <el-form-item label="对USDT汇率模式:" label-width="150px" prop="isRate">
+            <el-select v-model="addCurrencyForm.isRate" style="width: 200px;text-align: center">
+              <el-option
+                  v-for="item in exchangeRateOptions"
+                  :label="item.label"
+                  :key="item.value"
+                  :value="item.value"
+              />
+            </el-select>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row v-if="addCurrencyForm.isRate === 2">
+        <el-col :span="24" style="display: flex;justify-content: center;">
+          <el-form-item label="对USDT汇率:" label-width="150px" prop="exchangeRate">
+            <el-input type="number" v-model="addCurrencyForm.exchangeRate" style="width: 200px"/>
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="cancelAddDialog">取 消</el-button>
+      <el-button type="primary" @click="submitAddCurrency">确 定</el-button>
+    </div>
+  </el-dialog>
+
+  <el-dialog
+      v-model="googleDialogVisible"
+      title="谷歌验证"
+      class="dialog"
+      center
+      width="30%"
+      height="200px"
+  >
+    <el-form ref="googleFormRef" :rules="googleRule" :model="googleForm" style="height:100px;margin-top: 20px">
+      <el-row>
+        <el-col :span="24" style="display: flex;justify-content: center;align-items: center;">
+          <el-form-item label="谷歌验证码:" label-width="150px" prop="googleCode">
+            <el-input v-model="googleForm.googleCode" style="width: 200px"/>
+          </el-form-item>
+        </el-col>
+      </el-row>
+    </el-form>
+    <div slot="footer" class="dialog-footer" style="margin-right: 3%;height: 30px;">
+      <el-button @click="cancelGoogleDialog">取 消</el-button>
+      <el-button type="primary" @click="confirmAddCurrency">确 定</el-button>
+    </div>
+  </el-dialog>
 </template>
 
 <script>
 import {ref} from "vue";
 import {
+  addCurrencyType,
   exportCurrencyReport,
   getAllCurrencyType,
   getCurrencyReport,
@@ -312,6 +401,13 @@ const filterDateRange = ref('')
 export default {
   name: 'CurrencyTypeReport',
   data() {
+    const validateExchangeRate = (rule, value, callback) => {
+      if (this.addCurrencyForm.isRate === 2 && (value === '' || value === undefined)) {
+        callback(new Error('固定汇率模式下对USDT汇率为必填项'))
+      } else {
+        callback()
+      }
+    };
     return {
       activeTool: "1",
       timeRange: [],
@@ -336,11 +432,109 @@ export default {
       tab1PageSize:10,
       tab2PageSize:10,
       filterbox: {},
+      addDialogVisible: false,
+      googleDialogVisible: false,
+      addCurrencyForm: {
+        currencyType: '',
+        name: '',
+        icon: '',
+        currencyAccuracy: '',
+        isRate: 1,
+        exchangeRate: ''
+      },
+      addRules: {
+        currencyType: [
+          { required: true, message: '请输入币种英文简称', trigger: 'blur' }
+        ],
+        name: [
+          { required: true, message: '请输入币种名称', trigger: 'blur' }
+        ],
+        icon: [
+          { required: true, message: '请输入币种符号', trigger: 'blur' }
+        ],
+        currencyAccuracy: [
+          { required: true, message: '请输入币种最小单位', trigger: 'blur' }
+        ],
+        exchangeRate: [
+          { validator: validateExchangeRate, message: '请输入对USDT汇率', trigger: 'blur' }
+        ]
+      },
+      googleForm: {
+        googleCode: ''
+      },
+      googleRule: {
+        googleCode: {
+          required: true, trigger: 'blur', message: 'googleCode is required'
+        }
+      },
+      exchangeRateOptions: [
+        {
+          value: 1,
+          label: '实时汇率'
+        },
+        {
+          value: 2,
+          label: '固定汇率'
+        }
+      ],
     }
   },
   methods: {
     reset(form){
       this.$refs[form].resetFields();
+    },
+    async refreshCurrencyOptions() {
+
+    },
+    openAddDialog() {
+      this.addDialogVisible = true;
+    },
+    cancelAddDialog() {
+      this.addDialogVisible = false;
+      this.$refs.addFormRef?.resetFields();
+    },
+    submitAddCurrency() {
+      this.$refs.addFormRef.validate(valid => {
+        if (valid) {
+          this.googleDialogVisible = true;
+        }
+      })
+    },
+    cancelGoogleDialog() {
+      this.googleDialogVisible = false;
+      this.$refs.googleFormRef?.resetFields();
+    },
+    confirmAddCurrency() {
+      this.$refs.googleFormRef.validate(valid => {
+        if (!valid) {
+          return;
+        }
+        const payload = Object.assign({}, this.addCurrencyForm, this.googleForm)
+        addCurrencyType(payload).then(res => {
+          if (res.status === 200 && res.data.code === 0) {
+            this.googleDialogVisible = false;
+            this.addDialogVisible = false;
+            this.$refs.googleFormRef?.resetFields();
+            this.$refs.addFormRef?.resetFields();
+            this.refreshCurrencyOptions();
+            this.$notify({
+              title: 'Success',
+              type: 'success',
+              message: '新增币种成功',
+              duration: 3000,
+              position: 'bottom-right'
+            })
+          } else {
+            this.$notify({
+              title: 'Failed',
+              type: 'error',
+              message: res.data.message || '新增币种失败',
+              duration: 3000,
+              position: 'bottom-right'
+            })
+          }
+        })
+      })
     },
     handleCurrencyChange(tab) {
       if (tab && tab.paneName !== undefined) {
@@ -397,7 +591,7 @@ export default {
 
       getCurrencyReport(this.filterbox).then(response => {
         if (response.status === 200 && response.data.code === 0) {
-          let resData = JSON.parse(response.data.data)
+          let resData = JSON.parse(response.data.data).currencyTypeDTOList
           const cardInfo = resData.cardInfo[this.filterbox.currency]
           if (orderType === 0) {
             this.collectionCurrencyInfo = resData.currencyReportDtoList
@@ -493,29 +687,31 @@ export default {
     }
   },
   async mounted() {
-    await getAllCurrencyType().then(res => {
-      if (res.status === 200) {
-        if (res.data.code === 0) {
-          this.currencyOptions = JSON.parse(res.data.data)
+
+    getAllCurrencyType().then(res => {
+      if (res.status === 200 && res.data.code === 0) {
+        this.currencyOptions = JSON.parse(res.data.data).currencyTypeDTOList
+        if (!this.filterbox.currency && this.currencyOptions.length > 0) {
           this.currency = this.currencyOptions[0].currencyType
           this.filterbox.currency = this.currencyOptions[0].currencyType
-          this.currencyIcons = {};
-          this.currencyOptions.forEach(currency => {
-            this.currencyIcons[currency.currencyType] = currency.icon
-          })
-          let iconKey = this.currency;
-          this.currencyIcon = this.currencyIcons[iconKey]
-          this.statisticsInfo.collectionCurrencyAmount = this.currencyIcon+0;
-          this.statisticsInfo.payingCurrencyAmount = this.currencyIcon+0;
         }
+        this.currencyIcons = {};
+        this.currencyOptions.forEach(currency => {
+          this.currencyIcons[currency.currencyType] = currency.icon
+        })
+        let iconKey = this.currency;
+        this.currencyIcon = this.currencyIcons[iconKey] || ''
+        this.statisticsInfo.collectionCurrencyAmount = (this.currencyIcon || '') + 0;
+        this.statisticsInfo.payingCurrencyAmount = (this.currencyIcon || '') + 0;
+
+        this.startTime = getTodayStartTimestamp()
+        this.endTime = getTodayStartTimestamp()+86399
+        this.filterbox.isNeedCardData = true
+        this.activeTabPane = '0'
+        this.search(0, '0')
+      } else {
       }
     })
-
-    this.startTime = getTodayStartTimestamp()
-    this.endTime = getTodayStartTimestamp()
-    this.filterbox.isNeedCardData = true
-    this.activeTabPane = '0'
-    this.search(0)
   }
 }
 </script>

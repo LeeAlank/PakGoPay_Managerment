@@ -236,7 +236,7 @@ export default {
       await getAllCurrencyType().then(res => {
         if (res.status === 200) {
           if (res.data.code === 0) {
-            this.currencyOptions = JSON.parse(res.data.data)
+            this.currencyOptions = JSON.parse(res.data.data).currencyTypeDTOList
             this.currency = this.currencyOptions[0].currencyType
             this.filterbox.currency = this.currencyOptions[0].currencyType
             this.currencyIcons = {};

@@ -149,7 +149,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
           </template>
           <div style="color: black;margin-left: 8px">充值</div>
         </el-button>
-        <el-button @click="createManualAccountAdjustment" class="filterButton">
+        <el-button v-if="roleName=== 'admin'" @click="createManualAccountAdjustment" class="filterButton">
           <template #icon>
             <div style="width: 100%">
               <SvgIcon class="filterButtonSvg" name="manualaccountadjustment"/>
@@ -484,14 +484,29 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
         style="margin-right: 5%;margin-top: 60px"
     >
       <div class="el-form-line">
-        <el-form-item label="商户:" label-width="150px" prop="merchantUserId">
+        <el-form-item label="商户:" label-width="150px" prop="merchantAgentId">
           <el-select
-              :options="merchantAccountOptions"
+              :options="cacheMerchantAccountOptions"
               :props="merchantAccountProps"
-              v-model="manualAccountAdjustmentOrderInfo.merchantUserId"
+              v-model="manualAccountAdjustmentOrderInfo.merchantAgentId"
+              @change="handleAjustMentMerchantChange"
               style="width: 200px"
           >
           </el-select>
+        </el-form-item>
+      </div>
+      <div class="el-form-line">
+        <el-form-item label="币种:" label-width="150px" prop="currency">
+          <el-select v-model="manualAccountAdjustmentOrderInfo.currency" style="width: 200px"
+                     :options="currencyOptions"
+                     :props="currencyProps"
+                     @change="handleAjustmentCurrencyChange"
+          />
+        </el-form-item>
+      </div>
+      <div class="el-form-line">
+        <el-form-item label="账户金额:" label-width="150px" prop="total">
+          <el-input disabled v-model="manualAccountAdjustmentOrderInfo.total" style="width: 200px"/>
         </el-form-item>
       </div>
       <div class="el-form-line">
@@ -504,6 +519,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
               inactive-text="减少"
               :active-value="1"
               :inactive-value="0"
+              :class="manualAccountAdjustmentOrderInfo.type === 1 ? 'adjust-switch-inc' : 'adjust-switch-dec'"
               style="width: 200px"
           >
           </el-switch>
@@ -513,11 +529,6 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
       <div class="el-form-line">
         <el-form-item label="调账金额:" label-width="150px" prop="amount">
           <el-input type="number" v-model="manualAccountAdjustmentOrderInfo.amount" style="width: 200px"/>
-        </el-form-item>
-      </div>
-      <div class="el-form-line">
-        <el-form-item label="谷歌验证码:" label-width="150px" prop="googleCode">
-          <el-input v-model="manualAccountAdjustmentOrderInfo.googleCode" style="width: 200px"/>
         </el-form-item>
       </div>
     </el-form>
@@ -609,6 +620,7 @@ export default {
       selectedMerchentName: '',
       selectAccountVisible: true,
       merchantAccountOptions: [],
+      cacheMerchantAccountOptions: [],
       merchantInfoProps: {
         value: 'userId',
         label: 'accountName',
@@ -723,12 +735,15 @@ export default {
       dialogManualAccountAdjustmentTitle: '',
       manualAccountAdjustmentOrderInfo: {},
       dialogManualAccountAdjustmentRule: {
-        merchantUserId: {
+        merchantAgentId: {
           required: true, trigger: 'blur', message: 'you need to select merchant'
         },
         amount: {
           required: true, trigger: 'blur', message: 'type amount'
         },
+        currency: {
+          required: true, trigger: 'blur', message: 'you need to select currency'
+        }
        /* googleCode: {
           required: true, trigger: 'blur', message: 'you need to select googleCode'
         }*/
@@ -756,6 +771,19 @@ export default {
       this.withdrawOrderInfo.merchantAgentName = opt[0].name;
       //this.withdrawOrderInfo.walletAddr = opt.walletAddr;
       this.merchantAccountOptions = Object.assign([], opt)
+    },
+    handleAjustMentMerchantChange(value) {
+      let opt = [];
+      this.merchantAccountOptions.find((item) => {
+        //return item.merchantAgentId === value;
+        if (item.merchantAgentId === value) {
+          opt.push(item);
+        }
+      });
+      this.manualAccountAdjustmentOrderInfo.merchantAgentName = opt[0].name;
+      this.manualAccountAdjustmentOrderInfo.merchantAgentId = opt[0].merchantAgentId;
+      //this.withdrawOrderInfo.walletAddr = opt.walletAddr;
+      this.cacheMerchantAccountOptions = Object.assign([], opt)
     },
     handleRechargeMerchantChange(value) {
       let opt = {};
@@ -985,6 +1013,7 @@ export default {
       this.dialogManualAccountAdjustmentVisible = true
       this.dialogManualAccountAdjustmentTitle = '手工调账'
       this.manualAccountAdjustmentOrderInfo.orderType = 3
+      this.cacheMerchantAccountOptions = Object.assign({}, this.merchantAccountOptions)
     },
     cancelWithdraw(form) {
       this.$refs[form].resetFields()
@@ -1005,7 +1034,7 @@ export default {
       })
     },
     submitConfirm(form) {
-      let orderMessage = form.orderType === 1 ? 'Recharge' : form.orderType === 2 ? 'Withdraw' : 'Manual Account Adjustment'
+      let orderMessage = this.confirmData.orderType === 1 ? 'Recharge' : this.confirmData.orderType === 2 ? 'Withdraw' : 'Manual Account Adjustment'
       this.$refs[form].validate(validate => {
         if (validate) {
           createStatementeOrderApply(this.confirmData).then(res => {
@@ -1013,6 +1042,9 @@ export default {
             this.confirmDialogVisible = false
             if (res.status === 200 && res.data.code === 0) {
               this.$refs[form].resetFields()
+              if (this.confirmData.orderType === 3) {
+                this.$refs.manualAccountAdjustmentOrderInfoForm?.resetFields()
+              }
               this.$notify({
                 title: 'Success',
                 type: 'success',
@@ -1098,8 +1130,8 @@ export default {
     submitManualAccountAdjustment(form) {
       this.$refs[form].validate(validate => {
         if (validate) {
-          this.dialogWithdrawVisible = false
-          this.dialogWithdrawTitle = ''
+          this.dialogManualAccountAdjustmentVisible = false
+          this.dialogManualAccountAdjustmentTitle = ''
           this.confirmData =  Object.assign({}, this.manualAccountAdjustmentOrderInfo)
           this.confirmDialogTitle = '谷歌验证'
           this.confirmDialogVisible = true
@@ -1110,6 +1142,11 @@ export default {
       let opt = {}
       opt = this.amountInfo[val]
       opt ? this.withdrawOrderInfo.availableAmount = opt.available : this.withdrawOrderInfo.availableAmount = 0
+    },
+    handleAjustmentCurrencyChange(val) {
+      let opt = {}
+      opt = this.amountInfo[val]
+      opt ? this.manualAccountAdjustmentOrderInfo.total = this.currencyIcons[val] + opt.available : this.manualAccountAdjustmentOrderInfo.total = this.currencyIcons[val] + 0
     },
     getNewstMerchantInfo() {
       getMerchantInfo({merchantUserName: this.filterbox.name, isNeedCardData: true}).then(res => {
@@ -1132,7 +1169,7 @@ export default {
         getAllCurrencyType().then(res => {
       if (res.status === 200) {
         if (res.data.code === 0) {
-          this.currencyOptions = JSON.parse(res.data.data)
+          this.currencyOptions = JSON.parse(res.data.data).currencyTypeDTOList
           this.currency = this.currencyOptions[0].currencyType
           this.filterbox.currency = this.currencyOptions[0].currencyType
           //this.filterbox.currency = this.currencyOptions[0].currencyType
@@ -1182,5 +1219,21 @@ export default {
 
 input::-webkit-inner-spin-button {
   -webkit-appearance: none !important;
+}
+
+:deep(.adjust-switch-inc .el-switch__label--right) {
+  color: #16a34a;
+}
+
+:deep(.adjust-switch-inc .el-switch__label--left) {
+  color: #9ca3af;
+}
+
+:deep(.adjust-switch-dec .el-switch__label--left) {
+  color: #16a34a;
+}
+
+:deep(.adjust-switch-dec .el-switch__label--right) {
+  color: #9ca3af;
 }
 </style>

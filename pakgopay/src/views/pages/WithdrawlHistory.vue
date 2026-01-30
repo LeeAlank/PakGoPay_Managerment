@@ -488,7 +488,7 @@ export default {
       totalCount: 0,
       currentPage: 1,
       pageSize: 10,
-      pageSizes: [5, 10, 15, 20],
+      pageSizes: [10, 20, 50, 100, 200],
       createAccountRules: {
         merchantAgentId: {
           required: true, messages: 'you need to select a merchant', trigger: 'blur'

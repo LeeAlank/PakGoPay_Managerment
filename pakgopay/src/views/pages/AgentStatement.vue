@@ -1,5 +1,6 @@
 <script setup>
 import SvgIcon from "@/components/SvgIcon/index.vue";
+import {getTimeFromTimestamp} from "@/api/common.js";
 </script>
 
 <template>
@@ -11,7 +12,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       </template>
       <!-- 工具栏 -->
       <div class="main-toolbar">
-        <form class="main-toolform">
+        <el-form class="main-toolform" ref="filterboxForm" :model="filterbox">
           <div class="main-toolform-item">
             <div class="main-toolform-line" style="justify-content: right;margin-right: 4%;">
               <el-button @click="reset('filterboxForm')" class="filterButton">
@@ -29,42 +30,39 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             </div>
           </div>
           <div class="main-toolform-item" style="margin-right: 3%;">
-            <el-form
-                ref="filterboxForm"
-                class="form"
-                :model="filterbox"
-                style="width: 100%"
-            >
               <el-row>
                 <el-col :span="6">
-                  <el-form-item label="代理名称:" label-width="150px">
+                  <el-form-item label="代理名称:" label-width="150px" prop="merchantAgentId">
                     <el-select
                         :options="agentOptions"
                         :props="agentProps"
-                        v-model="filterbox.agentUserId"
+                        v-model="filterbox.merchantAgentId"
                         style="width: 200px"
+                        clearable
+                        filterable
                     ></el-select>
                   </el-form-item>
                 </el-col>
                 <el-col :span="6">
-                  <el-form-item label="交易订单号:" label-width="150px">
-                    <el-input v-model="filterbox.orderNO" style="width: 200px"/>
+                  <el-form-item label="交易订单号:" label-width="150px" prop="id">
+                    <el-input v-model="filterbox.id" style="width: 200px" clearable/>
                   </el-form-item>
                 </el-col>
                 <el-col :span="6">
-                  <el-form-item label="交易类型:" label-width="150px">
+                  <el-form-item label="交易类型:" label-width="150px" prop="orderType">
                     <el-select
-                        v-model="filterbox.type"
+                        v-model="filterbox.orderType"
                         style="width: 200px"
+                        clearable
                     >
-                      <el-option label="充值" :value="0"></el-option>
-                      <el-option label="提现" :value="1"></el-option>
-                      <el-option label="手工调账" :value="2"></el-option>
+                      <el-option label="充值" :value="1"></el-option>
+                      <el-option label="提现" :value="2"></el-option>
+                      <el-option label="手工调账" :value="3"></el-option>
                     </el-select>
                   </el-form-item>
                 </el-col>
                 <el-col :span="6">
-                  <el-form-item label="时间:" label-width="150px">
+                  <el-form-item label="时间:" label-width="150px" prop="filterDateRange">
                     <el-date-picker
                         v-model="filterbox.filterDateRange"
                         type="daterange"
@@ -73,14 +71,14 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                         end-placeholder="结束日期"
                         format="YYYY/MM/DD"
                         value-format="x"
+                        clearable
                     >
                     </el-date-picker>
                   </el-form-item>
                 </el-col>
               </el-row>
-            </el-form>
           </div>
-        </form>
+        </el-form>
       </div>
     </el-collapse-item>
   </el-collapse>
@@ -98,7 +96,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
         >
           <div>
-            {{row.orderNO}}
+            {{row.id}}
           </div>
         </el-table-column>
         <el-table-column
@@ -108,7 +106,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
         >
           <div>
-            {{row.agentName}}
+            {{row.name}}
           </div>
         </el-table-column>
         <el-table-column
@@ -118,7 +116,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
         >
           <div>
-            {{row.transactionType}}
+            {{transactionType[row.orderType]}}
           </div>
         </el-table-column>
         <el-table-column
@@ -128,7 +126,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
         >
           <div>
-            {{row.transactionCurrencyType}}
+            {{row.currency}}
           </div>
         </el-table-column>
         <el-table-column
@@ -138,7 +136,28 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
         >
           <div>
-            {{row.transactionCashAmount}}
+            {{row.amount}}
+          </div>
+        </el-table-column>
+        <el-table-column
+            prop="beforeTransactionAccountBalance"
+            label="交易前账户金额"
+            v-slot="{row}"
+            align="center"
+            width="200px;"
+        >
+          <div style="width: 100%;">
+            {{row.totalBalanceBefore}}
+          </div>
+        </el-table-column>
+        <el-table-column
+            prop="afterTransactionAccountBalance"
+            label="交易后账户余额"
+            v-slot="{row}"
+            align="center"
+        >
+          <div>
+            {{row.totalBalanceAfter}}
           </div>
         </el-table-column>
         <el-table-column
@@ -148,7 +167,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
         >
           <div>
-            {{row.transactionTime}}
+            {{getTimeFromTimestamp(row.createTime)}}
           </div>
         </el-table-column>
         <el-table-column
@@ -157,7 +176,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
         >
           <div>
-            {{row.transactionReason}}
+            {{row.remark}}
           </div>
         </el-table-column>
         <el-table-column
@@ -166,7 +185,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
         >
           <div>
-            {{row.operator}}
+            {{row.createBy}}
           </div>
         </el-table-column>
       </el-table>
@@ -178,6 +197,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
         v-model:page-size="pageSize"
         :page-sizes="pageSizes"
         @current-change="handleCurrentChange"
+        @size-change="handleSizeChange"
        
       >
       </el-pagination>
@@ -186,12 +206,18 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 </template>
 
 <script>
-import { getAgentInfo } from "@/api/interface/backendInterface.js";
+import {getAgentInfo, getWithdrawStatementeOrder} from "@/api/interface/backendInterface.js";
+import {getTodayStartTimestamp} from "@/api/common.js";
 
 export default {
   name: "AgentStatement",
   data() {
     return {
+      transactionType: {
+        '1': '充值',
+        '2': '提现',
+        '3': '调账'
+      },
       activeTool: '1',
       filterbox: {},
       agentOptions: [],
@@ -208,17 +234,49 @@ export default {
     };
   },
   methods: {
-    handleCurrentChange() {},
+    handleCurrentChange(val) {
+      this.filterbox.pageNo = val;
+      this.currentPage = val;
+      this.filterbox.pageSize = this.pageSize;
+      this.search()
+    },
+    handleSizeChange(val) {
+      this.pageSize = val;
+      this.filterbox.pageSize = this.pageSize;
+      this.filterbox.pageNo = 1
+      this.currentPage = 1
+      this.search()
+    },
     reset(form) {
       this.$refs[form].resetFields();
     },
-    search() {},
+    search() {
+      let timeRange = null
+      if (this.filterbox.filterDateRange) {
+        timeRange = new String(this.filterbox.filterDateRange)
+        this.filterbox.startTime = timeRange.split(',')[0] / 1000
+        this.filterbox.endTime = timeRange.split(',')[1] / 1000 + 86399
+      } else {
+        this.filterbox.filterDateRange = [getTodayStartTimestamp()*1000,getTodayStartTimestamp()*1000],
+            this.filterbox.startTime = getTodayStartTimestamp()
+        this.filterbox.endTime = getTodayStartTimestamp() + 86399
+      }
+      getWithdrawStatementeOrder(this.filterbox).then(response => {
+        this.agentStatementsFormData = [];
+        let result = JSON.parse(response.data.data);
+        this.agentStatementsFormData = result.accountStatementsDtoList;
+        this.totalCount = result.totalNumber
+        this.currentPage = result.pageNo;
+        this.pageSize = result.pageSize;
+      })
+    },
     exportStatements() {}
   },
   mounted() {
     getAgentInfo({ pageSize: 1000 }).then(response => {
       if (response.status === 200 && response.data.code === 0) {
-        this.agentOptions = JSON.parse(response.data.data).agentDtoList || [];
+        this.agentOptions = JSON.parse(response.data.data).agentInfoDtoList || [];
+        this.search()
       }
     })
   }

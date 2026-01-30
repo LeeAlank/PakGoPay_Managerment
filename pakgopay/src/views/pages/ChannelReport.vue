@@ -58,7 +58,7 @@ export default {
       tab2CurrentPage: 0,
       tab2TotalCount: 0,
       tab2PageSize: 1,
-      pageSizes: [1,5,10,15,30,50,100],
+      pageSizes: [10,50,100],
 
       filterbox: {
       }

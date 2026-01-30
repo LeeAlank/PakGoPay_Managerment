@@ -751,7 +751,7 @@ export default {
       totalCount: 0,
       pageSize: 10,
       currentPage: 1,
-      pageSizes: [1, 5, 10, 15, 20],
+      pageSizes: [10, 20, 50, 100, 200],
     }
   },
   methods: {

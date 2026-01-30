@@ -1226,7 +1226,7 @@ export default {
       totalCount: 0,
       pageSize: 10,
       currentPage: 1,
-      pageSizes: [1, 10, 20, 30, 40],
+      pageSizes: [10, 20, 50, 100, 200],
       tableKey: 0,
       toolbarIsVisible: true,
       pathChannelDialogTitle: "",

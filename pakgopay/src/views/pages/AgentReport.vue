@@ -303,7 +303,7 @@ export default {
       tab2CurrentPage: 1,
       tab2PageSize: 5,
       tab2TotalCount: 2,
-      pageSizes: [5, 10, 15, 30, 50, 100],
+      pageSizes: [10,20, 50, 100],
 
       filterbox: {
         pathChannelName: '',

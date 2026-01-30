@@ -429,7 +429,7 @@ export default {
       tab2TotalCount: 0,
       tab1CurrentPage: 1,
       tab2CurrentPage: 1,
-      pageSizes: [10, 20, 30, 40],
+      pageSizes: [10, 20, 50, 100, 200],
       tab1PageSize:10,
       tab2PageSize:10,
       filterbox: {},

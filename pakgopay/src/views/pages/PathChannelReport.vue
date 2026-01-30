@@ -55,8 +55,8 @@ export default {
       tab2CurrentPage: 0,
       tab2TotalCount: 0,
       tab2PageSize: 1,
-      pageSizes: [1, 5, 10, 15, 30, 50, 100],
-      totalCount: 2,
+      pageSizes: [ 10, 20, 50, 100, 200],
+      totalCount: 0,
       filterbox: {
         pathChannelName: '',
         pathChannelLabelName: '',

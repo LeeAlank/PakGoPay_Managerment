@@ -43,7 +43,7 @@ export default {
       reportTitle: '代收订单订单总数｜代收订单成功率｜代收订单成功数｜代付订单总数｜代收订单成功率｜代收订单成功数｜代收/付商户手续费｜一二三级代理佣金｜代收/付总利润',
       tab1CurrentPage: 1,
       tab1TotalCount: 2,
-      pageSizes: [1, 5, 10, 15, 30, 50, 100],
+      pageSizes: [10, 15, 30, 50, 100],
       tab1PageSize: 1,
       tab2CurrentPage: 1,
       tab2TotalCount: 2,

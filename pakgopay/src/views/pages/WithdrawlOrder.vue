@@ -176,10 +176,10 @@ import {getTimeFromTimestamp} from "@/api/common.js";
             <SvgIcon class="filterButtonSvg" name="createOrder"/>
             <div>创建订单</div>
           </el-button>
-          <el-button @click="createPathChannel()" class="filterButton">
+<!--          <el-button @click="createPathChannel()" class="filterButton">
             <SvgIcon class="filterButtonSvg" name="callBack"/>
             <div>批量回调</div>
-          </el-button>
+          </el-button>-->
         </div>
         <el-table
             border :data="withdrawlOrderTableInfo"
@@ -331,7 +331,7 @@ export default {
       totalCount: 0,
       currentPage: 1,
       pageSize: 10,
-      pageSizes: [1, 10, 20, 30, 40],
+      pageSizes: [10, 20, 50, 100, 200],
       tableKey: 0,
       activeTool: "1",
       filterbox: {

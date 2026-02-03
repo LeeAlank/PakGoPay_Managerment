@@ -407,6 +407,7 @@
     "roleManagement.form.menu": "菜单:",
     "roleManagement.dialog.addTitle": "新增角色",
     "roleManagement.dialog.editTitle": "编辑",
+    "roleManagement.dialog.googleVerify": "谷歌验证",
     "roleManagement.dialog.deleteTitle": "删除角色",
     "roleManagement.validation.roleNameRequired": "请输入角色名称",
     "roleManagement.validation.roleFlagRequired": "请输入角色标识",

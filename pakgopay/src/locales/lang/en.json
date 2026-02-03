@@ -400,6 +400,7 @@
   "roleManagement.form.menu": "Menu:",
   "roleManagement.dialog.addTitle": "Add role",
   "roleManagement.dialog.editTitle": "Edit",
+  "roleManagement.dialog.googleVerify": "Google verification",
   "roleManagement.dialog.deleteTitle": "Delete role",
   "roleManagement.validation.roleNameRequired": "Please enter a role name.",
   "roleManagement.validation.roleFlagRequired": "Please enter a role flag.",

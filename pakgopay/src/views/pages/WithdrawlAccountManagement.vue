@@ -758,6 +758,10 @@ export default {
       this.confirmDialogTitle = ''
     },
     handleMerchantChange(value) {
+      this.withdrawOrderInfo.currency = null;
+      this.withdrawOrderInfo.availableAmount = null;
+      this.withdrawOrderInfo.walletAddr = null;
+      this.withdrawOrderInfo.amount = null;
       let opt = [];
       this.merchantAccountOptions.find((item) => {
         //return item.merchantAgentId === value;
@@ -765,9 +769,9 @@ export default {
           opt.push(item);
         }
       });
-      this.withdrawOrderInfo.merchantAgentName = opt[0].name;
+      this.withdrawOrderInfo.merchantAgentName = opt.length >0 ? opt[0].name : null;
       //this.withdrawOrderInfo.walletAddr = opt.walletAddr;
-      this.merchantAccountOptions = Object.assign([], opt)
+      //this.merchantAccountOptions = Object.assign([], opt)
       this.selectedMerchantBalance = this.amountInfo[value]
       this.merchantAccountOptions.forEach(item => {
         if (item.merchantAgentId === value) {
@@ -1147,10 +1151,13 @@ export default {
       })
     },
     handleWithdrawCurrencyChange(val) {
-      let opt = {}
-      //opt = this.amountInfo[val]
-      opt = this.selectedMerchantBalance[val]
-      opt ? this.withdrawOrderInfo.availableAmount = opt.available : this.withdrawOrderInfo.availableAmount = 0
+      const opt = this.selectedMerchantBalance?.[val] ?? {};
+      if(opt) {
+        this.withdrawOrderInfo.availableAmount = opt.available ? opt.available : 0;
+      } else {
+        this.withdrawOrderInfo.availableAmount = 0
+      }
+      //opt ? this.withdrawOrderInfo.availableAmount = opt.available : this.withdrawOrderInfo.availableAmount = 0
     },
     handleAjustmentCurrencyChange(val) {
       let opt = {}

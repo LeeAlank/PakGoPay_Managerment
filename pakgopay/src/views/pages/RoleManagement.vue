@@ -131,7 +131,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp, getTimeFromTimestamp} from 
        width="40%"
        style="height: 600px;border:solid 1px lightseagreen;overflow:scroll;position: relative;"
    >
-     <el-form style="margin-top: 50px" :model="roleInfo" :rules="addRoleRule" ref="roleInfo">
+     <el-form style="margin-top: 50px" :model="roleInfo" :rules="editRoleRule" ref="roleInfo">
        <div class="el-form-line">
          <el-form-item :label="$t('roleManagement.form.roleName')" label-width="150px"  prop="roleName">
            <el-input type="text" v-model="roleInfo.roleName" style="width: 200px"></el-input>
@@ -179,17 +179,12 @@ import {getFormateDate, getFormateTimeByTimeBystamp, getTimeFromTimestamp} from 
      <el-form style="margin-top: 50px" :model="roleInfo" :rules="addRoleRule" ref="roleInfo">
        <div class="el-form-line">
        <el-form-item :label="$t('roleManagement.form.roleName')" label-width="150px"  prop="roleName">
-         <el-input type="text" v-model="roleInfo.roleName" style="width: 200px"></el-input>
+         <el-input disabled type="text" v-model="roleInfo.roleName" style="width: 200px"></el-input>
        </el-form-item>
      </div>
      <div class="el-form-line">
        <el-form-item :label="$t('roleManagement.form.roleFlag')" label-width="150px"  prop="remark">
          <el-input type="text" v-model="roleInfo.remark" style="width: 200px"></el-input>
-       </el-form-item>
-     </div>
-     <div class="el-form-line">
-       <el-form-item :label="$t('common.googleCode')" label-width="150px"  prop="googleCode">
-         <el-input type="text" v-model="roleInfo.googleCode" style="width: 200px"></el-input>
        </el-form-item>
      </div>
        <div class="el-form-line">
@@ -212,6 +207,31 @@ import {getFormateDate, getFormateTimeByTimeBystamp, getTimeFromTimestamp} from 
      <div slot="footer" class="dialog-footer">
        <el-button @click="cancelDialog2">{{ $t('common.cancel') }}</el-button>
        <el-button type="primary" @click="submit2('roleInfo')">{{ $t('common.confirm') }}</el-button>
+     </div>
+   </el-dialog>
+
+   <el-dialog
+       :title="$t('roleManagement.dialog.googleVerify')"
+       v-model="googleVerifyVisible"
+       class="dialog"
+       center="true"
+       width="36%"
+   >
+     <el-form :model="googleVerifyForm" ref="googleVerifyForm">
+       <div class="el-form-line">
+         <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode">
+           <el-input
+             type="number"
+             v-model.trim="googleVerifyForm.googleCode"
+             style="width: 200px"
+             :placeholder="$t('common.placeholder.googleCode')"
+           ></el-input>
+         </el-form-item>
+       </div>
+     </el-form>
+     <div slot="footer" class="dialog-footer">
+       <el-button @click="cancelGoogleVerify">{{ $t('common.cancel') }}</el-button>
+       <el-button type="primary" @click="submitGoogleVerify">{{ $t('common.confirm') }}</el-button>
      </div>
    </el-dialog>
 
@@ -287,6 +307,11 @@ export default {
       dialogTitle: '',
       dialogVisible2: false,
       dialogTitle2: '',
+      googleVerifyVisible: false,
+      googleVerifyForm: {
+        googleCode: ''
+      },
+      pendingRoleInfo: null,
       dialogVisible3: false,
       dialogTitle3: '',
       roleInfoFormData: [],
@@ -294,6 +319,13 @@ export default {
       tableKey: 0,
       timeZoneKey: localStorage.getItem("timeZone") || "UTC+8",
       addRoleInfoData:[],
+      defaultRoleInfo: {
+        roleId: '',
+        remark: '',
+        menuList: [],
+        roleName: '',
+        googleCode: '',
+      },
       roleInfo:{
         roleId: '',
         remark: '',
@@ -317,6 +349,14 @@ export default {
         ],
         googleCode: [
             { required: true, message: this.$t('common.googleCodeRequired'), trigger: "blur" }
+        ]
+      },
+      editRoleRule: {
+        roleName: [
+          { required: true, message: this.$t('roleManagement.validation.roleNameRequired'), trigger: "blur" }
+        ],
+        remark: [
+          { required: false, message: this.$t('roleManagement.validation.roleFlagRequired'), trigger: "blur" }
         ]
       }
     }
@@ -365,17 +405,24 @@ export default {
       })
       this.dialogTitle2 = this.$t('roleManagement.dialog.editTitle')
       this.dialogVisible2 = true
-      this.roleInfo.roleId = row.roleId
-      this.roleInfo.roleName = row.roleName
-      this.roleInfo.remark = row.remark
+      this.roleInfo = {
+        ...this.defaultRoleInfo,
+        roleId: row.roleId,
+        roleName: row.roleName,
+        remark: row.remark
+      }
       await nextTick(() => {
         treeRef2.value.setCheckedKeys(this.menuList, true);
       })
     },
     deleteRoleInfo(row) {
 
-      this.roleInfo = {}
-      this.roleInfo = row
+      this.roleInfo = {
+        ...this.defaultRoleInfo,
+        roleId: row.roleId,
+        roleName: row.roleName,
+        remark: row.remark
+      }
       this.dialogVisible3 = true
       this.dialogTitle3 = this.$t('roleManagement.dialog.deleteTitle')
     },
@@ -396,14 +443,22 @@ export default {
     cancelDialog() {
       this.dialogVisible = false;
       this.dialogTitle = '';
+      this.resetAddForm();
     },
     cancelDialog2() {
       this.dialogVisible2 = false;
       this.dialogTitle2 = '';
+      this.resetEditForm();
+    },
+    cancelGoogleVerify() {
+      this.googleVerifyVisible = false;
+      this.googleVerifyForm.googleCode = '';
+      this.pendingRoleInfo = null;
     },
     cancelDialog3() {
       this.dialogVisible3 = false;
       this.dialogTitle3 = '';
+      this.resetDeleteForm();
     },
     submit(formName) {
 
@@ -434,7 +489,7 @@ export default {
             if (res.status === 200 && res.data.code === 0) {
               this.dialogTitle = ''
               this.dialogVisible = false
-              this.roleInfo = {}
+              this.resetAddForm()
               this.$notify({
                 title: this.$t('common.success'),
                 message: this.$t('roleManagement.message.addSuccess'),
@@ -502,40 +557,11 @@ export default {
       const that = this
       this.$refs[formName].validate((valid) => {
         if (valid) {
-          modifyRoleInfo(that.roleInfo).then(res => {
-            if (res.status === 200 && res.data.code === 0) {
-              this.dialogTitle2 = ''
-              this.dialogVisible2 = false
-              this.roleInfo = {}
-              this.$notify({
-                title: this.$t('common.success'),
-                message: this.$t('roleManagement.message.updateSuccess'),
-                type: 'success',
-                position: 'bottom-right'
-              });
-            } else if (res.data.code !== 0) {
-              this.$notify({
-                title: this.$t('common.error'),
-                message: res.data.message,
-                type: 'error',
-                position: 'bottom-right'
-              });
-            } else if (res.status === 401) {
-              this.$notify({
-                title: this.$t('common.error'),
-                message: this.$t('roleManagement.message.sessionExpired'),
-                type: 'error',
-                position: 'bottom-right'
-              });
-            } else {
-              this.$notify({
-                title: this.$t('common.error'),
-                message: res.data.message,
-                type: 'error',
-                position: 'bottom-right'
-              });
-            }
-          })
+          this.pendingRoleInfo = Object.assign({}, that.roleInfo)
+          this.dialogVisible2 = false
+          this.dialogTitle2 = ''
+          this.googleVerifyForm.googleCode = ''
+          this.googleVerifyVisible = true
 
         } else {
           this.$notify({
@@ -547,6 +573,59 @@ export default {
           return false;
         }
       });
+    },
+    submitGoogleVerify() {
+      if (!this.googleVerifyForm.googleCode) {
+        this.$notify({
+          title: this.$t('common.error'),
+          message: this.$t('common.googleCodeRequired'),
+          type: 'error',
+          position: 'bottom-right'
+        })
+        return
+      }
+      if (!this.pendingRoleInfo) {
+        this.googleVerifyVisible = false
+        return
+      }
+      const submitInfo = Object.assign({}, this.pendingRoleInfo, {
+        googleCode: this.googleVerifyForm.googleCode
+      })
+      modifyRoleInfo(submitInfo).then(res => {
+        if (res.status === 200 && res.data.code === 0) {
+          this.googleVerifyVisible = false
+          this.googleVerifyForm.googleCode = ''
+          this.pendingRoleInfo = null
+          this.resetEditForm()
+          this.$notify({
+            title: this.$t('common.success'),
+            message: this.$t('roleManagement.message.updateSuccess'),
+            type: 'success',
+            position: 'bottom-right'
+          });
+        } else if (res.data.code !== 0) {
+          this.$notify({
+            title: this.$t('common.error'),
+            message: res.data.message,
+            type: 'error',
+            position: 'bottom-right'
+          });
+        } else if (res.status === 401) {
+          this.$notify({
+            title: this.$t('common.error'),
+            message: this.$t('roleManagement.message.sessionExpired'),
+            type: 'error',
+            position: 'bottom-right'
+          });
+        } else {
+          this.$notify({
+            title: this.$t('common.error'),
+            message: res.data.message,
+            type: 'error',
+            position: 'bottom-right'
+          });
+        }
+      })
     },
     submit3(formName) {
       this.$confirm(this.$t('roleManagement.message.deleteConfirm', {name: this.roleInfo.roleName}), this.$t('common.prompt'), {
@@ -583,10 +662,36 @@ export default {
             }
             this.dialogVisible3 = false;
             this.dialogTitle3 = ''
-            this.roleInfo = {}
+            this.resetDeleteForm()
           })
       })
 
+    }
+    ,
+    resetAddForm() {
+      Object.assign(this.roleInfo, this.defaultRoleInfo)
+      this.addRoleInfoData = []
+      if (this.$refs.roleInfo) {
+        this.$refs.roleInfo.resetFields()
+      }
+      if (treeRef.value) {
+        treeRef.value.setCheckedKeys([])
+      }
+    },
+    resetEditForm() {
+      Object.assign(this.roleInfo, this.defaultRoleInfo)
+      if (this.$refs.roleInfo) {
+        this.$refs.roleInfo.resetFields()
+      }
+      if (treeRef2.value) {
+        treeRef2.value.setCheckedKeys([])
+      }
+    },
+    resetDeleteForm() {
+      Object.assign(this.roleInfo, this.defaultRoleInfo)
+      if (this.$refs.roleInfo) {
+        this.$refs.roleInfo.resetFields()
+      }
     }
   },
   mounted() {

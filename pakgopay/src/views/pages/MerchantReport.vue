@@ -534,7 +534,7 @@ export default {
             </el-table-column>
             <el-table-column
                 prop="orderProfit"
-                label="代收总利润"
+                label="平台手续费"
                 v-slot="{row}"
                 align="center"
             >
@@ -667,7 +667,7 @@ export default {
             </el-table-column>
             <el-table-column
                 prop="totalProfit"
-                label="代付总利润"
+                label="平台手续费"
                 v-slot="{row}"
                 align="center"
             >
@@ -677,7 +677,7 @@ export default {
             </el-table-column>
             <el-table-column
                 prop="time"
-                label="代收总利润"
+                label="时间"
                 v-slot="{row}"
                 align="center"
             >

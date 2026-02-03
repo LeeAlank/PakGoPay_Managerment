@@ -435,7 +435,7 @@ export default {
             </el-table-column>
             <el-table-column
                 prop="collectionChannelProfit"
-                label="代收净利润"
+                label="平台手续费"
                 align="center"
                 v-slot="{row}"
             >
@@ -525,7 +525,7 @@ export default {
             </el-table-column>
             <el-table-column
                 prop="orderBalance"
-                label="代付净利润"
+                label="平台手续费"
                 align="center"
                 v-slot="{row}"
             >

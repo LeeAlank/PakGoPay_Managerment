@@ -168,7 +168,7 @@ import {getFormateDate} from "@/api/common.js";
             <div>{{currencyIcon + row.merchantFee}}</div>
           </el-table-column>
           <el-table-column
-              label="代收总利润"
+              label="平台手续费"
               prop="orderProfit"
               align="center"
               v-slot="{row}"
@@ -261,7 +261,7 @@ import {getFormateDate} from "@/api/common.js";
             <div>{{row.merchantFee}}</div>
           </el-table-column>
           <el-table-column
-              label="代付总利润"
+              label="平台手续费"
               prop="orderProfit"
               align="center"
               v-slot="{row}"

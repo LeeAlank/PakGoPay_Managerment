@@ -711,31 +711,42 @@ export default {
       if (!dateStr) {
         return "";
       }
-      const date = new Date(`${dateStr}T00:00:00`);
-      if (Number.isNaN(date.getTime())) {
+      const parts = dateStr.split("-");
+      if (parts.length !== 3) {
         return "";
       }
-      return Math.floor(date.getTime() / 1000);
+      const year = Number(parts[0]);
+      const month = Number(parts[1]) - 1;
+      const day = Number(parts[2]);
+      if ([year, month, day].some(Number.isNaN)) {
+        return "";
+      }
+      return Math.floor(Date.UTC(year, month, day, 0, 0, 0) / 1000);
     },
     toMonthStartEpochSeconds(monthStr) {
       if (!monthStr) {
         return "";
       }
-      const date = new Date(`${monthStr}-01T00:00:00`);
-      if (Number.isNaN(date.getTime())) {
+      const parts = monthStr.split("-");
+      if (parts.length !== 2) {
         return "";
       }
-      return Math.floor(date.getTime() / 1000);
+      const year = Number(parts[0]);
+      const month = Number(parts[1]) - 1;
+      if ([year, month].some(Number.isNaN)) {
+        return "";
+      }
+      return Math.floor(Date.UTC(year, month, 1, 0, 0, 0) / 1000);
     },
     toYearStartEpochSeconds(yearStr) {
       if (!yearStr) {
         return "";
       }
-      const date = new Date(`${yearStr}-01-01T00:00:00`);
-      if (Number.isNaN(date.getTime())) {
+      const year = Number(yearStr);
+      if (Number.isNaN(year)) {
         return "";
       }
-      return Math.floor(date.getTime() / 1000);
+      return Math.floor(Date.UTC(year, 0, 1, 0, 0, 0) / 1000);
     },
     getScopeInfo() {
       const roleName = localStorage.getItem("roleName");

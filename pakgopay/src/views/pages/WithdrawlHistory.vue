@@ -400,6 +400,77 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
     </div>
   </el-dialog>
   <el-dialog
+      :title="dialogManualAccountAdjustmentTitle"
+      v-model="dialogManualAccountAdjustmentVisible"
+      class="dialog"
+      center
+      width="40%"
+      height="50%"
+  >
+    <el-form
+        ref="manualAccountAdjustmentOrderInfoForm"
+        :model="manualAccountAdjustmentOrderInfo"
+        class="form"
+        :rules="dialogManualAccountAdjustmentRule"
+        style="margin-right: 5%;margin-top: 60px"
+    >
+      <div class="el-form-line">
+        <el-form-item :label="$t('withdrawlHistory.form.agentName')" label-width="150px" prop="merchantAgentId">
+          <el-select
+              :options="agentOptions"
+              :props="agentProps"
+              v-model="manualAccountAdjustmentOrderInfo.merchantAgentId"
+              @change="handleAdjustAgentChange"
+              style="width: 200px"
+              :disabled="filterAvaiable"
+          >
+          </el-select>
+        </el-form-item>
+      </div>
+      <div class="el-form-line">
+        <el-form-item :label="$t('withdrawlAccount.form.currency')" label-width="150px" prop="currency">
+          <el-select v-model="manualAccountAdjustmentOrderInfo.currency" style="width: 200px"
+                     :options="currencyOptions"
+                     :props="currencyProps"
+                     @change="handleAdjustCurrencyChange"
+          />
+        </el-form-item>
+      </div>
+      <div class="el-form-line">
+        <el-form-item :label="$t('withdrawlAccount.form.totalAmount')" label-width="150px" prop="total">
+          <el-input disabled v-model="manualAccountAdjustmentOrderInfo.total" style="width: 200px"/>
+        </el-form-item>
+      </div>
+      <div class="el-form-line">
+        <el-form-item :label="$t('withdrawlAccount.form.adjustMode')" label-width="150px" prop="type">
+          <el-switch
+              v-model="manualAccountAdjustmentOrderInfo.type"
+              active-color="#13ce66"
+              inactive-color="#ff4949"
+              :active-text="$t('withdrawlAccount.adjust.increase')"
+              :inactive-text="$t('withdrawlAccount.adjust.decrease')"
+              :active-value="1"
+              :inactive-value="0"
+              :class="manualAccountAdjustmentOrderInfo.type === 1 ? 'adjust-switch-inc' : 'adjust-switch-dec'"
+              style="width: 200px"
+          >
+          </el-switch>
+        </el-form-item>
+
+      </div>
+      <div class="el-form-line">
+        <el-form-item :label="$t('withdrawlAccount.form.adjustAmount')" label-width="150px" prop="amount">
+          <el-input type="number" v-model="manualAccountAdjustmentOrderInfo.amount" style="width: 200px"/>
+        </el-form-item>
+      </div>
+    </el-form>
+    <div slot="footer" class="dialog-footer">
+      <el-button @click="cancelManualAccountAdjustment('manualAccountAdjustmentOrderInfoForm')">{{ $t('common.cancel') }}</el-button>
+      <el-button type="primary" @click="submitManualAccountAdjustment('manualAccountAdjustmentOrderInfoForm')">{{ $t('common.confirm') }}
+      </el-button>
+    </div>
+  </el-dialog>
+  <el-dialog
       :title="confirmDialogTitle"
       v-model="confirmDialogVisible"
       class="dialog"
@@ -466,6 +537,9 @@ export default {
       },
       dialogWithdrawVisible: false,
       dialogWithdrawTitle: '',
+      dialogManualAccountAdjustmentVisible: false,
+      dialogManualAccountAdjustmentTitle: '',
+      manualAccountAdjustmentOrderInfo: {},
       tableKey: 0,
       activeTool: '1',
       agentOptions: [],
@@ -496,6 +570,11 @@ export default {
       accountGoogleData: {
         googleCode: ''
       },
+      confirmDialogVisible: false,
+      confirmDialogTitle: '',
+      confirmData: {
+        googleCode: ''
+      },
       accountSubmitType: '',
       agentTotalAmount: '10',
       agentAvailableBalance: '0.1',
@@ -506,18 +585,23 @@ export default {
       pageSizes: [10, 20, 50, 100, 200],
       createAccountRules: {
         merchantAgentId: {
-          required: true, messages: this.$t('withdrawlHistory.validation.agentRequired'), trigger: 'blur'
+          required: true, message: this.$t('withdrawlHistory.validation.agentRequired'), trigger: 'blur'
         },
         walletAddr: {
-          required: true, messages: this.$t('withdrawlHistory.validation.walletAddrRequired'), trigger: 'blur'
+          required: true, message: this.$t('withdrawlHistory.validation.walletAddrRequired'), trigger: 'blur'
         },
         walletName: {
-          required: true, messages: this.$t('withdrawlHistory.validation.walletNameRequired'), trigger: 'blur'
+          required: true, message: this.$t('withdrawlHistory.validation.walletNameRequired'), trigger: 'blur'
         }
       },
       accountGoogleRule: {
         googleCode: {
-          required: true, messages: this.$t('common.googleCodeRequired'), trigger: 'blur'
+          required: true, message: this.$t('common.googleCodeRequired'), trigger: 'blur'
+        }
+      },
+      confirmRule: {
+        googleCode: {
+          required: true, message: this.$t('common.googleCodeRequired'), trigger: 'blur'
         }
       },
       withdrawOrderRule: {
@@ -536,6 +620,17 @@ export default {
         /* googleCode: {
            required: true, trigger: 'blur'
          }*/
+      },
+      dialogManualAccountAdjustmentRule: {
+        merchantAgentId: {
+          required: true, trigger: 'blur', message: this.$t('withdrawlHistory.validation.agentRequired')
+        },
+        amount: {
+          required: true, trigger: 'blur', message: this.$t('withdrawlHistory.validation.amountRequired')
+        },
+        currency: {
+          required: true, trigger: 'blur', message: this.$t('withdrawlAccount.validation.currencyRequired')
+        }
       },
     }
   },
@@ -681,6 +776,19 @@ export default {
       this.dialogWithdrawTitle = this.$t('withdrawlHistory.dialog.withdrawTitle')
       this.withdrawOrderInfo.orderType = 2
     },
+    createManualAccountAdjustment() {
+      this.manualAccountAdjustmentOrderInfo = {
+        merchantAgentId: '',
+        merchantAgentName: '',
+        currency: null,
+        total: null,
+        amount: null,
+        type: 1,
+        orderType: 3
+      }
+      this.dialogManualAccountAdjustmentVisible = true
+      this.dialogManualAccountAdjustmentTitle = this.$t('withdrawlAccount.dialog.manualAdjustTitle')
+    },
     editAgentAccount(row) {
       this.createAgentAccountModel = Object.assign({}, row)
       this.createAccountVisible = true
@@ -752,6 +860,11 @@ export default {
       this.dialogWithdrawVisible = false
       this.updateAgentAccount(null)
     },
+    cancelManualAccountAdjustment(form) {
+      this.$refs[form].resetFields()
+      this.dialogManualAccountAdjustmentVisible = false
+      this.dialogManualAccountAdjustmentTitle = ''
+    },
     submitWithdraw(form) {
       this.$refs[form].validate(validate => {
         if (validate) {
@@ -765,11 +878,12 @@ export default {
       })
     },
     submitConfirm(form) {
-      let orderMessage = form.orderType === 1
-        ? this.$t('withdrawlHistory.orderType.recharge')
-        : form.orderType === 2
-          ? this.$t('withdrawlHistory.orderType.withdraw')
-          : this.$t('withdrawlHistory.orderType.manualAdjust')
+      const orderMessageKey = this.confirmData.orderType === 1
+        ? 'withdrawlHistory.orderType.recharge'
+        : this.confirmData.orderType === 2
+          ? 'withdrawlHistory.orderType.withdraw'
+          : 'withdrawlHistory.orderType.manualAdjust'
+      const orderMessage = this.$t(orderMessageKey)
       this.$refs[form].validate(validate => {
         if (validate) {
           createStatementeOrderApply(this.confirmData).then(res => {
@@ -777,6 +891,10 @@ export default {
             this.confirmDialogVisible = false
             if (res.status === 200 && res.data.code === 0) {
               this.$refs[form].resetFields()
+              if (this.confirmData.orderType === 3) {
+                this.$refs.manualAccountAdjustmentOrderInfoForm?.resetFields()
+                this.getNewstAgentInfo()
+              }
               this.$notify({
                 title: this.$t('common.success'),
                 type: 'success',
@@ -897,6 +1015,44 @@ export default {
         })
       })
     },
+    submitManualAccountAdjustment(form) {
+      this.$refs[form].validate(validate => {
+        if (validate) {
+          const rawAmount = Number(this.manualAccountAdjustmentOrderInfo.amount || 0)
+          if (this.manualAccountAdjustmentOrderInfo.type === 0) {
+            this.manualAccountAdjustmentOrderInfo.amount = rawAmount === 0 ? 0 : -Math.abs(rawAmount)
+          } else {
+            this.manualAccountAdjustmentOrderInfo.amount = Math.abs(rawAmount)
+          }
+          this.dialogManualAccountAdjustmentVisible = false
+          this.dialogManualAccountAdjustmentTitle = ''
+          this.confirmData = Object.assign({}, this.manualAccountAdjustmentOrderInfo)
+          this.confirmDialogTitle = this.$t('withdrawlHistory.dialog.confirmTitle')
+          this.confirmDialogVisible = true
+        }
+      })
+    },
+    handleAdjustAgentChange(value) {
+      this.manualAccountAdjustmentOrderInfo.currency = null
+      this.manualAccountAdjustmentOrderInfo.total = null
+      let opt = [];
+      this.agentAccountOptions.find((item) => {
+        if (item.merchantAgentId === value) {
+          opt.push(item);
+        }
+      });
+      this.manualAccountAdjustmentOrderInfo.merchantAgentName = opt.length > 0 ? opt[0].name : null;
+      this.manualAccountAdjustmentOrderInfo.merchantAgentId = opt.length > 0 ? opt[0].merchantAgentId : null;
+      this.selectedAgentBalance = this.amountInfo[value]
+    },
+    handleAdjustCurrencyChange(val) {
+      const opt = this.selectedAgentBalance?.[val] ?? {};
+      if (opt) {
+        this.manualAccountAdjustmentOrderInfo.total = opt.available ? opt.available : 0;
+      } else {
+        this.manualAccountAdjustmentOrderInfo.total = 0
+      }
+    },
     getNewstAgentInfo() {
       getAgentInfo({merchantUserName: this.filterbox.name, isNeedCardData: true}).then(res => {
         if (res.status === 200 && res.data.code === 0) {
@@ -1001,5 +1157,21 @@ export default {
 
 input::-webkit-inner-spin-button {
   -webkit-appearance: none !important;
+}
+
+:deep(.adjust-switch-inc .el-switch__label--right) {
+  color: #16a34a;
+}
+
+:deep(.adjust-switch-inc .el-switch__label--left) {
+  color: #9ca3af;
+}
+
+:deep(.adjust-switch-dec .el-switch__label--left) {
+  color: #16a34a;
+}
+
+:deep(.adjust-switch-dec .el-switch__label--right) {
+  color: #9ca3af;
 }
 </style>

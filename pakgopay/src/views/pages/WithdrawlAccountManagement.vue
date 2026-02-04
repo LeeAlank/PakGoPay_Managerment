@@ -1067,6 +1067,12 @@ export default {
     submitManualAccountAdjustment(form) {
       this.$refs[form].validate(validate => {
         if (validate) {
+          const rawAmount = Number(this.manualAccountAdjustmentOrderInfo.amount || 0)
+          if (this.manualAccountAdjustmentOrderInfo.type === 0) {
+            this.manualAccountAdjustmentOrderInfo.amount = rawAmount === 0 ? 0 : -Math.abs(rawAmount)
+          } else {
+            this.manualAccountAdjustmentOrderInfo.amount = Math.abs(rawAmount)
+          }
           this.dialogManualAccountAdjustmentVisible = false
           this.dialogManualAccountAdjustmentTitle = ''
           this.confirmData =  Object.assign({}, this.manualAccountAdjustmentOrderInfo)

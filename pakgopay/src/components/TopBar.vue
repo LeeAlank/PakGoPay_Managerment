@@ -118,6 +118,11 @@ export default {
           value: 'zh-cn',
           label: this.$t('language.zh'),
           flag: 'chinese'
+        },
+        {
+          value: 'ms',
+          label: this.$t('language.ms'),
+          flag: 'singapore'
         }
       ]
     },
@@ -265,12 +270,15 @@ export default {
               :value="item.value"
               :label="item.label"
           >
-            <SvgIcon :name="item.flag"/>{{ item.label }}
+            <span class="lang-option">
+              <SvgIcon :name="item.flag" :class="['lang-flag', { 'lang-flag-tall': item.value === 'ms' }]" />
+              <span class="lang-label">{{ item.label }}</span>
+            </span>
           </el-option>
         </el-select>
         <div style="display: flex; flex-direction: column; margin-left: 12px;">
           <SvgIcon name="clock" style="width: 22px;height: 22px;width: 50px;margin: 0" />
-          <div style="font-size: small;margin:0">{{$t('timezone')}}</div>
+          <div class="timezone-label" style="font-size: small;margin:0">{{$t('timezone')}}</div>
         </div>
         <el-select
             v-model="selectedTimeZone"
@@ -381,6 +389,25 @@ export default {
 
 .notice-unread {
   font-weight: 600;
+}
+.lang-option {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+.lang-flag {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+}
+.lang-flag-tall {
+  height: 32px;
+}
+.lang-label {
+  line-height: 16px;
+}
+.timezone-label {
+  white-space: nowrap;
 }
 
 .zhedie {

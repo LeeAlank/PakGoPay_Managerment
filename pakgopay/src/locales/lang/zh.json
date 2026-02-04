@@ -47,6 +47,7 @@
     "language": "语言",
     "language.en": "English",
     "language.zh": "中文",
+    "language.ms": "马来语",
     "timezone": "时区",
     "topbar.logout":  "退出",
     "topbar.newMessage": "新消息",

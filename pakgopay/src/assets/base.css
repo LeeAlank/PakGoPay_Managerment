@@ -187,6 +187,13 @@ body {
     color: black;
     font-size: small;
 }
+.dialog-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-right: 1% !important;
+    margin-bottom: 1% !important;
+}
 
 .el-tabs--card > .el-tabs__header {
     border-radius: 12px;

@@ -6,54 +6,6 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
 
 <template>
   <div class="main-title">{{ $t('withdrawlAccount.title') }}</div>
-<!--  <div style="display: flex;align-items: inherit;margin-top: 1%;margin-bottom:0">
-    <el-form-item style="margin-left: 2%;">
-      <template #label>
-          <span style="color: black;font-size: small;align-items: center;">
-            统计币种:
-          </span>
-      </template>
-      <el-select
-          style="width: 100px;align-items: center;text-align: center;"
-          :options="currencyOptions"
-          :props="currencyProps"
-          default-first-option
-          v-model="filterbox.currency"
-          @change="handleCurrencyChange"
-          filterable
-      />
-    </el-form-item>
-  </div>-->
-  <!--  <div class="statistics-container"
-         style="display: flex;justify-content: space-around;height: auto;justify-items: center;align-items: center;margin-top:1%;">
-      <el-card style="width: 30%;height: 100%;">
-        <div style="display: flex;">
-          <SvgIcon name="cash" width="100px" height="100px"/>
-          <div style="display: flex; flex-direction: column;width: 80%;">
-            <span>总账户金额:</span>
-            <textarea v-model="statisticsInfo.total" disabled class="cash-text-area"></textarea>
-          </div>
-        </div>
-      </el-card>
-      <el-card style="width: 30%;height: 100%;">
-        <div style="display: flex;">
-          <SvgIcon name="cash-freeze" width="100px" height="100px"/>
-          <div style="display: flex; flex-direction: column;width: 80%;">
-            <span>冻结总金额:</span>
-            <textarea v-model="statisticsInfo.frozen" disabled class="cash-text-area"></textarea>
-          </div>
-        </div>
-      </el-card>
-      <el-card style="width: 30%;height: 100%;">
-        <div style="display: flex;">
-          <SvgIcon name="tixian" width="90px" height="90px"/>
-          <div style="display: flex; flex-direction: column;width: 80%;">
-            <span>提现总金额:</span>
-            <textarea v-model="statisticsInfo.withdraw" disabled class="cash-text-area"></textarea>
-          </div>
-        </div>
-      </el-card>
-    </div>-->
   <el-collapse v-model="activeTool">
     <el-collapse-item name="1">
       <template #title>
@@ -123,14 +75,6 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
      -->
     <form>
       <div style="display: flex;flex-direction: row;float: right">
-<!--        <el-button @click="exportStatements()" class="filterButton">
-          <template #icon>
-            <div style="width: 100%">
-              <SvgIcon class="filterButtonSvg" name="export"/>
-            </div>
-          </template>
-          <div style="color: black;margin-left: 8px">导出</div>
-        </el-button>-->
         <el-button @click="addWithdrawlAccount()" class="filterButton">
           <template #icon>
             <div style="width: 100%">
@@ -281,7 +225,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
       v-model="dialogFormVisible"
       class="dialog"
       center
-      width="70%"
+      width="40%"
       height="50%"
   >
     <!--
@@ -367,7 +311,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
       v-model="dialogWithdrawVisible"
       class="dialog"
       center
-      width="50%"
+      width="40%"
       height="50%"
   >
     <el-form :model="withdrawOrderInfo" label-width="100%" class="form" ref="withdrawOrderInfoForm"
@@ -431,7 +375,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
       v-model="dialogRechargeVisible"
       class="dialog"
       center
-      width="50%"
+      width="40%"
       height="50%"
   >
     <el-form ref="rechargeOrderInfoForm" :model="rechargeOrderInfo" class="form" :rules="rechargeOrderRule">
@@ -479,7 +423,7 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
       v-model="dialogManualAccountAdjustmentVisible"
       class="dialog"
       center
-      width="50%"
+      width="40%"
       height="50%"
   >
     <el-form
@@ -780,6 +724,9 @@ export default {
       })
     },
     handleAjustMentMerchantChange(value) {
+      this.manualAccountAdjustmentOrderInfo.currency = null
+      this.manualAccountAdjustmentOrderInfo.availableAmount = null
+      this.manualAccountAdjustmentOrderInfo.total = null
       let opt = [];
       this.merchantAccountOptions.find((item) => {
         //return item.merchantAgentId === value;
@@ -787,10 +734,16 @@ export default {
           opt.push(item);
         }
       });
-      this.manualAccountAdjustmentOrderInfo.merchantAgentName = opt[0].name;
+      this.manualAccountAdjustmentOrderInfo.merchantAgentName = opt.length >0 ? opt[0].name : null;
       this.manualAccountAdjustmentOrderInfo.merchantAgentId = opt[0].merchantAgentId;
       //this.withdrawOrderInfo.walletAddr = opt.walletAddr;
-      this.cacheMerchantAccountOptions = Object.assign([], opt)
+      //this.cacheMerchantAccountOptions = Object.assign([], opt)
+      this.selectedMerchantBalance = this.amountInfo[value]
+      /*this.merchantAccountOptions.forEach(item => {
+        if (item.merchantAgentId === value) {
+          this.selectedMerchantOptions.push(item);
+        }
+      })*/
     },
     handleRechargeMerchantChange(value) {
       let opt = {};
@@ -1103,34 +1056,6 @@ export default {
           this.confirmDialogTitle = this.$t('withdrawlAccount.dialog.confirmTitle')
           this.confirmDialogVisible = true
           this.$refs[form].resetFields()
-          /*createStatementeOrderApply(this.rechargeOrderInfo).then(res => {
-            if (res.status === 200 && res.data.code === 0) {
-              this.$refs[form].resetFields()
-              this.$notify({
-                title: 'Success',
-                type: 'success',
-                message: 'Create Recharge Order Successfully.',
-                duration: 3000,
-                position: 'bottom-right'
-              })
-            } else if (res.status === 200 && res.data.code !== 0) {
-              this.$notify({
-                title: 'Failed',
-                type: 'error',
-                message: res.data.message,
-                duration: 3000,
-                position: 'bottom-right'
-              })
-            } else {
-              this.$notify({
-                title: 'Error',
-                type: 'error',
-                message: 'somethind went wrong, try it again',
-                duration: 3000,
-                position: 'bottom-right'
-              })
-            }
-          })*/
         }
       })
     },
@@ -1160,9 +1085,14 @@ export default {
       //opt ? this.withdrawOrderInfo.availableAmount = opt.available : this.withdrawOrderInfo.availableAmount = 0
     },
     handleAjustmentCurrencyChange(val) {
-      let opt = {}
-      opt = this.amountInfo[val]
-      opt ? this.manualAccountAdjustmentOrderInfo.total = this.currencyIcons[val] + opt.available : this.manualAccountAdjustmentOrderInfo.total = this.currencyIcons[val] + 0
+      const opt = this.selectedMerchantBalance?.[val] ?? {};
+      //opt = this.amountInfo[val]
+      //opt ? this.manualAccountAdjustmentOrderInfo.total = this.currencyIcons[val] + opt.available : this.manualAccountAdjustmentOrderInfo.total = this.currencyIcons[val] + 0
+      if(opt) {
+        this.manualAccountAdjustmentOrderInfo.total = opt.available ? opt.available : 0;
+      } else {
+        this.manualAccountAdjustmentOrderInfo.total = 0
+      }
     },
     getNewstMerchantInfo() {
       getMerchantInfo({merchantUserName: this.filterbox.name, isNeedCardData: true}).then(res => {

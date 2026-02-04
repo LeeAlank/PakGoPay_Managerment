@@ -47,6 +47,7 @@
   "language": "language",
   "language.en": "English",
   "language.zh": "Chinese",
+  "language.ms": "Malay",
   "timezone": "timezone",
   "topbar.logout": "Logout",
   "topbar.newMessage": "New message",

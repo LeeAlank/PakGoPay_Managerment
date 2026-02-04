@@ -283,15 +283,6 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <el-input style="width: 200px" v-model="createAgentAccountModel.walletAddr"/>
         </el-form-item>
       </el-col>
-      <!--      <el-col v-if="dialogType !== 'start' && dialogType !== 'stop'" :span="24" class="addDialog">
-              <el-form-item
-                  label="钱包名称:"
-                  label-width="150px"
-                  prop="walletName"
-              >
-                <el-input style="width: 200px" v-model="createAgentAccountModel.walletName"/>
-              </el-form-item>
-            </el-col>-->
       <el-col v-if="dialogType !== 'start' && dialogType !== 'stop'" :span="24" class="addDialog">
         <el-form-item
             :label="$t('withdrawlHistory.form.status')"
@@ -312,19 +303,35 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </el-switch>
         </el-form-item>
       </el-col>
-      <el-col :span="24" class="addDialog">
-        <el-form-item
-            :label="$t('common.googleCode')"
-            label-width="150px"
-            prop="googleCode"
-        >
-          <el-input style="width: 200px" v-model="createAgentAccountModel.googleCode"/>
-        </el-form-item>
-      </el-col>
+      <el-col :span="24" class="addDialog"></el-col>
     </el-form>
     <div slot="footer" class="dialog-footer">
       <el-button @click="cancelDialog('createAccountForm')">{{ $t('common.cancel') }}</el-button>
       <el-button type="primary" @click="submit('createAccountForm')">{{ $t('common.confirm') }}</el-button>
+    </div>
+  </el-dialog>
+  <el-dialog
+      :title="accountGoogleTitle"
+      v-model="accountGoogleVisible"
+      class="dialog"
+      center
+      width="30%"
+      height="200px"
+  >
+    <el-form ref="accountGoogleForm" :rules="accountGoogleRule" :model="accountGoogleData" style="height:100px;margin-top: 20px">
+      <el-row>
+        <el-col :span="24" style="display: flex;justify-content: center;justify-items: center;align-items: center;">
+          <div>
+            <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode">
+              <el-input v-model="accountGoogleData.googleCode" style="width: 200px"/>
+            </el-form-item>
+          </div>
+        </el-col>
+      </el-row>
+    </el-form>
+    <div slot="footer" class="dialog-footer" style="margin-right: 3%;height: 30px;">
+      <el-button @click="cancelAccountGoogle('accountGoogleForm')">{{ $t('common.cancel') }}</el-button>
+      <el-button type="primary" @click="submitAccountGoogle('accountGoogleForm')">{{ $t('common.confirm') }}</el-button>
     </div>
   </el-dialog>
   <!-- withdraw dialog -->
@@ -484,6 +491,12 @@ export default {
       createAccountVisible: false,
       withdrawAccountData: [],
       createAgentAccountModel: {},
+      accountGoogleVisible: false,
+      accountGoogleTitle: '',
+      accountGoogleData: {
+        googleCode: ''
+      },
+      accountSubmitType: '',
       agentTotalAmount: '10',
       agentAvailableBalance: '0.1',
       agentFreezeAmount: '9.9',
@@ -500,7 +513,9 @@ export default {
         },
         walletName: {
           required: true, messages: this.$t('withdrawlHistory.validation.walletNameRequired'), trigger: 'blur'
-        },
+        }
+      },
+      accountGoogleRule: {
         googleCode: {
           required: true, messages: this.$t('common.googleCodeRequired'), trigger: 'blur'
         }
@@ -543,6 +558,20 @@ export default {
     },
     reset(form) {
       this.$refs[form].resetFields();
+    },
+    resetCreateAccountForm() {
+      this.createAgentAccountModel = {
+        merchantAgentId: '',
+        walletName: '',
+        walletAddr: '',
+        status: 1
+      }
+    },
+    resetAccountGoogleForm() {
+      this.accountGoogleData = {
+        googleCode: ''
+      }
+      this.accountSubmitType = ''
     },
     exportAgentStatement() {
       this.filterbox.columns = getAgentAccountTitle(this)
@@ -635,6 +664,7 @@ export default {
       })*/
     },
     addWithdrawlAccount() {
+      this.resetCreateAccountForm()
       this.createAccountVisible = true
       this.createAccountTitle = this.$t('withdrawlHistory.dialog.addTitle')
       this.dialogType = 'create'
@@ -652,21 +682,20 @@ export default {
       this.withdrawOrderInfo.orderType = 2
     },
     editAgentAccount(row) {
-      this.createAgentAccountModel = {}
-      this.createAgentAccountModel = row
+      this.createAgentAccountModel = Object.assign({}, row)
       this.createAccountVisible = true
       this.createAccountTitle = this.$t('withdrawlHistory.dialog.editTitle')
       this.submitType = 'edit'
     },
     startAgentAccount(row) {
-      this.createAgentAccountModel = row
+      this.createAgentAccountModel = Object.assign({}, row)
       this.createAgentAccountModel.status = 1
       this.dialogType = 'start'
       this.createAccountVisible = true
       this.createAccountTitle = this.$t('withdrawlHistory.dialog.enableTitle')
     },
     stopAgentAccount(row) {
-      this.createAgentAccountModel = row
+      this.createAgentAccountModel = Object.assign({}, row)
       this.createAgentAccountModel.status = 0
       this.dialogType = 'start'
       this.createAccountVisible = true
@@ -687,84 +716,30 @@ export default {
     submit(form) {
       this.$refs[form].validate(valid => {
         if (valid) {
-          if (this.submitType === 'create') {
-            // request interface to create Account
-            createAgentAccountInfo(this.createAgentAccountModel).then(res => {
-              if (res.status === 200 && res.data.code === 0) {
-                this.createAccountVisible = false
-                this.createAccountTitle = ''
-                this.dialogType = ''
-                this.$refs[form].resetFields()
-                this.submitType = ''
-                this.search()
-                this.$notify({
-                  title: this.$t('common.success'),
-                  message: this.$t('withdrawlHistory.message.createSuccess'),
-                  duration: 3000,
-                  position: 'bottom-right',
-                  type: 'success'
-                })
-              } else if (res.status === 200 && res.data.code !== 0) {
-                this.$notify({
-                  title: this.$t('common.error'),
-                  message: res.data.message,
-                  duration: 3000,
-                  position: 'bottom-right',
-                  type: 'error'
-                })
-              } else {
-                this.$notify({
-                  title: this.$t('common.error'),
-                  message: this.$t('common.requestFailed'),
-                  duration: 3000,
-                  position: 'bottom-right',
-                  type: 'error'
-                })
-              }
-            })
-          } else {
-            modifyAgentAccountInfo(this.createAgentAccountModel).then(res => {
-              if (res.status === 200 && res.data.code === 0) {
-                this.createAccountVisible = false
-                this.createAccountTitle = ''
-                this.dialogType = ''
-                this.$refs[form].resetFields()
-                this.submitType = ''
-                this.$notify({
-                  title: this.$t('common.success'),
-                  message: this.$t('withdrawlHistory.message.updateSuccess'),
-                  duration: 3000,
-                  position: 'bottom-right',
-                  type: 'success'
-                })
-                this.search()
-              } else if (res.status === 200 && res.data.code !== 0) {
-                this.$notify({
-                  title: this.$t('common.error'),
-                  message: res.data.message,
-                  duration: 3000,
-                  position: 'bottom-right',
-                  type: 'error'
-                })
-              } else {
-                this.$notify({
-                  title: this.$t('common.error'),
-                  message: this.$t('common.requestFailed'),
-                  duration: 3000,
-                  position: 'bottom-right',
-                  type: 'error'
-                })
-              }
-            })
-          }
+          this.accountSubmitType = this.submitType === 'create' ? 'create' : 'modify'
+          this.createAccountVisible = false
+          this.accountGoogleTitle = this.$t('withdrawlHistory.dialog.confirmTitle')
+          this.accountGoogleVisible = true
         }
       })
     },
     cancelDialog(form) {
       this.$refs[form].resetFields();
+      this.resetCreateAccountForm()
       this.createAccountVisible = false
       this.createAccountTitle = ''
       this.dialogType = ''
+      this.submitType = ''
+    },
+    cancelAccountGoogle(form) {
+      this.$refs[form].resetFields();
+      this.resetAccountGoogleForm()
+      this.resetCreateAccountForm()
+      this.accountGoogleVisible = false
+      this.accountGoogleTitle = ''
+      this.createAccountTitle = ''
+      this.dialogType = ''
+      this.submitType = ''
     },
     handleWithdrawCurrencyChange(val) {
       let opt = {}
@@ -830,6 +805,57 @@ export default {
             }
           })
         }
+      })
+    },
+    submitAccountGoogle(form) {
+      this.$refs[form].validate(validate => {
+        if (!validate) {
+          return
+        }
+        const payload = Object.assign({}, this.createAgentAccountModel, {
+          googleCode: this.accountGoogleData.googleCode
+        })
+        const request = this.accountSubmitType === 'create'
+          ? createAgentAccountInfo(payload)
+          : modifyAgentAccountInfo(payload)
+        request.then(res => {
+          this.accountGoogleTitle = ''
+          this.accountGoogleVisible = false
+          if (res.status === 200 && res.data.code === 0) {
+            this.$refs[form].resetFields()
+            this.resetAccountGoogleForm()
+            this.resetCreateAccountForm()
+            this.createAccountTitle = ''
+            this.dialogType = ''
+            this.submitType = ''
+            this.search()
+            this.$notify({
+              title: this.$t('common.success'),
+              message: this.accountSubmitType === 'create'
+                ? this.$t('withdrawlHistory.message.createSuccess')
+                : this.$t('withdrawlHistory.message.updateSuccess'),
+              duration: 3000,
+              position: 'bottom-right',
+              type: 'success'
+            })
+          } else if (res.status === 200 && res.data.code !== 0) {
+            this.$notify({
+              title: this.$t('common.error'),
+              message: res.data.message,
+              duration: 3000,
+              position: 'bottom-right',
+              type: 'error'
+            })
+          } else {
+            this.$notify({
+              title: this.$t('common.error'),
+              message: this.$t('common.requestFailed'),
+              duration: 3000,
+              position: 'bottom-right',
+              type: 'error'
+            })
+          }
+        })
       })
     },
     updateAgentAccount(loadingInstance) {

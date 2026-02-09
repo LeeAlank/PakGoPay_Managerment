@@ -1,0 +1,4 @@
+/assets/*
+  Access-Control-Allow-Origin: https://wanwanpay.com
+  Access-Control-Allow-Methods: GET, HEAD, OPTIONS
+  Access-Control-Allow-Headers: *

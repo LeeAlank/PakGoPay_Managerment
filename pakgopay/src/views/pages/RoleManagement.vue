@@ -123,14 +123,14 @@ import {getTimeFromTimestamp} from "@/api/common.js";
        </el-pagination>
      </div>
    </div>
-   <el-dialog
-       :title="dialogTitle"
-       v-model="dialogVisible"
-       class="dialog"
-       center="true"
-       width="40%"
-       style="height: 600px;border:solid 1px lightseagreen;overflow:scroll;position: relative;"
-   >
+  <el-dialog
+      :title="dialogTitle"
+      v-model="dialogVisible"
+      class="dialog role-edit-dialog"
+      center="true"
+      width="40%"
+      style="height: 600px;border:solid 1px lightseagreen;position: relative;"
+  >
      <el-form style="margin-top: 50px" :model="roleInfo" :rules="editRoleRule" ref="roleInfo">
        <div class="el-form-line">
          <el-form-item :label="$t('roleManagement.form.roleName')" label-width="150px"  prop="roleName">
@@ -168,14 +168,14 @@ import {getTimeFromTimestamp} from "@/api/common.js";
        <el-button type="primary" @click="submit('roleInfo')">{{ $t('common.confirm') }}</el-button>
      </div>
    </el-dialog>
-   <el-dialog
-       :title="dialogTitle2"
-       v-model="dialogVisible2"
-       class="dialog"
-       center="true"
-       width="40%"
-       style="height: 600px;border:solid 1px lightseagreen;overflow:scroll;position: relative;"
-   >
+  <el-dialog
+      :title="dialogTitle2"
+      v-model="dialogVisible2"
+      class="dialog role-edit-dialog"
+      center="true"
+      width="40%"
+      style="height: 600px;border:solid 1px lightseagreen;position: relative;"
+  >
      <el-form style="margin-top: 50px" :model="roleInfo" :rules="addRoleRule" ref="roleInfo">
        <div class="el-form-line">
        <el-form-item :label="$t('roleManagement.form.roleName')" label-width="150px"  prop="roleName">
@@ -721,4 +721,18 @@ export default {
 </script>
 <style scoped>
 @import "@/assets/base.css";
+
+:deep(.role-edit-dialog .el-dialog__body) {
+  max-height: 420px;
+  overflow: auto;
+}
+
+:deep(.role-edit-dialog .el-dialog__footer) {
+  position: sticky;
+  bottom: 0;
+  background: #ffffff;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  z-index: 1;
+}
 </style>

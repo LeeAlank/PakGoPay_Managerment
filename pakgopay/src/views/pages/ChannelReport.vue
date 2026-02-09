@@ -154,6 +154,8 @@ export default {
     },
     search(orderType, paneName){
       if (this.currencyOptions.length === 0){
+        this.tab1PageSize = 10;
+        this.tab2PageSize = 10;
         return
       }
       let loadingClass = ''

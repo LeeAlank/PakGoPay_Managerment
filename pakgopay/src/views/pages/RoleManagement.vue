@@ -1,7 +1,7 @@
 <script setup>
 
 import SvgIcon from "@/components/SvgIcon/index.vue";
-import {getFormateDate, getFormateTimeByTimeBystamp, getTimeFromTimestamp} from "@/api/common.js";
+import {getTimeFromTimestamp} from "@/api/common.js";
 </script>
 
 <template>
@@ -30,13 +30,13 @@ import {getFormateDate, getFormateTimeByTimeBystamp, getTimeFromTimestamp} from 
      </el-row>
    </div>
 
-   <div class="main-views-form">
+   <div class="reportInfo">
      <el-form>
        <el-table
            :key="tableKey"
            border :data="roleInfoTableData"
            class="merchantInfos-table"
-           style="width: 97%"
+           style="width: 100%"
            height="auto"
        >
          <el-table-column
@@ -214,22 +214,27 @@ import {getFormateDate, getFormateTimeByTimeBystamp, getTimeFromTimestamp} from 
        :title="$t('roleManagement.dialog.googleVerify')"
        v-model="googleVerifyVisible"
        class="dialog"
-       center="true"
-       width="36%"
+       center
+       width="30%"
+       style="min-width: 420px;"
    >
-     <el-form :model="googleVerifyForm" ref="googleVerifyForm">
-       <div class="el-form-line">
-         <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode">
-           <el-input
-             type="number"
-             v-model.trim="googleVerifyForm.googleCode"
-             style="width: 200px"
-             :placeholder="$t('common.placeholder.googleCode')"
-           ></el-input>
-         </el-form-item>
-       </div>
+     <el-form ref="googleVerifyForm" :model="googleVerifyForm" style="height:100px;margin-top: 20px">
+       <el-row>
+         <el-col :span="24" style="display: flex;justify-content: center;justify-items: center;align-items: center;">
+           <div>
+             <el-form-item :label="`${$t('common.googleCode')}:`" label-width="150px" prop="googleCode" required>
+               <el-input
+                 type="number"
+                 v-model.trim="googleVerifyForm.googleCode"
+                 style="width: 200px"
+                 :placeholder="$t('common.placeholder.googleCode')"
+               />
+             </el-form-item>
+           </div>
+         </el-col>
+       </el-row>
      </el-form>
-     <div slot="footer" class="dialog-footer">
+     <div slot="footer" class="dialog-footer" style="margin-right: 3%;display: flex;justify-content: flex-end;align-items: center;gap: 8px;">
        <el-button @click="cancelGoogleVerify">{{ $t('common.cancel') }}</el-button>
        <el-button type="primary" @click="submitGoogleVerify">{{ $t('common.confirm') }}</el-button>
      </div>
@@ -715,10 +720,5 @@ export default {
 }
 </script>
 <style scoped>
-.dialog-footer {
-  bottom: 0;
-  position: sticky;
-  position: -webkit-sticky;
-  right: 2%;
-}
+@import "@/assets/base.css";
 </style>

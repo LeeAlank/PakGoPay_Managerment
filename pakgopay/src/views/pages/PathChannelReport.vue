@@ -157,6 +157,11 @@ export default {
       this.filterbox.isNeed = true
     },
     search(orderType, paneName) {
+      if (this.currencyOptions.length === 0) {
+        this.tab1PageSize = 10;
+        this.tab2PageSize = 10;
+        return
+      }
       let loadingClass = ''
       if (paneName === '0') {
         loadingClass = 'reportInfo-table1'

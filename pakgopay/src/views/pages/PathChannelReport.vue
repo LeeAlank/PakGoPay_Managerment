@@ -29,6 +29,7 @@ export default {
   },
   data() {
     return {
+      payingPaymentInfo:[],
       activeTool: "1",
       collectionPaymentInfo: [],
       timeRange: [],
@@ -310,7 +311,7 @@ export default {
                 <span style="width: 150px">{{ $t('common.timeRange') }}</span>
               </template>
               <el-date-picker
-                  v-model="this.filterbox.filterDateRange"
+                  v-model="filterbox.filterDateRange"
                   type="daterange"
                   :range-separator="$t('common.rangeSeparator')"
                   :start-placeholder="$t('common.startDate')"

@@ -367,7 +367,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
           >
 
           </el-select>-->
-          {{this.currencyMaps[row.currency]}}
+          {{currencyMaps[row.currency]}}
 <!--          <div>
             {{ row.currency }}
           </div>-->

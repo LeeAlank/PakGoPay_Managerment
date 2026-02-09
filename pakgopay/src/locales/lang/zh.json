@@ -262,7 +262,7 @@
     "common.toolbar": "工具栏",
     "common.reset": "重置",
     "common.export": "导出",
-    "common.currency": "币种",
+    "common.currency": "币种：",
     "common.enable": "启用",
     "common.disable": "停用",
     "common.operation": "操作",

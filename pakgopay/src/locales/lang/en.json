@@ -254,7 +254,7 @@
   "common.toolbar": "Toolbar",
   "common.reset": "Reset",
   "common.export": "Export",
-  "common.currency": "Currency",
+  "common.currency": "Currency:",
   "common.enable": "Enable",
   "common.disable": "Disable",
   "common.operation": "Operation",

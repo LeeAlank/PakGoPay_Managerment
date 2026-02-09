@@ -394,6 +394,7 @@ import {
 export default {
   data() {
     return {
+      filterAvaiable: false,
       totalCount: 0,
       currentPage: 1,
       pageSize: 10,

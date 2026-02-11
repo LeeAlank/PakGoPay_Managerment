@@ -38,8 +38,25 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
             <div style="display: flex;flex-direction: row;width: 100%">
               <el-col :span="5">
                 <el-form-item :label="$t('pathChannelList.filter.channelName')" label-width="150px" prop="paymentName">
-                  <el-input v-model="filterbox.paymentName" type="text"
-                         :placeholder="$t('pathChannelList.placeholder.channelName')" style="width: 200px;height: 100%"/>
+                  <el-select
+                    v-model="filterbox.paymentName"
+                    filterable
+                    remote
+                    clearable
+                    :remote-method="handlePaymentNameSearch"
+                    :loading="paymentNameLoading"
+                    :placeholder="$t('pathChannelList.placeholder.channelName')"
+                    popper-class="pathchannel-name-select-dropdown"
+                    @visible-change="handlePaymentNameDropdownVisible"
+                    style="width: 200px;height: 100%"
+                  >
+                    <el-option
+                      v-for="item in paymentNameOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
@@ -998,9 +1015,9 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
           <el-form-item
               :label="$t('pathChannelList.form.paymentRequestPayUrl')"
               label-width="150px"
-              prop="paymentRequestCollectionUrl"
+              prop="paymentRequestPayUrl"
           >
-            <el-input v-model="createPathChannelInfo.paymentRequestCollectionUrl" style="width: 200px"/>
+            <el-input v-model="createPathChannelInfo.paymentRequestPayUrl" style="width: 200px"/>
           </el-form-item>
         </el-col>
         <el-col :span="6">
@@ -1111,6 +1128,9 @@ import {
   getPaymentInfo
 } from "@/api/interface/backendInterface.js";
 import {exportExcel, getAgentAccountTitle, getFormateTime, getPaymentListTitle, loadingBody} from "@/api/common.js";
+import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
+
+const PATH_CHANNEL_DRAFT_KEY = 'draft:PathChannelList:form';
 export default {
   name: "PathChannelList",
   data() {
@@ -1281,6 +1301,13 @@ export default {
       pathChannelCurrencyTypeOptions: [],
       supportTypeOptions: [],
       paymentTypeOptions: [],
+      paymentNameOptions: [],
+      paymentNameLoading: false,
+      paymentNameHasMore: true,
+      paymentNamePageNo: 1,
+      paymentNamePageSize: 20,
+      paymentNameQuery: '',
+      paymentNameScrollBound: false,
       currency: '',
       currencyIcon: '',
       currencyIcons: [],
@@ -1303,7 +1330,112 @@ export default {
       createPathChannelInfo: {},
     }
   },
+  watch: {
+    dialogFormVisible(visible) {
+      if (visible) {
+        this.loadPathChannelDraft();
+      }
+    },
+    createPathChannelInfo: {
+      deep: true,
+      handler() {
+        this.savePathChannelDraft();
+      }
+    },
+    submitType() {
+      this.savePathChannelDraft();
+    }
+  },
   methods: {
+    savePathChannelDraft() {
+      if (!this.dialogFormVisible) return;
+      const mode = this.submitType || '';
+      const recordId = this.createPathChannelInfo?.paymentNo || this.createPathChannelInfo?.paymentId || '';
+      saveDraft(PATH_CHANNEL_DRAFT_KEY, {
+        mode,
+        recordId,
+        data: this.createPathChannelInfo || {}
+      });
+    },
+    loadPathChannelDraft() {
+      const draft = loadDraft(PATH_CHANNEL_DRAFT_KEY);
+      if (!draft || !draft.data) return;
+      const mode = this.submitType || '';
+      if (draft.mode && mode && draft.mode !== mode) return;
+      if (mode === 'edit') {
+        const recordId = this.createPathChannelInfo?.paymentNo || this.createPathChannelInfo?.paymentId || '';
+        if (draft.recordId && recordId && draft.recordId !== recordId) return;
+      }
+      this.createPathChannelInfo = Object.assign({}, draft.data || {});
+    },
+    clearPathChannelDraft() {
+      clearDraft(PATH_CHANNEL_DRAFT_KEY);
+    },
+    handlePaymentNameDropdownVisible(visible) {
+      if (!visible) return;
+      if (!this.paymentNameOptions.length) {
+        this.resetPaymentNameOptions();
+        this.fetchPaymentNameOptions(false);
+      }
+      this.attachPaymentNameScroll();
+    },
+    handlePaymentNameSearch(query) {
+      this.paymentNameQuery = query || '';
+      this.resetPaymentNameOptions();
+      this.fetchPaymentNameOptions(false);
+    },
+    resetPaymentNameOptions() {
+      this.paymentNamePageNo = 1;
+      this.paymentNameHasMore = true;
+      this.paymentNameOptions = [];
+    },
+    fetchPaymentNameOptions(append) {
+      if (this.paymentNameLoading || !this.paymentNameHasMore) return;
+      this.paymentNameLoading = true;
+      const payload = {
+        pageNo: this.paymentNamePageNo,
+        pageSize: this.paymentNamePageSize
+      };
+      if (this.paymentNameQuery) {
+        payload.paymentName = this.paymentNameQuery;
+      }
+      getPaymentInfo(payload).then(res => {
+        if (res.status === 200 && res.data.code === 0) {
+          const allData = JSON.parse(res.data.data);
+          const list = allData.paymentDtoList || [];
+          const mapped = list.map(item => ({
+            value: item.paymentName,
+            label: item.paymentName
+          }));
+          this.paymentNameOptions = append
+            ? this.paymentNameOptions.concat(mapped)
+            : mapped;
+          if (list.length < this.paymentNamePageSize) {
+            this.paymentNameHasMore = false;
+          } else {
+            this.paymentNamePageNo += 1;
+          }
+        } else {
+          this.paymentNameHasMore = false;
+        }
+      }).finally(() => {
+        this.paymentNameLoading = false;
+      });
+    },
+    attachPaymentNameScroll() {
+      this.$nextTick(() => {
+        const wrap = document.querySelector(".pathchannel-name-select-dropdown .el-select-dropdown__wrap");
+        if (!wrap || this.paymentNameScrollBound) return;
+        wrap.addEventListener("scroll", this.handlePaymentNameScroll);
+        this.paymentNameScrollBound = true;
+      });
+    },
+    handlePaymentNameScroll(event) {
+      const el = event.target;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 8) {
+        this.fetchPaymentNameOptions(true);
+      }
+    },
     refreshOptions() {
       this.paymentStatusOptions = [
         { value: 0, label: this.$t('common.disable') },
@@ -1488,6 +1620,7 @@ export default {
       this.createPathChannelInfo = {}
       this.pathChannelDialogTitle = ''
       this.$refs['createPaymentForm'].resetFields()
+      this.clearPathChannelDraft()
     },
     createPathChannel() {
       this.dialogFormVisible = true
@@ -1523,6 +1656,7 @@ export default {
           this.createPathChannelInfo.enableTimePeriod1 = ''
           this.createPathChannelInfo.enableTimePeriod = ''
         }
+        this.clearPathChannelDraft()
       } else if (res.status === 200 && res.data.code !== 0) {
         this.$notify({
           title: this.$t('common.error'),

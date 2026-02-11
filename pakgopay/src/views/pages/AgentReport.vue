@@ -18,9 +18,10 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
               <el-form-item :label="$t('agentReport.filter.agent')" label-width="150px" prop="agentId">
                 <el-select
                     :options="agentOptions"
-                    :props="agentProps"
+                    :props="agentNameProps"
                     :placeholder="$t('agentReport.placeholder.agent')"
-                    v-model="filterbox.agentId"
+                    v-model="filterbox.agentName"
+                    filterable
                     style="width: 250px"
                 />
               </el-form-item>
@@ -282,6 +283,10 @@ export default {
       agentProps: {
         value: 'accountName',
         label: 'agentName'
+      },
+      agentNameProps: {
+        label: 'agentName',
+        value: 'agentName'
       },
       timeRange: [],
       currency: '',

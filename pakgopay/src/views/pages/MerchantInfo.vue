@@ -30,7 +30,26 @@ import '@/assets/base.css'
           <el-row>
             <el-col :span="6">
               <el-form-item :label="$t('merchantInfo.filter.account')" label-width="150px" prop="merchantUserName">
-                 <el-input :disabled="filterAvaiable"  v-model="filterbox.merchantUserName"  type="text" :placeholder="$t('merchantInfo.placeholder.account')" style="width: 200px"/>
+                <el-select
+                  v-model="filterbox.merchantUserName"
+                  filterable
+                  remote
+                  clearable
+                  :remote-method="handleMerchantAccountSearch"
+                  :loading="merchantAccountLoading"
+                  :placeholder="$t('merchantInfo.placeholder.account')"
+                  popper-class="merchant-account-select-dropdown"
+                  @visible-change="handleMerchantAccountDropdownVisible"
+                  style="width: 200px"
+                  :disabled="filterAvaiable"
+                >
+                  <el-option
+                    v-for="item in merchantAccountOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="6">
@@ -766,6 +785,42 @@ import {
   getMerchantInfo,
   getPaymentInfo, modifyMerchantInfo
 } from "@/api/interface/backendInterface.js";
+import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
+
+const MERCHANT_DRAFT_KEY = 'draft:MerchantInfo:form';
+const buildEmptyMerchantAddInfo = () => ({
+  merchantName: '',
+  accountName: '',
+  accountPwd: '',
+  accountConfirmPwd: '',
+  contactName: '',
+  contactEmail: '',
+  contactPhone: '',
+  loginIps: '',
+  withdrawalIps: '',
+  status: 1,
+  useAgent: 0,
+  channelIds: [],
+  parentId: '',
+  supportPaying: 1,
+  supportCollection: 1,
+  payMinFee: '',
+  payMaxFee: '',
+  payWhiteIps: '',
+  payingChannelModel: '随机',
+  payingChargingModel: 1,
+  payFixedFee: 0,
+  payRate: 0,
+  collectionMinFee: '',
+  collectionMaxFee: '',
+  colWhiteIps: '',
+  isFloat: 0,
+  floatRange: '',
+  collectionChannelModel: '随机',
+  collectionChargingModel: 1,
+  collectionFixedFee: 0,
+  collectionRate: 0
+});
 export default {
   name: "MerchantInfo",
   computed: {
@@ -799,6 +854,20 @@ export default {
     }
   },
   watch: {
+    dialogAddFormVisible(visible) {
+      if (visible) {
+        this.loadMerchantDraft();
+      }
+    },
+    merchantAddInfo: {
+      deep: true,
+      handler() {
+        this.saveMerchantDraft();
+      }
+    },
+    dialogFlag() {
+      this.saveMerchantDraft();
+    },
     "merchantAddInfo.payFixedFee"() {
       this.payFixedFeeValid = false;
     },
@@ -811,11 +880,16 @@ export default {
       this.collectionFixedFeeValid = false;
       this.collectionRateValid = false;
     },
-    "merchantAddInfo.useAgent"() {
+    "merchantAddInfo.useAgent"(value) {
       this.payFixedFeeValid = false;
       this.payRateValid = false;
       this.collectionFixedFeeValid = false;
       this.collectionRateValid = false;
+      if (value === 1) {
+        this.merchantAddInfo.channelIds = [];
+      } else if (value === 0) {
+        this.merchantAddInfo.parentId = '';
+      }
     },
     "merchantAddInfo.supportPaying"() {
       this.payFixedFeeValid = false;
@@ -1096,6 +1170,13 @@ export default {
     return {
       isAdmin: false,
       filterAvaiable: false,
+      merchantAccountOptions: [],
+      merchantAccountLoading: false,
+      merchantAccountHasMore: true,
+      merchantAccountPageNo: 1,
+      merchantAccountPageSize: 20,
+      merchantAccountQuery: '',
+      merchantAccountScrollBound: false,
       tableKey: 0,
       activeTool: "1",
       currency: '',
@@ -1254,7 +1335,7 @@ export default {
       dialogFlag: '',
       merchantInfoFormData: [
       ],
-      merchantAddInfo: {},
+      merchantAddInfo: buildEmptyMerchantAddInfo(),
       payFixedFeeValid: false,
       payRateValid: false,
       collectionFixedFeeValid: false,
@@ -1287,6 +1368,97 @@ export default {
     }
   },
   methods: {
+    saveMerchantDraft() {
+      if (!this.dialogAddFormVisible) return;
+      const mode = this.dialogFlag || '';
+      const recordId = this.merchantAddInfo?.merchantUserId || this.merchantAddInfo?.userId || this.merchantAddInfo?.id || '';
+      saveDraft(MERCHANT_DRAFT_KEY, {
+        mode,
+        recordId,
+        data: this.merchantAddInfo || {}
+      });
+    },
+    loadMerchantDraft() {
+      const draft = loadDraft(MERCHANT_DRAFT_KEY);
+      if (!draft || !draft.data) return;
+      const mode = this.dialogFlag || '';
+      if (draft.mode && mode && draft.mode !== mode) return;
+      if (mode === 'edit') {
+        const recordId = this.merchantAddInfo?.merchantUserId || this.merchantAddInfo?.userId || this.merchantAddInfo?.id || '';
+        if (draft.recordId && recordId && draft.recordId !== recordId) return;
+      }
+      this.merchantAddInfo = Object.assign(buildEmptyMerchantAddInfo(), draft.data || {});
+    },
+    clearMerchantDraft() {
+      clearDraft(MERCHANT_DRAFT_KEY);
+    },
+    handleMerchantAccountDropdownVisible(visible) {
+      if (!visible || this.filterAvaiable) return;
+      if (!this.merchantAccountOptions.length) {
+        this.resetMerchantAccountOptions();
+        this.fetchMerchantAccountOptions(false);
+      }
+      this.attachMerchantAccountScroll();
+    },
+    handleMerchantAccountSearch(query) {
+      if (this.filterAvaiable) return;
+      this.merchantAccountQuery = query || '';
+      this.resetMerchantAccountOptions();
+      this.fetchMerchantAccountOptions(false);
+    },
+    resetMerchantAccountOptions() {
+      this.merchantAccountPageNo = 1;
+      this.merchantAccountHasMore = true;
+      this.merchantAccountOptions = [];
+    },
+    fetchMerchantAccountOptions(append) {
+      if (this.merchantAccountLoading || !this.merchantAccountHasMore) return;
+      this.merchantAccountLoading = true;
+      const payload = {
+        pageNo: this.merchantAccountPageNo,
+        pageSize: this.merchantAccountPageSize,
+        isNeedCardData: false
+      };
+      if (this.merchantAccountQuery) {
+        payload.merchantUserName = this.merchantAccountQuery;
+      }
+      getMerchantInfo(payload).then(res => {
+        if (res.status === 200 && res.data.code === 0) {
+          const all = JSON.parse(res.data.data);
+          const list = all.merchantInfoDtoList || [];
+          const mapped = list.map(item => ({
+            value: item.accountName,
+            label: item.accountName
+          }));
+          this.merchantAccountOptions = append
+            ? this.merchantAccountOptions.concat(mapped)
+            : mapped;
+          if (list.length < this.merchantAccountPageSize) {
+            this.merchantAccountHasMore = false;
+          } else {
+            this.merchantAccountPageNo += 1;
+          }
+        } else {
+          this.merchantAccountHasMore = false;
+        }
+      }).finally(() => {
+        this.merchantAccountLoading = false;
+      });
+    },
+    attachMerchantAccountScroll() {
+      this.$nextTick(() => {
+        const wrap = document.querySelector(".merchant-account-select-dropdown .el-select-dropdown__wrap");
+        if (!wrap || this.merchantAccountScrollBound) return;
+        wrap.addEventListener("scroll", this.handleMerchantAccountScroll);
+        this.merchantAccountScrollBound = true;
+      });
+    },
+    handleMerchantAccountScroll(event) {
+      const el = event.target;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 8) {
+        this.fetchMerchantAccountOptions(true);
+      }
+    },
     confirmEditSubmit() {
       if (!this.editVerifyCode) {
         this.$message({
@@ -1306,6 +1478,7 @@ export default {
           if (this.verifyAction === 'create') {
             this.$refs.merchantAddInfo?.resetFields()
           }
+          this.clearMerchantDraft()
           this.search()
           this.$notify({
             title: this.$t('common.success'),
@@ -1414,6 +1587,7 @@ export default {
       this.dialogAddFormVisible = true;
       this.dialogAddTitle = this.$t('merchantInfo.dialog.addTitle');
       this.dialogFlag = 'create'
+      this.loadMerchantDraft()
     },
     handleAgentChange(val) {
       if (this.merchantInfo.useAgent === 1) {
@@ -1438,45 +1612,14 @@ export default {
       this.merchantAddFormKey += 1;
       this.selectedAgent = []
       this.dialogFlag = ''
+      this.clearMerchantDraft()
       if (this.$refs[form]) {
         this.$refs[form].resetFields();
         this.$refs[form].clearValidate();
       }
     },
     resetMerchantAddInfo() {
-      this.merchantAddInfo = {
-        merchantName: '',
-        accountName: '',
-        accountPwd: '',
-        accountConfirmPwd: '',
-        contactName: '',
-        contactEmail: '',
-        contactPhone: '',
-        loginIps: '',
-        withdrawalIps: '',
-        status: 1,
-        useAgent: 0,
-        channelIds: [],
-        parentId: '',
-        supportPaying: 1,
-        supportCollection: 1,
-        payMinFee: '',
-        payMaxFee: '',
-        payWhiteIps: '',
-        payingChannelModel: '随机',
-        payingChargingModel: 1,
-        payFixedFee: 0,
-        payRate: 0,
-        collectionMinFee: '',
-        collectionMaxFee: '',
-        colWhiteIps: '',
-        isFloat: 0,
-        floatRange: '',
-        collectionChannelModel: '随机',
-        collectionChargingModel: 1,
-        collectionFixedFee: 0,
-        collectionRate: 0
-      };
+      this.merchantAddInfo = buildEmptyMerchantAddInfo();
     },
     cancelDeleteDialog() {
       this.dialogDeleteTitle = ''
@@ -1504,6 +1647,7 @@ export default {
       this.dialogFlag = 'edit';
       this.dialogAddFormVisible = true
       this.dialogAddTitle = this.$t('merchantInfo.dialog.editTitle')
+      this.loadMerchantDraft()
 
     },
     getAllAgentId(agents) {
@@ -1647,6 +1791,12 @@ export default {
       //filterData.merchantUserId = localStorage.getItem('userId')
       this.filterbox.merchantUserName = localStorage.getItem('userName')
       this.filterAvaiable = true
+      if (this.filterbox.merchantUserName) {
+        this.merchantAccountOptions = [{
+          value: this.filterbox.merchantUserName,
+          label: this.filterbox.merchantUserName
+        }]
+      }
     }
     await getAgentInfo({}).then((res) => {
       if (res.status === 200 && res.data.code === 0) {
@@ -1772,6 +1922,13 @@ export default {
     border-radius: 6px;
     padding: 4px 6px;
     box-shadow: 0 3px 8px rgba(24, 24, 24, 0.18);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    will-change: transform;
+  }
+
+  .agent-info-card:hover{
+    transform: scale(1.03);
+    box-shadow: 0 6px 16px rgba(24, 24, 24, 0.24);
   }
 
   .account-info-row{

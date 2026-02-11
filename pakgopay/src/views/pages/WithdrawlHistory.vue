@@ -505,6 +505,26 @@ import {
   modifyAgentInfo
 } from "@/api/interface/backendInterface.js";
 import {exportExcel, getAgentAccountTitle, getFormateTime, getMerchantAccountTitle, loadingBody} from "@/api/common.js";
+import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
+
+const AGENT_ACCOUNT_DRAFT_KEY = 'draft:WithdrawlHistory:agentAccount';
+const WITHDRAW_ORDER_DRAFT_KEY = 'draft:WithdrawlHistory:withdrawOrder';
+const buildEmptyAgentAccountModel = () => ({
+  merchantAgentId: '',
+  walletAddr: '',
+  walletName: '',
+  status: 1,
+  userName: ''
+});
+const buildEmptyWithdrawOrderInfo = () => ({
+  merchantAgentId: '',
+  currency: null,
+  availableAmount: null,
+  walletAddr: '',
+  amount: null,
+  googleCode: '',
+  orderType: 2
+});
 
 export default {
   name: 'WithdrawlHistory',
@@ -525,7 +545,7 @@ export default {
       amountInfo: {},
       filterAvaiable: false,
       timeZoneKey: localStorage.getItem("timeZone") || "UTC+8",
-      withdrawOrderInfo: {},
+      withdrawOrderInfo: buildEmptyWithdrawOrderInfo(),
       agentAccountOptions: [],
       agentAccountProps: {
         value: 'merchantAgentId',
@@ -564,7 +584,7 @@ export default {
       createAccountTitle: '',
       createAccountVisible: false,
       withdrawAccountData: [],
-      createAgentAccountModel: {},
+      createAgentAccountModel: buildEmptyAgentAccountModel(),
       accountGoogleVisible: false,
       accountGoogleTitle: '',
       accountGoogleData: {
@@ -634,7 +654,63 @@ export default {
       },
     }
   },
+  watch: {
+    createAccountVisible(visible) {
+      if (visible) {
+        this.loadAgentAccountDraft();
+      }
+    },
+    dialogWithdrawVisible(visible) {
+      if (visible) {
+        this.loadWithdrawOrderDraft();
+      }
+    },
+    createAgentAccountModel: {
+      deep: true,
+      handler() {
+        this.saveAgentAccountDraft();
+      }
+    },
+    withdrawOrderInfo: {
+      deep: true,
+      handler() {
+        this.saveWithdrawOrderDraft();
+      }
+    }
+  },
   methods: {
+    saveAgentAccountDraft() {
+      if (!this.createAccountVisible) return;
+      const mode = this.submitType || '';
+      const recordId = this.createAgentAccountModel?.merchantAgentId || this.createAgentAccountModel?.userId || '';
+      saveDraft(AGENT_ACCOUNT_DRAFT_KEY, { mode, recordId, data: this.createAgentAccountModel || {} });
+    },
+    loadAgentAccountDraft() {
+      const draft = loadDraft(AGENT_ACCOUNT_DRAFT_KEY);
+      if (!draft || !draft.data) return;
+      const mode = this.submitType || '';
+      if (draft.mode && mode && draft.mode !== mode) return;
+      if (mode === 'edit') {
+        const recordId = this.createAgentAccountModel?.merchantAgentId || this.createAgentAccountModel?.userId || '';
+        if (draft.recordId && recordId && draft.recordId !== recordId) return;
+      }
+      this.createAgentAccountModel = Object.assign(buildEmptyAgentAccountModel(), draft.data || {});
+    },
+    clearAgentAccountDraft() {
+      clearDraft(AGENT_ACCOUNT_DRAFT_KEY);
+    },
+    saveWithdrawOrderDraft() {
+      if (!this.dialogWithdrawVisible) return;
+      saveDraft(WITHDRAW_ORDER_DRAFT_KEY, { data: this.withdrawOrderInfo || {} });
+    },
+    loadWithdrawOrderDraft() {
+      const draft = loadDraft(WITHDRAW_ORDER_DRAFT_KEY);
+      if (!draft || !draft.data) return;
+      this.withdrawOrderInfo = Object.assign(buildEmptyWithdrawOrderInfo(), draft.data || {});
+    },
+    clearWithdrawOrderDraft() {
+      clearDraft(WITHDRAW_ORDER_DRAFT_KEY);
+    },
     formatTimeByZone(ts) {
       const match = /UTC([+-])(\d{1,2})(?::(\d{2}))?/.exec(this.timeZoneKey);
       const baseMillis = ts * 1000;
@@ -764,6 +840,7 @@ export default {
       this.createAccountTitle = this.$t('withdrawlHistory.dialog.addTitle')
       this.dialogType = 'create'
       this.submitType = 'create'
+      this.loadAgentAccountDraft()
     },
     createWithdrawlApply() {
 // set withdraw merchant
@@ -775,6 +852,7 @@ export default {
       this.dialogWithdrawVisible = true
       this.dialogWithdrawTitle = this.$t('withdrawlHistory.dialog.withdrawTitle')
       this.withdrawOrderInfo.orderType = 2
+      this.loadWithdrawOrderDraft()
     },
     createManualAccountAdjustment() {
       this.manualAccountAdjustmentOrderInfo = {
@@ -794,6 +872,7 @@ export default {
       this.createAccountVisible = true
       this.createAccountTitle = this.$t('withdrawlHistory.dialog.editTitle')
       this.submitType = 'edit'
+      this.loadAgentAccountDraft()
     },
     startAgentAccount(row) {
       this.createAgentAccountModel = Object.assign({}, row)
@@ -801,6 +880,8 @@ export default {
       this.dialogType = 'start'
       this.createAccountVisible = true
       this.createAccountTitle = this.$t('withdrawlHistory.dialog.enableTitle')
+      this.submitType = 'edit'
+      this.loadAgentAccountDraft()
     },
     stopAgentAccount(row) {
       this.createAgentAccountModel = Object.assign({}, row)
@@ -808,6 +889,8 @@ export default {
       this.dialogType = 'start'
       this.createAccountVisible = true
       this.createAccountTitle = this.$t('withdrawlHistory.dialog.disableTitle')
+      this.submitType = 'edit'
+      this.loadAgentAccountDraft()
     },
     handleSizeChange(pageSize) {
       this.pageSize = pageSize;
@@ -838,6 +921,7 @@ export default {
       this.createAccountTitle = ''
       this.dialogType = ''
       this.submitType = ''
+      this.clearAgentAccountDraft()
     },
     cancelAccountGoogle(form) {
       this.$refs[form].resetFields();
@@ -859,6 +943,7 @@ export default {
       this.dialogWithdrawTitle = ''
       this.dialogWithdrawVisible = false
       this.updateAgentAccount(null)
+      this.clearWithdrawOrderDraft()
     },
     cancelManualAccountAdjustment(form) {
       this.$refs[form].resetFields()
@@ -894,6 +979,9 @@ export default {
               if (this.confirmData.orderType === 3) {
                 this.$refs.manualAccountAdjustmentOrderInfoForm?.resetFields()
                 this.getNewstAgentInfo()
+              }
+              if (this.confirmData.orderType === 2) {
+                this.clearWithdrawOrderDraft()
               }
               this.$notify({
                 title: this.$t('common.success'),
@@ -946,6 +1034,7 @@ export default {
             this.createAccountTitle = ''
             this.dialogType = ''
             this.submitType = ''
+            this.clearAgentAccountDraft()
             this.search()
             this.$notify({
               title: this.$t('common.success'),

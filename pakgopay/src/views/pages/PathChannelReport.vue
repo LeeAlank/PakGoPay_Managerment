@@ -59,10 +59,6 @@ export default {
       pageSizes: [ 10, 20, 50, 100, 200],
       totalCount: 0,
       filterbox: {
-        pathChannelName: '',
-        pathChannelLabelName: '',
-        startTime: '',
-        endTime: '',
       }
     }
   },
@@ -301,6 +297,7 @@ export default {
                   :options="pathChannelOptions"
                   :props="pathChannelProps"
                   v-model="filterbox.paymentNo"
+                  filterable
                   style="width: 200px"
               />
             </el-form-item>

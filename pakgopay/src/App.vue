@@ -36,6 +36,38 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
         localStorage.removeItem("menu")
         router.push("/web/login");
       },
+      promptSessionExpired() {
+        if (this.heartPrompting) {
+          return;
+        }
+        this.heartPrompting = true;
+        ElMessageBox.confirm(this.$t('app.sessionExpired'), this.$t('common.prompt'), {
+          confirmButtonText: this.$t('common.confirm'),
+          showCancelButton: false,
+          type: 'warning'
+        }).then(() => {
+          if (!this.hasRefreshToken()) {
+            this.heartPrompting = false;
+            this.logOut();
+            return;
+          }
+          refreshAccessToken(localStorage.getItem("refreshToken")).then(response => {
+            if (response && response.data && response.data.code === 0) {
+              if (response.data.token) {
+                localStorage.setItem("token", response.data.token);
+              }
+              if (response.data.refreshToken) {
+                localStorage.setItem("refreshToken", response.data.refreshToken);
+              }
+              location.reload();
+            }
+          }).finally(() => {
+            this.heartPrompting = false;
+          })
+        }).catch(() => {
+          this.heartPrompting = false;
+        })
+      },
       changeCollapse() {
         this.collapse = !this.collapse;
       },
@@ -46,36 +78,11 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
           }
           heart().then(res => {
             if (res.status === 200 && res.data === 'refresh') {
-              if (this.heartPrompting) {
-                return
-              }
-              this.heartPrompting = true
-              ElMessageBox.confirm(this.$t('app.sessionExpired'), this.$t('common.prompt'), {
-                confirmButtonText: this.$t('common.confirm'),
-                showCancelButton: false,
-                type: 'warning'
-              }).then(() => {
-                if (!this.hasRefreshToken()) {
-                  this.heartPrompting = false
-                  this.logOut()
-                  return
-                }
-                refreshAccessToken(localStorage.getItem("refreshToken")).then(response => {
-                  if (response && response.data && response.data.code === 0) {
-                    if (response.data.token) {
-                      localStorage.setItem("token", response.data.token);
-                    }
-                    if (response.data.refreshToken) {
-                      localStorage.setItem("refreshToken", response.data.refreshToken);
-                    }
-                    location.reload();
-                  }
-                }).finally(() => {
-                  this.heartPrompting = false
-                })
-              }).catch(() => {
-                this.heartPrompting = false
-              })
+              this.promptSessionExpired();
+            }
+          }).catch((error) => {
+            if (error?.response?.status === 401) {
+              this.promptSessionExpired();
             }
           })
         }
@@ -130,6 +137,10 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
           } else {
             router.replace("/web/login");
           }
+        }
+      }).catch((error) => {
+        if (error?.response?.status === 401) {
+          this.promptSessionExpired();
         }
       })
     },

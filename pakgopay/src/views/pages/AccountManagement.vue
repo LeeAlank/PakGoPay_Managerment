@@ -349,6 +349,17 @@ import {
   manageLoginUserStatus, deleteLoginUser, loginUserByLoginName, resetGoogleKey
 } from "@/api/interface/backendInterface.js";
 import {loadingBody} from "@/api/common.js";
+import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
+
+const ACCOUNT_DRAFT_KEY = 'draft:AccountManagement:form';
+const buildEmptyCreateUserInfo = () => ({
+  loginName: '',
+  password: '',
+  confirmPassword: '',
+  roleId: '',
+  status: 1,
+  googleCode: ''
+});
 
 export default {
 
@@ -402,7 +413,8 @@ export default {
       pageSizes: [10, 50, 100, 200],
       dialogVisible: false,
       dialogTitle: '',
-      createUserInfo: {},
+      createUserInfo: buildEmptyCreateUserInfo(),
+      dialogMode: '',
       resetGoogleVisible: false,
       resetGoogleForm: {},
       resetGoogleResult: {
@@ -448,10 +460,49 @@ export default {
 
     }
   },
+  watch: {
+    dialogVisible(visible) {
+      if (visible) {
+        this.loadAccountDraft();
+      }
+    },
+    createUserInfo: {
+      deep: true,
+      handler() {
+        this.saveAccountDraft();
+      }
+    },
+    dialogMode() {
+      this.saveAccountDraft();
+    }
+  },
   methods: {
+    saveAccountDraft() {
+      if (!this.dialogVisible) return;
+      const mode = this.dialogMode || '';
+      const recordId = this.createUserInfo?.userId || this.createUserInfo?.id || '';
+      saveDraft(ACCOUNT_DRAFT_KEY, { mode, recordId, data: this.createUserInfo || {} });
+    },
+    loadAccountDraft() {
+      const draft = loadDraft(ACCOUNT_DRAFT_KEY);
+      if (!draft || !draft.data) return;
+      const mode = this.dialogMode || '';
+      if (draft.mode && mode && draft.mode !== mode) return;
+      if (mode === 'edit') {
+        const recordId = this.createUserInfo?.userId || this.createUserInfo?.id || '';
+        if (draft.recordId && recordId && draft.recordId !== recordId) return;
+      }
+      this.createUserInfo = Object.assign(buildEmptyCreateUserInfo(), draft.data || {});
+    },
+    clearAccountDraft() {
+      clearDraft(ACCOUNT_DRAFT_KEY);
+    },
     createUser() {
       this.dialogVisible = true;
       this.dialogTitle = this.$t('accountManagement.dialog.createTitle')
+      this.dialogMode = 'create'
+      this.createUserInfo = buildEmptyCreateUserInfo()
+      this.loadAccountDraft()
     },
     search() {
       this.loadData()
@@ -462,6 +513,8 @@ export default {
       this.createUserInfo.roleId = filterInfo ? filterInfo[0].roleId : ''
       this.dialogVisible = true;
       this.dialogTitle = this.$t('accountManagement.dialog.editTitle')
+      this.dialogMode = 'edit'
+      this.loadAccountDraft()
     },
     deleteUser(row) {
       this.dialogVisible2 = true;
@@ -495,7 +548,9 @@ export default {
       this.dialogVisible = false;
       this.dialogTitle = ''
       this.passwordmatch = true
-      this.createUserInfo = {}
+      this.createUserInfo = buildEmptyCreateUserInfo()
+      this.clearAccountDraft()
+      this.dialogMode = ''
     },
     cancelDialog2() {
       this.dialogVisible2 = false
@@ -696,6 +751,9 @@ export default {
             if (response.data.code === 0) {
               this.dialogVisible = false
               this.dialogTitle = ""
+              this.clearAccountDraft()
+              this.dialogMode = ''
+              this.createUserInfo = buildEmptyCreateUserInfo()
               this.loadData()
               this.$notify({
                 title: this.$t('common.success'),

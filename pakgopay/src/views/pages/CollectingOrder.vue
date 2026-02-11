@@ -8,7 +8,7 @@ import {
 </script>
 
 <template>
-  <div style="width: 100%;height: 110%; overflow-y: scroll;">
+  <div style="width: 100%; height: auto; overflow-y: visible;">
     <div class="main-title">{{ $t('collectingOrder.title') }}</div>
     <el-collapse v-model="activeTool">
       <el-collapse-item name="1">
@@ -21,7 +21,7 @@ import {
           <el-form class="main-toolform" ref="filterboxForm" :model="filterbox">
             <el-row>
               <el-col :offset="18" :span="6">
-                <div class="toolbar-action-row">
+                <div class="toolbar-action-row" style="margin-right: 180px;">
                   <el-button @click="search()" class="filterButton">
                     <SvgIcon class="filterButtonSvg" name="search"/>
                     <div>{{ $t('common.query') }}</div>
@@ -237,9 +237,9 @@ import {
             border
             :data="collectingOrderTableInfo"
             class="merchantInfos-table"
-            style="width: 100%;"
+            style="width: 100%;height: auto"
             :key="tableKey"
-            max-height="520"
+            max-height="90vh"
         >
           <el-table-column
               prop="orderId"
@@ -275,7 +275,7 @@ import {
           </el-table-column>
           <el-table-column
               prop="currencyType"
-              :label="$t('common.currency')"
+              :label="$t('collectingOrder.column.currency')"
               v-slot="{row}"
               align="center"
           >
@@ -317,6 +317,14 @@ import {
             <div>{{channelMaps[row.channelId]}}</div>
           </el-table-column>
           <el-table-column
+              prop="paymentNo"
+              :label="$t('collectingOrder.column.paymentNo')"
+              v-slot="{row}"
+              align="center"
+          >
+            <div>{{row.paymentNo}}</div>
+          </el-table-column>
+          <el-table-column
               prop="callBackStatus"
               :label="$t('collectingOrder.column.callbackStatus')"
               v-slot="{row}"
@@ -347,11 +355,11 @@ import {
               v-slot="{row}"
               fixed="right"
           >
-            <el-dropdown trigger="click">
+            <el-dropdown v-if="row.orderStatus !== '2' && row.orderStatus !== '3'" trigger="click">
               <SvgIcon name="more" width="30" height="30" />
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item v-if="row.orderStatus === 1" @click="startUser(row)">{{ $t('collectingOrder.action.review') }}</el-dropdown-item>
+<!--                  <el-dropdown-item v-if="row.orderStatus === 1" @click="startUser(row)">{{ $t('collectingOrder.action.review') }}</el-dropdown-item>-->
 <!--                  <el-dropdown-item @click="editUser(row)">编辑</el-dropdown-item>-->
                   <el-dropdown-item @click="callback(row)">{{ $t('collectingOrder.action.callback') }}</el-dropdown-item>
                 </el-dropdown-menu>
@@ -380,7 +388,8 @@ import {
   getAllCurrencyType,
   getChannelInfo,
   getCollectionOrder,
-  getMerchantInfo
+  getMerchantInfo,
+  queryOpsOrderCardInfo
 } from "@/api/interface/backendInterface.js";
 
 export default {
@@ -423,8 +432,8 @@ export default {
         label: 'accountName',
       },
       staticsData: {
-        orderTotalCount: 10000,
-        ordereSuccessRate: '99.9%',
+        orderTotalCount: '',
+        ordereSuccessRate: '',
         merchantCommission: '',
         merchantEffectiveCommission: '',
         merchantFreezeAmount: '',
@@ -586,6 +595,78 @@ export default {
     }
   },
   methods: {
+    buildCardQueryPayload() {
+      const roleName = localStorage.getItem('roleName');
+      let scopeType = 0;
+      if (roleName === 'merchant') scopeType = 1;
+      if (roleName === 'agent') scopeType = 2;
+      const scopeId = scopeType === 0 ? 0 : (localStorage.getItem('userId') || 0);
+      const currency = this.filterbox.currencyType || this.currency || this.filterbox.currency || '';
+      return {
+        currency,
+        scopeType,
+        scopeId,
+        orderType: 0
+      };
+    },
+    fetchCardInfo() {
+      const payload = this.buildCardQueryPayload();
+      return queryOpsOrderCardInfo(payload).then(res => {
+        if (res.status === 200 && res.data.code === 0) {
+          const card = typeof res.data.data === 'string' ? JSON.parse(res.data.data) : res.data.data;
+          this.staticsRawData = {
+            merchantCommission: card?.merchantFee ?? 0,
+            merchantEffectiveCommission: card?.validMerchantFee ?? 0,
+            merchantFreezeAmount: card?.frozenAmount ?? 0,
+            merchantAvaiableAmount: card?.availableAmount ?? 0,
+          };
+          this.staticsData.orderTotalCount = (card?.orderQuantity ?? 0);
+          this.staticsData.ordereSuccessRate = this.formatSuccessRate(card?.successRate);
+          this.applyCurrencyToStatics();
+        } else {
+          this.staticsRawData = {
+            merchantCommission: 0,
+            merchantEffectiveCommission: 0,
+            merchantFreezeAmount: 0,
+            merchantAvaiableAmount: 0,
+          };
+          this.staticsData.orderTotalCount = 0;
+          this.staticsData.ordereSuccessRate = this.formatSuccessRate(0);
+          this.applyCurrencyToStatics();
+          this.$notify({
+            title: this.$t('common.error'),
+            message: this.$t('orderCommon.message.cardFetchFailed'),
+            duration: 3000,
+            position: 'bottom-right',
+            type: 'error',
+          })
+        }
+      }).catch(() => {
+        this.staticsRawData = {
+          merchantCommission: 0,
+          merchantEffectiveCommission: 0,
+          merchantFreezeAmount: 0,
+          merchantAvaiableAmount: 0,
+        };
+        this.staticsData.orderTotalCount = 0;
+        this.staticsData.ordereSuccessRate = this.formatSuccessRate(0);
+        this.applyCurrencyToStatics();
+        this.$notify({
+          title: this.$t('common.error'),
+          message: this.$t('orderCommon.message.cardFetchFailed'),
+          duration: 3000,
+          position: 'bottom-right',
+          type: 'error',
+        })
+      });
+    },
+    formatSuccessRate(value) {
+      const num = Number(value);
+      if (!Number.isFinite(num)) {
+        return '0.0%';
+      }
+      return `${(num * 100).toFixed(1)}%`;
+    },
     getOrderStatusClass(status) {
       const map = {
         '0': 'status-pending',
@@ -648,6 +729,7 @@ export default {
            this.collectingOrderTableInfo = allData.collectionOrderDtoList
            this.totalCount = allData.totalNumber
            this.pageSize = allData.pageSize
+           this.fetchCardInfo();
         } else if (res.status === 200 && res.data.code !== 0) {
           this.$notify({
             title: this.$t('common.error'),
@@ -687,6 +769,7 @@ export default {
       this.currency = this.filterbox.currencyType;
       this.currencyIcon = this.currencyIcons[this.currency] || '';
       this.applyCurrencyToStatics();
+      this.fetchCardInfo();
     },
     handleChange(currentPage) {
       /*this.collectingOrderTableInfo = []
@@ -748,7 +831,7 @@ export default {
     });
     let roleName = localStorage.getItem('roleName');
     if (roleName &&  roleName !== 'admin') {
-      this.filterbox.merchantUserId = localStorage.getItem('userName');
+      this.filterbox.merchantUserId = localStorage.getItem('userId');
       this.filterAvaiable = true
     }
 

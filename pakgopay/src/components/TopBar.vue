@@ -54,6 +54,9 @@ export default {
     if (storedZone) {
       this.selectedTimeZone = storedZone;
     }
+    const storedLang = localStorage.getItem("lang");
+    this.selectedLang = storedLang || this.$i18n.locale || "zh-cn";
+    this.$i18n.locale = this.selectedLang;
     this.refreshLanguageOptions();
   },
   mounted() {
@@ -106,6 +109,7 @@ export default {
     changeLanauage(lang) {
       this.$i18n.locale = lang;
       localStorage.setItem("lang", lang);
+      this.selectedLang = lang;
       this.refreshLanguageOptions();
     },
     refreshLanguageOptions() {
@@ -188,7 +192,6 @@ export default {
       await this.$refs.noticePlayer.play()
     },
     async handleNotificationClick(notification) {
-      console.log('messagessss--'+notification.id);
       markReadMessage(notification.id).then(res => {
         if(res.status === 200 && res.data.code === 0) {
           this.messageCount = JSON.parse(res.data.data).messageCount
@@ -239,6 +242,12 @@ export default {
       router.push({
         name: 'AccountManagement'
       })
+    }
+  },
+  watch: {
+    "$i18n.locale"(val) {
+      this.selectedLang = val;
+      this.refreshLanguageOptions();
     }
   },
 }

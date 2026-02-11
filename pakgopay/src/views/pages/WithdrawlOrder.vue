@@ -5,7 +5,7 @@ import {getTimeFromTimestamp} from "@/api/common.js";
 </script>
 
 <template>
-  <div style="width: 100%;height: 110%; overflow-y: scroll;">
+  <div style="width: 100%; height: auto; overflow-y: visible;">
     <div class="main-title">{{ $t('withdrawlOrder.title') }}</div>
     <!-- 工具栏 -->
     <el-collapse v-model="activeTool">
@@ -19,7 +19,7 @@ import {getTimeFromTimestamp} from "@/api/common.js";
           <el-form class="main-toolform" style="height: 100%;" ref="filterboxForm" :model="filterbox">
             <el-row>
               <el-col :offset="18" :span="6">
-                <div class="toolbar-action-row">
+                <div class="toolbar-action-row" >
                   <el-button @click="search()" class="filterButton">
                     <SvgIcon class="filterButtonSvg" name="search"/>
                     <div>{{ $t('common.query') }}</div>
@@ -186,6 +186,7 @@ import {getTimeFromTimestamp} from "@/api/common.js";
             class="merchantInfos-table"
             style="height: auto;"
             :key="tableKey"
+            max-height="90vh"
         >
           <el-table-column
               prop="orderId"
@@ -584,7 +585,7 @@ export default {
   },
   async mounted() {
     let roleName = localStorage.getItem('roleName');
-    let userName = localStorage.getItem('userName');
+    let userName = localStorage.getItem('userId');
     if (roleName &&  roleName === 'agent') {
       this.filterbox.userType = 2
       this.filterAvaiable = true

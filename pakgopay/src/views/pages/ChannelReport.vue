@@ -300,6 +300,7 @@ export default {
                   :props="channelProps"
                   :placeholder="$t('channelReport.placeholder.channel')"
                   v-model="filterbox.channelId"
+                  filterable
                   style="width: 250px;text-align: center;"
                 />
               </el-form-item>
@@ -427,7 +428,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{this.currencyIcon+row.merchantFee}}</div>
+              <div>{{currencyIcon+row.merchantFee}}</div>
             </el-table-column>
             <el-table-column
                 prop="collectionChannelProfit"
@@ -435,7 +436,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{this.currencyIcon+row.orderProfit}}</div>
+              <div>{{currencyIcon+row.orderProfit}}</div>
             </el-table-column>
             <el-table-column
                 prop="recordDate"
@@ -509,7 +510,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{this.currencyIcon+row.merchantFee}}</div>
+              <div>{{currencyIcon+row.merchantFee}}</div>
             </el-table-column>
             <el-table-column
                 prop="orderBalance"
@@ -517,7 +518,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{this.currencyIcon+row.orderProfit}}</div>
+              <div>{{currencyIcon+row.orderProfit}}</div>
             </el-table-column>
             <el-table-column
               prop="time"

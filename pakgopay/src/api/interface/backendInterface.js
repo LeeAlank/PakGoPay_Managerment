@@ -25,7 +25,8 @@ export async function heart() {
         method: "GET",
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        },
+        skip401Handler: true
     })
 }
 
@@ -296,6 +297,28 @@ export function bindGoogleKey(user_id, loginName) {
             userId: user_id,
             loginName: loginName
         }
+    })
+}
+
+export function getTelegramConfig() {
+    return service({
+        url: '/api/pakGoPay/server/SystemConfig/telegramConfig',
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+    })
+}
+
+export function updateTelegramConfig(form) {
+    return service({
+        url: '/api/pakGoPay/server/SystemConfig/telegramConfig',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        data: form,
     })
 }
 
@@ -823,6 +846,18 @@ export function getCollectionOrder(form) {
 export function getPayingOrder(form) {
     return service({
         url: '/api/pakGoPay/server/v1/queryPayOutOrders',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form
+    })
+}
+
+export function queryOpsOrderCardInfo(form) {
+    return service({
+        url: '/api/pakGoPay/server/queryOpsOrderCardInfo',
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,

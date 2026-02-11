@@ -88,6 +88,7 @@
         <div class="turnstile-wrap">
           <div ref="turnstileWidget" class="turnstile-widget"></div>
           <div v-if="turnstileError" class="turnstile-error">{{ turnstileError }}</div>
+          <div v-else-if="turnstileSuccess" class="turnstile-success">{{ $t('login.turnstileSuccess') }}</div>
         </div>
         <div class="login-actions">
           <button class="btn-primary" type="button" @click="login(loginForm)">
@@ -129,6 +130,7 @@ export default {
       turnstileSiteKey: import.meta.env.VITE_TURNSTILE_SITE_KEY || "",
       turnstileWidgetId: null,
       turnstileError: "",
+      turnstileSuccess: false,
       showPassword: false,
       isQrCode: true,
       qrCodeUrl: "",
@@ -141,6 +143,7 @@ export default {
       this.$i18n.locale = this.selectedLang;
       localStorage.setItem("lang", this.selectedLang);
       this.refreshLanguageOptions();
+      this.rerenderTurnstileForLanguage();
     },
     refreshLanguageOptions() {
       this.languageOptions = [
@@ -186,24 +189,50 @@ export default {
       }
       this.turnstileWidgetId = window.turnstile.render(this.$refs.turnstileWidget, {
         sitekey: this.turnstileSiteKey,
+        language: this.getTurnstileLanguage(),
         callback: (token) => {
           this.turnstileError = "";
+          this.turnstileSuccess = true;
           this.loginForm.turnstileToken = token;
         },
         "expired-callback": () => {
           this.loginForm.turnstileToken = "";
+          this.turnstileSuccess = false;
         },
         "error-callback": () => {
           this.loginForm.turnstileToken = "";
           this.turnstileError = this.$t('login.error.turnstileFailed');
+          this.turnstileSuccess = false;
         }
       });
+    },
+    getTurnstileLanguage() {
+      const lang = (this.selectedLang || "auto").toLowerCase();
+      if (lang === "zh" || lang === "zh-cn") return "zh-cn";
+      if (lang === "ms") return "ms";
+      if (lang === "en") return "en";
+      return "auto";
+    },
+    rerenderTurnstileForLanguage() {
+      this.turnstileSuccess = false;
+      this.loginForm.turnstileToken = "";
+      if (window.turnstile && this.$refs.turnstileWidget) {
+        if (this.turnstileWidgetId !== null && typeof window.turnstile.remove === "function") {
+          window.turnstile.remove(this.turnstileWidgetId);
+        }
+        this.$refs.turnstileWidget.innerHTML = "";
+        this.turnstileWidgetId = null;
+        this.renderTurnstile();
+        return;
+      }
+      this.loadTurnstile();
     },
     resetTurnstile() {
       if (window.turnstile && this.turnstileWidgetId !== null) {
         window.turnstile.reset(this.turnstileWidgetId);
       }
       this.loginForm.turnstileToken = "";
+      this.turnstileSuccess = false;
     },
     async login(loginForm) {
       if (!loginForm.userName || !loginForm.password) {
@@ -297,6 +326,7 @@ export default {
   watch: {
     "$i18n.locale"() {
       this.refreshLanguageOptions();
+      this.rerenderTurnstileForLanguage();
     }
   }
 };
@@ -411,6 +441,11 @@ export default {
 .turnstile-error {
   font-size: 12px;
   color: #ef4444;
+}
+
+.turnstile-success {
+  font-size: 12px;
+  color: #10b981;
 }
 
 .lang-switch {

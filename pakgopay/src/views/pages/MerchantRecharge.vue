@@ -164,14 +164,22 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 
 
 <script>
+import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
+
+const MERCHANT_RECHARGE_DRAFT_KEY = 'draft:MerchantRecharge:form';
+const buildEmptyRechargeAccountInfo = () => ({
+  merchantName: '',
+  merchantAccount: '',
+  rechargeAmount: '',
+  googleCode: ''
+});
+
 export default {
   data() {
     return {
       filterbox: {
       },
-      rechargeAccountInfo: {
-
-      },
+      rechargeAccountInfo: buildEmptyRechargeAccountInfo(),
       merchantInfos:[],
       totalCount: 0,
       currentPage: 1,
@@ -192,6 +200,19 @@ export default {
       }
     }
   },
+  watch: {
+    dialogFormVisible(visible) {
+      if (visible) {
+        this.loadRechargeDraft();
+      }
+    },
+    rechargeAccountInfo: {
+      deep: true,
+      handler() {
+        this.saveRechargeDraft();
+      }
+    }
+  },
   mounted() {
     const merchantInfos = [
       {
@@ -206,6 +227,18 @@ export default {
     this.merchantInfos = merchantInfos
   },
   methods: {
+    saveRechargeDraft() {
+      if (!this.dialogFormVisible) return;
+      saveDraft(MERCHANT_RECHARGE_DRAFT_KEY, { data: this.rechargeAccountInfo || {} });
+    },
+    loadRechargeDraft() {
+      const draft = loadDraft(MERCHANT_RECHARGE_DRAFT_KEY);
+      if (!draft || !draft.data) return;
+      this.rechargeAccountInfo = Object.assign(buildEmptyRechargeAccountInfo(), draft.data || {});
+    },
+    clearRechargeDraft() {
+      clearDraft(MERCHANT_RECHARGE_DRAFT_KEY);
+    },
     handleSizeChange(val) {
 
     },
@@ -215,6 +248,7 @@ export default {
     rechargeAccount() {
       this.dialogTitle = this.$t('merchantRecharge.dialog.title')
       this.dialogFormVisible = true
+      this.loadRechargeDraft()
     },
     getOperators(queryString, cb) {
       /**
@@ -238,7 +272,8 @@ export default {
     cancelDialog() {
       this.dialogTitle=''
       this.dialogFormVisible = false
-      this.rechargeAccountInfo = {}
+      this.rechargeAccountInfo = buildEmptyRechargeAccountInfo()
+      this.clearRechargeDraft()
     },
     submit(rechargeAccountInfo) {
       /*if(this.rechargeAccountInfo.googleCode.length < 6){
@@ -252,7 +287,8 @@ export default {
       }*/
       this.$refs[rechargeAccountInfo].validate((valid) => {
         if (valid) {
-
+          this.clearRechargeDraft()
+          this.rechargeAccountInfo = buildEmptyRechargeAccountInfo()
         } else {
           this.$notify({
             title: this.$t('common.error'),

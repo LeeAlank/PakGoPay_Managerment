@@ -40,12 +40,24 @@ import {getTimeFromTimestamp} from "@/api/common.js";
               <el-col :span="5">
                 <el-form-item :label="$t('channelList.filter.channel')" label-width="150px" prop="paymentId">
                   <el-select
-                      :options="paymentOptions"
-                      :props="paymentProps"
-                      filterable
-                      v-model="filterbox.paymentId"
-                      style="height: 100%;width: 200px"
-                  />
+                    v-model="filterbox.paymentId"
+                    filterable
+                    remote
+                    clearable
+                    :remote-method="handlePaymentSearch"
+                    :loading="paymentLoading"
+                    :placeholder="$t('channelList.filter.channel')"
+                    popper-class="channel-payment-select-dropdown"
+                    @visible-change="handlePaymentDropdownVisible"
+                    style="height: 100%;width: 200px"
+                  >
+                    <el-option
+                      v-for="item in paymentFilterOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
                 </el-form-item>
               </el-col>
               <el-col :span="6">
@@ -341,6 +353,9 @@ import {
   getFormateTime,
   loadingBody
 } from "@/api/common.js";
+import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
+
+const CHANNEL_DRAFT_KEY = 'draft:ChannelList:form';
 
 export default {
   name: 'ChannelList',
@@ -358,6 +373,13 @@ export default {
       },
       currencyMaps: {},
       paymentOptions: [],
+      paymentFilterOptions: [],
+      paymentLoading: false,
+      paymentHasMore: true,
+      paymentPageNo: 1,
+      paymentPageSize: 20,
+      paymentQuery: '',
+      paymentScrollBound: false,
       channelStatusOptions: [],
       paymentProps: {
         value: 'paymentId',
@@ -404,6 +426,91 @@ export default {
     }
   },
   methods: {
+    saveChannelDraft() {
+      if (!this.dialogFormVisible) return;
+      const mode = this.submitType || '';
+      const recordId = this.editChannelInfo?.channelId || this.editChannelInfo?.id || '';
+      saveDraft(CHANNEL_DRAFT_KEY, { mode, recordId, data: this.editChannelInfo || {} });
+    },
+    loadChannelDraft() {
+      const draft = loadDraft(CHANNEL_DRAFT_KEY);
+      if (!draft || !draft.data) return;
+      const mode = this.submitType || '';
+      if (draft.mode && mode && draft.mode !== mode) return;
+      if (mode === 'edit') {
+        const recordId = this.editChannelInfo?.channelId || this.editChannelInfo?.id || '';
+        if (draft.recordId && recordId && draft.recordId !== recordId) return;
+      }
+      this.editChannelInfo = Object.assign({}, draft.data || {});
+    },
+    clearChannelDraft() {
+      clearDraft(CHANNEL_DRAFT_KEY);
+    },
+    handlePaymentDropdownVisible(visible) {
+      if (!visible) return;
+      if (!this.paymentFilterOptions.length) {
+        this.resetPaymentOptions();
+        this.fetchPaymentOptions(false);
+      }
+      this.attachPaymentScroll();
+    },
+    handlePaymentSearch(query) {
+      this.paymentQuery = query || '';
+      this.resetPaymentOptions();
+      this.fetchPaymentOptions(false);
+    },
+    resetPaymentOptions() {
+      this.paymentPageNo = 1;
+      this.paymentHasMore = true;
+      this.paymentFilterOptions = [];
+    },
+    fetchPaymentOptions(append) {
+      if (this.paymentLoading || !this.paymentHasMore) return;
+      this.paymentLoading = true;
+      const payload = {
+        pageNo: this.paymentPageNo,
+        pageSize: this.paymentPageSize
+      };
+      if (this.paymentQuery) {
+        payload.paymentName = this.paymentQuery;
+      }
+      getPaymentInfo(payload).then(res => {
+        if (res.status === 200 && res.data.code === 0) {
+          const allData = JSON.parse(res.data.data);
+          const list = allData.paymentDtoList || [];
+          const mapped = list.map(item => ({
+            value: item.paymentId,
+            label: item.paymentName
+          }));
+          this.paymentFilterOptions = append
+            ? this.paymentFilterOptions.concat(mapped)
+            : mapped;
+          if (list.length < this.paymentPageSize) {
+            this.paymentHasMore = false;
+          } else {
+            this.paymentPageNo += 1;
+          }
+        } else {
+          this.paymentHasMore = false;
+        }
+      }).finally(() => {
+        this.paymentLoading = false;
+      });
+    },
+    attachPaymentScroll() {
+      this.$nextTick(() => {
+        const wrap = document.querySelector(".channel-payment-select-dropdown .el-select-dropdown__wrap");
+        if (!wrap || this.paymentScrollBound) return;
+        wrap.addEventListener("scroll", this.handlePaymentScroll);
+        this.paymentScrollBound = true;
+      });
+    },
+    handlePaymentScroll(event) {
+      const el = event.target;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 8) {
+        this.fetchPaymentOptions(true);
+      }
+    },
     exportPathChannelInfos() {
       this.filterbox.columns = getChannelListTitle(this)
       exportChannelList(this.filterbox).then(async res => {
@@ -558,6 +665,7 @@ export default {
             this.channelDialogTitle = ''
             this.stopDialogTitle = ''
             this.stopDialogVisible = false
+            this.clearChannelDraft()
             this.search()
             if (this.editChannelInfo?.googleCode) {
               this.editChannelInfo.googleCode = ''
@@ -574,6 +682,7 @@ export default {
             })
             this.dialogFormVisible = false;
             this.channelDialogTitle = ''
+            this.clearChannelDraft()
             this.search()
             if (this.editChannelInfo?.googleCode) {
               this.editChannelInfo.googleCode = ''
@@ -611,6 +720,7 @@ export default {
             }
             this.dialogFormVisible = false;
             this.channelDialogTitle = ''
+            this.clearChannelDraft()
             if (this.editChannelInfo?.googleCode) {
               this.editChannelInfo.googleCode = ''
             }
@@ -626,6 +736,7 @@ export default {
             })
             this.dialogFormVisible = false;
             this.channelDialogTitle = ''
+            this.clearChannelDraft()
             if (this.editChannelInfo?.googleCode) {
               this.editChannelInfo.googleCode = ''
             }
@@ -692,6 +803,7 @@ export default {
       this.dialogFormVisible = false;
       this.createChannelInfo = {}
       this.channelDialogTitle = ''
+      this.clearChannelDraft()
       if (this.editChannelInfo?.googleCode) {
         this.editChannelInfo.googleCode = ''
       }
@@ -715,6 +827,20 @@ export default {
     }
   },
   watch: {
+    dialogFormVisible(visible) {
+      if (visible) {
+        this.loadChannelDraft();
+      }
+    },
+    editChannelInfo: {
+      deep: true,
+      handler() {
+        this.saveChannelDraft();
+      }
+    },
+    submitType() {
+      this.saveChannelDraft();
+    },
     "$route.query"(newQuery, oldQuery) {
       if (newQuery?.["filterbox.channelName"] === oldQuery?.["filterbox.channelName"]) {
         return

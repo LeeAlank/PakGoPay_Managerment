@@ -192,6 +192,18 @@ import {
   addCurrencyType, getAllCurrencyType,
   getCurrencyTypeByPage
 } from "@/api/interface/backendInterface.js";
+import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
+
+const CURRENCY_TYPE_DRAFT_KEY = 'draft:CurrencyTypeList:add';
+const buildEmptyCurrencyTypeInfo = () => ({
+  currencyType: '',
+  name: '',
+  icon: '',
+  currencyAccuracy: '',
+  isRate: 2,
+  exchangeRate: '',
+  googleCode: ''
+});
 
 export default {
   name: 'CurrencyTypeList',
@@ -207,7 +219,7 @@ export default {
       tableKey: 0,
       dialogFormVisible: false,
       dialogTitle: '',
-      addCurrencyTypeInfo: {},
+      addCurrencyTypeInfo: buildEmptyCurrencyTypeInfo(),
       currencyTypeData: [
         /*{createTime: 1767082270000,currencyType:"US",exchangeRate:0.900000,icon:"$",id:1,isRate:1,name:"美金"}*/
       ],
@@ -272,6 +284,18 @@ export default {
     }
   },
   methods: {
+    saveCurrencyTypeDraft() {
+      if (!this.dialogFormVisible) return;
+      saveDraft(CURRENCY_TYPE_DRAFT_KEY, { data: this.addCurrencyTypeInfo || {} });
+    },
+    loadCurrencyTypeDraft() {
+      const draft = loadDraft(CURRENCY_TYPE_DRAFT_KEY);
+      if (!draft || !draft.data) return;
+      this.addCurrencyTypeInfo = Object.assign(buildEmptyCurrencyTypeInfo(), draft.data);
+    },
+    clearCurrencyTypeDraft() {
+      clearDraft(CURRENCY_TYPE_DRAFT_KEY);
+    },
     getCurrencyTypeList() {
       getCurrencyTypeByPage(this.filterbox).then(res => {
         if (res.status === 200) {
@@ -320,17 +344,10 @@ export default {
       this.resetDialogForm();
       this.dialogTitle = '';
       this.dialogFormVisible = false;
+      this.clearCurrencyTypeDraft();
     },
     resetDialogForm() {
-      this.addCurrencyTypeInfo = {
-        currencyType: '',
-        name: '',
-        icon: '',
-        currencyAccuracy: '',
-        isRate: 2,
-        exchangeRate: '',
-        googleCode: ''
-      };
+      this.addCurrencyTypeInfo = buildEmptyCurrencyTypeInfo();
       if (this.$refs.addCurrencyTypeInfo) {
         this.$refs.addCurrencyTypeInfo.resetFields();
       }
@@ -368,6 +385,7 @@ export default {
               this.getCurrencyTypeList()
               this.dialogFormVisible = false;
               this.resetDialogForm();
+              this.clearCurrencyTypeDraft();
             }
           }
           this.confirmData.googleCode = ''
@@ -382,6 +400,19 @@ export default {
       this.confirmData.googleCode = ''
       if (this.$refs[form]) {
         this.$refs[form].resetFields()
+      }
+    }
+  },
+  watch: {
+    dialogFormVisible(visible) {
+      if (visible) {
+        this.loadCurrencyTypeDraft();
+      }
+    },
+    addCurrencyTypeInfo: {
+      deep: true,
+      handler() {
+        this.saveCurrencyTypeDraft();
       }
     }
   },

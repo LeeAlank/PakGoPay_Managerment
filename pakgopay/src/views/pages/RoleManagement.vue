@@ -295,6 +295,9 @@ import {
   roleList
 } from "@/api/interface/backendInterface.js";
 import {nextTick, ref} from "vue";
+import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
+
+const ROLE_DRAFT_KEY = 'draft:RoleManagement:form';
 
 const treeRef = ref();
 const treeRef2 = ref();
@@ -312,6 +315,7 @@ export default {
       dialogTitle: '',
       dialogVisible2: false,
       dialogTitle2: '',
+      dialogMode: '',
       googleVerifyVisible: false,
       googleVerifyForm: {
         googleCode: ''
@@ -366,7 +370,48 @@ export default {
       }
     }
   },
+  watch: {
+    dialogVisible(visible) {
+      if (visible) {
+        this.loadRoleDraft();
+      }
+    },
+    dialogVisible2(visible) {
+      if (visible) {
+        this.loadRoleDraft();
+      }
+    },
+    roleInfo: {
+      deep: true,
+      handler() {
+        this.saveRoleDraft();
+      }
+    },
+    dialogMode() {
+      this.saveRoleDraft();
+    }
+  },
   methods: {
+    saveRoleDraft() {
+      if (!this.dialogVisible && !this.dialogVisible2) return;
+      const mode = this.dialogMode || '';
+      const recordId = this.roleInfo?.roleId || this.roleInfo?.roleName || '';
+      saveDraft(ROLE_DRAFT_KEY, { mode, recordId, data: this.roleInfo || {} });
+    },
+    loadRoleDraft() {
+      const draft = loadDraft(ROLE_DRAFT_KEY);
+      if (!draft || !draft.data) return;
+      const mode = this.dialogMode || '';
+      if (draft.mode && mode && draft.mode !== mode) return;
+      if (mode === 'edit') {
+        const recordId = this.roleInfo?.roleId || this.roleInfo?.roleName || '';
+        if (draft.recordId && recordId && draft.recordId !== recordId) return;
+      }
+      Object.assign(this.roleInfo, this.defaultRoleInfo, draft.data || {});
+    },
+    clearRoleDraft() {
+      clearDraft(ROLE_DRAFT_KEY);
+    },
     getRoleInfo() {
       roleList(null).then(res => {
         this.roleInfoTableData = JSON.parse(res.data.data);
@@ -410,12 +455,14 @@ export default {
       })
       this.dialogTitle2 = this.$t('roleManagement.dialog.editTitle')
       this.dialogVisible2 = true
+      this.dialogMode = 'edit'
       this.roleInfo = {
         ...this.defaultRoleInfo,
         roleId: row.roleId,
         roleName: row.roleName,
         remark: row.remark
       }
+      this.loadRoleDraft()
       await nextTick(() => {
         treeRef2.value.setCheckedKeys(this.menuList, true);
       })
@@ -434,6 +481,9 @@ export default {
     createRole() {
       this.dialogVisible = true;
       this.dialogTitle = this.$t('roleManagement.dialog.addTitle')
+      this.dialogMode = 'create'
+      Object.assign(this.roleInfo, this.defaultRoleInfo)
+      this.loadRoleDraft()
       this.menuData = []
       menu().then(res => {
         this.menuData = JSON.parse(res.data.data)
@@ -449,11 +499,15 @@ export default {
       this.dialogVisible = false;
       this.dialogTitle = '';
       this.resetAddForm();
+      this.clearRoleDraft();
+      this.dialogMode = '';
     },
     cancelDialog2() {
       this.dialogVisible2 = false;
       this.dialogTitle2 = '';
       this.resetEditForm();
+      this.clearRoleDraft();
+      this.dialogMode = '';
     },
     cancelGoogleVerify() {
       this.googleVerifyVisible = false;
@@ -495,6 +549,8 @@ export default {
               this.dialogTitle = ''
               this.dialogVisible = false
               this.resetAddForm()
+              this.clearRoleDraft()
+              this.dialogMode = ''
               this.$notify({
                 title: this.$t('common.success'),
                 message: this.$t('roleManagement.message.addSuccess'),
@@ -602,6 +658,8 @@ export default {
           this.googleVerifyForm.googleCode = ''
           this.pendingRoleInfo = null
           this.resetEditForm()
+          this.clearRoleDraft()
+          this.dialogMode = ''
           this.$notify({
             title: this.$t('common.success'),
             message: this.$t('roleManagement.message.updateSuccess'),

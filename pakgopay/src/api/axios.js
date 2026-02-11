@@ -50,6 +50,9 @@ service.interceptors.response.use(response => {
     return response;
 }, error => {
     if (error.response && error.response.status === 401) {
+        if (error.config && error.config.skip401Handler) {
+            return Promise.reject(error);
+        }
         if (isLoginRoute()) {
             return Promise.reject(error);
         }

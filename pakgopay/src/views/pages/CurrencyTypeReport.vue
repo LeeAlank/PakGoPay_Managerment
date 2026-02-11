@@ -299,6 +299,7 @@ import {getFormateDate} from "@/api/common.js";
       class="dialog"
       center
       width="60%"
+      @closed="handleAddDialogClosed"
   >
     <el-form ref="addFormRef" :model="addCurrencyForm" :rules="addRules" class="form">
       <el-row style="display: flex;justify-content: center;">
@@ -396,8 +397,10 @@ import {
   getTodayStartTimestamp,
   loadingBody
 } from "@/api/common.js";
+import { clearDraft, loadDraft, saveDraft } from "@/util/draft.js";
 
 const filterDateRange = ref('')
+const DRAFT_KEY_ADD = 'draft:CurrencyTypeReport:add'
 export default {
   name: 'CurrencyTypeReport',
   data() {
@@ -408,6 +411,14 @@ export default {
         callback()
       }
     };
+    const buildEmptyAddCurrencyForm = () => ({
+      currencyType: '',
+      name: '',
+      icon: '',
+      currencyAccuracy: '',
+      isRate: 1,
+      exchangeRate: ''
+    })
     return {
       orderType: 0,
       activeTool: "1",
@@ -435,14 +446,8 @@ export default {
       filterbox: {},
       addDialogVisible: false,
       googleDialogVisible: false,
-      addCurrencyForm: {
-        currencyType: '',
-        name: '',
-        icon: '',
-        currencyAccuracy: '',
-        isRate: 1,
-        exchangeRate: ''
-      },
+      addCurrencyForm: buildEmptyAddCurrencyForm(),
+      buildEmptyAddCurrencyForm,
       addRules: {
         currencyType: [
           { required: true, message: this.$t('currencyTypeReport.validation.currencyCodeRequired'), trigger: 'blur' }
@@ -480,7 +485,43 @@ export default {
       ],
     }
   },
+  watch: {
+    addDialogVisible(visible) {
+      if (visible) {
+        this.loadAddDraft();
+      }
+    },
+    addCurrencyForm: {
+      handler() {
+        if (!this.addDialogVisible) return;
+        this.saveAddDraft();
+      },
+      deep: true
+    }
+  },
   methods: {
+    saveAddDraft() {
+      saveDraft(DRAFT_KEY_ADD, {
+        addCurrencyForm: this.addCurrencyForm
+      });
+    },
+    loadAddDraft() {
+      const draft = loadDraft(DRAFT_KEY_ADD);
+      if (draft && draft.addCurrencyForm) {
+        this.addCurrencyForm = Object.assign(this.buildEmptyAddCurrencyForm(), draft.addCurrencyForm);
+        this.$nextTick(() => {
+          this.$refs.addFormRef?.clearValidate();
+        });
+      }
+    },
+    clearAddDraft() {
+      clearDraft(DRAFT_KEY_ADD);
+    },
+    handleAddDialogClosed() {
+      this.clearAddDraft();
+      this.addCurrencyForm = this.buildEmptyAddCurrencyForm();
+      this.$refs.addFormRef?.resetFields();
+    },
     reset(form){
       this.$refs[form].resetFields();
     },
@@ -492,6 +533,8 @@ export default {
     },
     cancelAddDialog() {
       this.addDialogVisible = false;
+      this.clearAddDraft();
+      this.addCurrencyForm = this.buildEmptyAddCurrencyForm();
       this.$refs.addFormRef?.resetFields();
     },
     submitAddCurrency() {
@@ -515,7 +558,9 @@ export default {
           if (res.status === 200 && res.data.code === 0) {
             this.googleDialogVisible = false;
             this.addDialogVisible = false;
+            this.clearAddDraft();
             this.$refs.googleFormRef?.resetFields();
+            this.addCurrencyForm = this.buildEmptyAddCurrencyForm();
             this.$refs.addFormRef?.resetFields();
             this.refreshCurrencyOptions();
             this.$notify({

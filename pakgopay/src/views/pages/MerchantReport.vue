@@ -10,7 +10,7 @@ import {ElPagination} from "element-plus";
 import 'element-plus/theme-chalk/el-pagination.css'
 import '@/api/common.css'
 
-import {exportMerchantReport, getAllCurrencyType, getMerchantReport} from "@/api/interface/backendInterface.js";
+import {exportMerchantReport, getAllCurrencyType, getMerchantInfo, getMerchantReport} from "@/api/interface/backendInterface.js";
 import {
   exportExcel,
   getFormateDate,
@@ -40,6 +40,13 @@ export default {
       statisticsInfo: {},
       timeRange: '',
       filterbox: {},
+      merchantOptions: [],
+      merchantLoading: false,
+      merchantHasMore: true,
+      merchantPageNo: 1,
+      merchantPageSize: 20,
+      merchantQuery: '',
+      merchantScrollBound: false,
       reportTitle: this.$t('merchantReport.reportTitle'),
       tab1CurrentPage: 1,
       tab1TotalCount: 2,
@@ -160,6 +167,68 @@ export default {
         console.log(err)
       })
     },
+    handleMerchantDropdownVisible(visible) {
+      if (!visible) return;
+      this.attachMerchantScroll();
+      if (this.merchantOptions.length === 0) {
+        this.merchantPageNo = 1;
+        this.merchantHasMore = true;
+        this.fetchMerchantOptions(false);
+      }
+    },
+    handleMerchantSearch(query) {
+      this.merchantQuery = query || '';
+      this.merchantPageNo = 1;
+      this.merchantHasMore = true;
+      this.merchantOptions = [];
+      this.fetchMerchantOptions(false);
+    },
+    fetchMerchantOptions(append) {
+      if (this.merchantLoading || !this.merchantHasMore) return;
+      this.merchantLoading = true;
+      const payload = {
+        pageNo: this.merchantPageNo,
+        pageSize: this.merchantPageSize,
+        isNeedCardData: false
+      };
+      if (this.merchantQuery) {
+        payload.merchantName = this.merchantQuery;
+      }
+      getMerchantInfo(payload).then(res => {
+        if (res.status === 200 && res.data.code === 0) {
+          const all = JSON.parse(res.data.data);
+          const list = all.merchantInfoDtoList || [];
+          const mapped = list.map(item => ({
+            value: item.merchantName,
+            label: item.merchantName
+          }));
+          this.merchantOptions = append ? this.merchantOptions.concat(mapped) : mapped;
+          if (list.length < this.merchantPageSize) {
+            this.merchantHasMore = false;
+          } else {
+            this.merchantPageNo += 1;
+          }
+        } else {
+          this.merchantHasMore = false;
+        }
+      }).finally(() => {
+        this.merchantLoading = false;
+      });
+    },
+    attachMerchantScroll() {
+      this.$nextTick(() => {
+        const wrap = document.querySelector(".merchant-select-dropdown .el-select-dropdown__wrap");
+        if (!wrap || this.merchantScrollBound) return;
+        wrap.addEventListener("scroll", this.handleMerchantScroll);
+        this.merchantScrollBound = true;
+      });
+    },
+    handleMerchantScroll(event) {
+      const el = event.target;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 8) {
+        this.fetchMerchantOptions(true);
+      }
+    },
     // 改变每页显示条数
     handleTab1SizeChange(pageSize) {
       this.tab1PageSize = pageSize
@@ -257,10 +326,12 @@ export default {
             this.statisticsInfo.totalAmount = this.currencyIcon + 0;
             this.statisticsInfo.totalWithdrawlAmount = this.currencyIcon + 0;
             this.statisticsInfo.totalFreezeAmount = this.currencyIcon + 0;
+            this.statisticsInfo.available = this.currencyIcon + 0;
           }else {
             this.statisticsInfo.totalAmount = this.currencyIcon + cardInfo.total;
             this.statisticsInfo.totalWithdrawlAmount = this.currencyIcon + cardInfo.withdraw;
             this.statisticsInfo.totalFreezeAmount = this.currencyIcon + cardInfo.frozen;
+            this.statisticsInfo.available = this.currencyIcon + cardInfo.available;
           }
 
         } else if (res.status === 200 && res.data.code !== 0) {
@@ -336,6 +407,7 @@ export default {
     this.filterbox.isNeedCardData = true
     this.activeTabPane = '0'
     this.search(0)
+    this.fetchMerchantOptions(false)
     this.tab1TotalCount = this.collectingReportInfoData.length
     this.tab2TotalCount = this.payingReportInfoData.length
   }
@@ -357,7 +429,26 @@ export default {
           <el-row class="toolform-item">
             <el-col :span="8" class="toolform-line" style="display: flex;justify-content: center;align-items: center;">
               <el-form-item :label="$t('merchantReport.filter.merchantName')" label-width="150px" prop="merchantAccount">
-                <el-input v-model="filterbox.merchantName" type="text" :placeholder="$t('merchantReport.placeholder.merchantAccount')"/>
+                <el-select
+                  ref="merchantSelect"
+                  v-model="filterbox.merchantName"
+                  filterable
+                  remote
+                  clearable
+                  :remote-method="handleMerchantSearch"
+                  :loading="merchantLoading"
+                  :placeholder="$t('merchantReport.placeholder.merchantAccount')"
+                  popper-class="merchant-select-dropdown"
+                  @visible-change="handleMerchantDropdownVisible"
+                  style="width: 200px"
+                >
+                  <el-option
+                    v-for="item in merchantOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="16" class="toolform-line" style="display: flex;justify-content: center;align-items: center;">
@@ -445,6 +536,16 @@ export default {
         </div>
       </div>
     </el-card>
+
+    <el-card id="statistics" class="statistics-form">
+      <div class="statistics-form-item">
+        <SvgIcon name="accountBalance" width="100px" height="100px"/>
+        <div style="display: flex; flex-direction: column;width: 80%;">
+          <span style="text-align: left;font-size: x-large">{{ $t('merchantReport.statistics.availableAmount') }}</span>
+          <textarea v-model="statisticsInfo.available" disabled class="cash-text-area"></textarea>
+        </div>
+      </div>
+    </el-card>
   </div>
   <div class="reportInfo">
     <el-tabs type="border-card" class="report-tabs" @tab-click="handleTabClick" v-model="activeTabPane">
@@ -513,7 +614,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ this.currencyIcon + row.merchantFee }}
+                {{ currencyIcon + row.merchantFee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -523,7 +624,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ this.currencyIcon + row.agent1Fee }}
+                {{ currencyIcon + row.agent1Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -533,7 +634,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ this.currencyIcon + row.agent2Fee }}
+                {{ currencyIcon + row.agent2Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -543,7 +644,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ this.currencyIcon + row.agent3Fee }}
+                {{ currencyIcon + row.agent3Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -553,7 +654,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ this.currencyIcon + row.orderProfit }}
+                {{ currencyIcon + row.orderProfit }}
               </div>
             </el-table-column>
             <el-table-column
@@ -646,7 +747,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ this.currencyIcon + row.merchantFee }}
+                {{ currencyIcon + row.merchantFee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -656,7 +757,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ this.currencyIcon + row.agent1Fee }}
+                {{ currencyIcon + row.agent1Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -666,7 +767,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ this.currencyIcon + row.agent2Fee }}
+                {{ currencyIcon + row.agent2Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -676,7 +777,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ this.currencyIcon + row.agent3Fee }}
+                {{ currencyIcon + row.agent3Fee }}
               </div>
             </el-table-column>
             <el-table-column
@@ -686,7 +787,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ this.currencyIcon + row.orderProfit }}
+                {{ currencyIcon + row.orderProfit }}
               </div>
             </el-table-column>
             <el-table-column

@@ -11,6 +11,7 @@ export default {
 </script>
 
 <style scoped>
+
 /*.content {
   margin-left: 250px; !* 与侧边栏的默认宽度一致 *!
   transition: margin-left 0.3s;

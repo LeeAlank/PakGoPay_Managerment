@@ -18,7 +18,26 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             <el-col :span="8">
               <div>
                 <el-form-item :label="$t('agentInfo.filter.agentName')" label-width="150px" prop="agentName">
-                  <el-input v-model="filterbox.agentName" style="width: 200px;" />
+                  <el-select
+                    v-model="filterbox.agentName"
+                    filterable
+                    remote
+                    clearable
+                    :remote-method="handleAgentNameSearch"
+                    :loading="agentNameLoading"
+                    :placeholder="$t('agentInfo.filter.agentName')"
+                    popper-class="agent-name-select-dropdown"
+                    @visible-change="handleAgentNameDropdownVisible"
+                    style="width: 200px;"
+                    :disabled="filterAvaiable"
+                  >
+                    <el-option
+                      v-for="item in agentNameOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
                 </el-form-item>
               </div>
             </el-col>
@@ -358,21 +377,21 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <el-col :span="8">
             <div class="el-form-line">
               <el-form-item :label="$t('agentInfo.form.collectionFixedFee')" label-width="150px" prop="collectionFixedFee">
-                <el-input type="number" v-model.number="agentInfo.collectionFixedFee" style="width: 200px"></el-input>
+                <el-input type="number" v-model.number="agentInfo.collectionFixedFee" style="width: 200px" @blur="handleCollectionFeeBlur"></el-input>
               </el-form-item>
             </div>
           </el-col>
           <el-col :span="8">
             <div class="el-form-line">
               <el-form-item :label="$t('agentInfo.form.collectionRate')" label-width="150px" prop="collectionRate">
-                <el-input type="number" v-model.number="agentInfo.collectionRate" style="width: 200px"></el-input>
+                <el-input type="number" v-model.number="agentInfo.collectionRate" style="width: 200px" @blur="handleCollectionFeeBlur"></el-input>
               </el-form-item>
             </div>
           </el-col>
           <el-col :span="8">
             <div class="el-form-line">
               <el-form-item :label="$t('agentInfo.form.payFixedFee')" label-width="150px" prop="payFixedFee">
-                <el-input type="number" v-model.number="agentInfo.payFixedFee" style="width: 200px"></el-input>
+                <el-input type="number" v-model.number="agentInfo.payFixedFee" style="width: 200px" @blur="handlePayFeeBlur"></el-input>
               </el-form-item>
             </div>
           </el-col>
@@ -381,7 +400,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <el-col :span="8">
             <div class="el-form-line">
               <el-form-item :label="$t('agentInfo.form.payRate')" label-width="150px" prop="payRate">
-                <el-input type="number" v-model.number="agentInfo.payRate" style="width: 200px"></el-input>
+                <el-input type="number" v-model.number="agentInfo.payRate" style="width: 200px" @blur="handlePayFeeBlur"></el-input>
               </el-form-item>
             </div>
           </el-col>
@@ -486,9 +505,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </el-col>
           <el-col :span="8">
             <div class="el-form-line">
-              <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode">
-                <el-input type="number" v-model="agentInfo.googleCode" style="width: 200px"></el-input>
-              </el-form-item>
+              <!-- google code moved to second confirm dialog -->
             </div>
           </el-col>
         </el-row>
@@ -607,9 +624,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </el-col>
           <el-col :span="8">
             <div class="el-form-line">
-              <el-form-item :label="$t('common.googleCode')" label-width="150px" >
-                <el-input type="number" v-model="nextLevelAgentInfo.googleCode" style="width: 200px"></el-input>
-              </el-form-item>
+              <!-- google code moved to second confirm dialog -->
             </div>
           </el-col>
         </el-row>
@@ -617,6 +632,30 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       <div slot="footer" class="dialog-footer" style="margin-bottom:10px;display: flex;padding:0;">
         <el-button @click="calcelParentDialog">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary">{{ $t('common.confirm') }}</el-button>
+      </div>
+    </el-dialog>
+
+    <!-- Google code confirm dialog -->
+    <el-dialog
+        :title="googleConfirmTitle"
+        v-model="googleConfirmVisible"
+        class="dialog"
+        center
+        width="30%"
+        height="200px"
+    >
+      <el-form ref="googleConfirmForm" :rules="googleConfirmRule" :model="googleConfirmData" style="height:100px;margin-top: 20px">
+        <el-row>
+          <el-col :span="24" style="display: flex;justify-content: center;align-items: center;">
+            <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode">
+              <el-input v-model="googleConfirmData.googleCode" style="width: 200px"/>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <div slot="footer" class="dialog-footer" style="margin-right: 3%;height: 30px;">
+        <el-button @click="cancelGoogleConfirm('googleConfirmForm')">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitGoogleConfirm('googleConfirmForm')">{{ $t('common.confirm') }}</el-button>
       </div>
     </el-dialog>
   </div>
@@ -647,6 +686,34 @@ import {
 import validator from "axios/unsafe/helpers/validator.js";
 import {exportExcel, getAgentInfoTitle, getFormateTime, getMerchantAccountTitle, loadingBody} from "@/api/common.js";
 import {nextTick} from "vue";
+import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
+
+const AGENT_DRAFT_KEY = 'agentInfoDraft';
+const buildEmptyAgentInfo = () => ({
+  agentName: '',
+  accountName: '',
+  level: '',
+  contactName: '',
+  contactPhone: '',
+  contactEmail: '',
+  collectionFixedFee: '',
+  collectionRate: '',
+  payFixedFee: '',
+  payRate: '',
+  channelIdList: [],
+  status: 1,
+  loginIps: '',
+  withdrawalIps: '',
+  collectionMaxFee: '',
+  collectionMinFee: '',
+  payMaxFee: '',
+  payMinFee: '',
+  accountPwd: '',
+  accountConfirmPwd: '',
+  parentId: '',
+  topAgentId: '',
+  parentChannelDtoList: [],
+});
 
 export default {
   name: 'ChannelList',
@@ -708,19 +775,32 @@ export default {
       createType: '',
       modifyType: '',
       tablekey: 0,
+      isAdmin: false,
+      filterAvaiable: false,
+      agentNameOptions: [],
+      agentNameLoading: false,
+      agentNameHasMore: true,
+      agentNamePageNo: 1,
+      agentNamePageSize: 20,
+      agentNameQuery: '',
+      agentNameScrollBound: false,
       filterbox: {
       },
       dialogFormVisible: false,
       parentDialogTitle: '',
       parentDialogVisible: false,
+      googleConfirmTitle: this.$t('agentInfo.dialog.googleVerify'),
+      googleConfirmVisible: false,
+      googleConfirmData: {
+        googleCode: ''
+      },
       channelOptions: [],
       channelProps: {
         value: 'channelId',
         label: 'channelName'
       },
       dialogTitle: '',
-      agentInfo: {
-      },
+      agentInfo: buildEmptyAgentInfo(),
       nextLevelAgentInfo: {
         parentAgentName: '',
         parentAgentAccount: '',
@@ -744,7 +824,6 @@ export default {
           }*/
         ],
         agentRate: '',
-        googleCode: '',
       },
       agentInfoFormData: [
         /*{
@@ -875,9 +954,6 @@ export default {
         channelIdList: {
           required: true,trigger: 'blur',
         },
-        googleCode: {
-          required: true,trigger: 'blur',
-        },
         collectionFixedFee: {
           required: true, trigger: 'blur', validator: validCollectionFee,
         },
@@ -909,15 +985,51 @@ export default {
           required: true, trigger: 'blur',
         }
       },
+      googleConfirmRule: {
+        googleCode: {
+          required: true,
+          message: this.$t('common.googleCodeRequired'),
+          trigger: 'blur'
+        }
+      },
       totalCount: 100,
       pageSize: 10,
       pageSizes: [10, 20, 50, 100, 200],
       currentPage: 1,
+      pendingSubmitAction: '',
+    }
+  },
+  watch: {
+    dialogFormVisible(visible) {
+      if (visible) {
+        this.loadAgentDraft();
+      }
+    },
+    agentInfo: {
+      deep: true,
+      handler() {
+        this.saveAgentDraft();
+      }
+    },
+    createType() {
+      this.saveAgentDraft();
     }
   },
   async mounted() {
     this.agentInfoTableData = this.agentInfoFormData
     this.totalCount = this.agentInfoTableData.length
+    const roleName = localStorage.getItem('roleName')
+    this.isAdmin = roleName === 'admin'
+    if (roleName === 'agent') {
+      this.filterbox.agentName = localStorage.getItem('userName')
+      this.filterAvaiable = true
+      if (this.filterbox.agentName) {
+        this.agentNameOptions = [{
+          value: this.filterbox.agentName,
+          label: this.filterbox.agentName
+        }]
+      }
+    }
     // get paymentInfos
     await getChannelInfo({pageSize: 1000}).then((res) => {
       if (res.status === 200 && res.data.code === 0) {
@@ -928,6 +1040,111 @@ export default {
     this.search()
   },
   methods: {
+    saveAgentDraft() {
+      if (!this.dialogFormVisible) return;
+      const isEdit = this.modifyType === 'edit';
+      const isCreate = this.createType === 'firstLevel' || this.createType === 'nextLevel';
+      if (!isEdit && !isCreate) return;
+      const recordId = isEdit ? (this.agentInfo?.userId || this.agentInfo?.id || this.agentInfo?.agentId || '') : '';
+      const payload = {
+        mode: isEdit ? 'edit' : 'create',
+        createType: this.createType,
+        recordId,
+        parentId: this.agentInfo?.parentId || '',
+        topAgentId: this.agentInfo?.topAgentId || '',
+        data: this.agentInfo || {}
+      };
+      saveDraft(AGENT_DRAFT_KEY, payload);
+    },
+    loadAgentDraft() {
+      const draft = loadDraft(AGENT_DRAFT_KEY);
+      if (!draft) return;
+      const isEdit = this.modifyType === 'edit';
+      if (isEdit) {
+        const recordId = this.agentInfo?.userId || this.agentInfo?.id || this.agentInfo?.agentId || '';
+        if (!recordId || draft.recordId !== recordId || draft.mode !== 'edit') return;
+      } else {
+        if (this.createType !== 'firstLevel' && this.createType !== 'nextLevel') return;
+        if (draft.mode !== 'create' || draft.createType !== this.createType) return;
+        if (this.createType === 'nextLevel') {
+          const currentParentId = this.agentInfo?.parentId || '';
+          if (draft.parentId && currentParentId && draft.parentId !== currentParentId) {
+            return;
+          }
+        }
+      }
+      this.agentInfo = Object.assign(buildEmptyAgentInfo(), draft.data || {});
+    },
+    clearAgentDraft() {
+      clearDraft(AGENT_DRAFT_KEY);
+    },
+    handleAgentNameDropdownVisible(visible) {
+      if (!visible || this.filterAvaiable) return;
+      if (!this.agentNameOptions.length) {
+        this.resetAgentNameOptions();
+        this.fetchAgentNameOptions(false);
+      }
+      this.attachAgentNameScroll();
+    },
+    handleAgentNameSearch(query) {
+      if (this.filterAvaiable) return;
+      this.agentNameQuery = query || '';
+      this.resetAgentNameOptions();
+      this.fetchAgentNameOptions(false);
+    },
+    resetAgentNameOptions() {
+      this.agentNamePageNo = 1;
+      this.agentNameHasMore = true;
+      this.agentNameOptions = [];
+    },
+    fetchAgentNameOptions(append) {
+      if (this.agentNameLoading || !this.agentNameHasMore) return;
+      this.agentNameLoading = true;
+      const payload = {
+        pageNo: this.agentNamePageNo,
+        pageSize: this.agentNamePageSize,
+        isNeedCardData: false
+      };
+      if (this.agentNameQuery) {
+        payload.agentName = this.agentNameQuery;
+      }
+      getAgentInfo(payload).then(res => {
+        if (res.status === 200 && res.data.code === 0) {
+          const all = JSON.parse(res.data.data);
+          const list = all.agentInfoDtoList || [];
+          const mapped = list.map(item => ({
+            value: item.agentName,
+            label: item.agentName
+          }));
+          this.agentNameOptions = append
+            ? this.agentNameOptions.concat(mapped)
+            : mapped;
+          if (list.length < this.agentNamePageSize) {
+            this.agentNameHasMore = false;
+          } else {
+            this.agentNamePageNo += 1;
+          }
+        } else {
+          this.agentNameHasMore = false;
+        }
+      }).finally(() => {
+        this.agentNameLoading = false;
+      });
+    },
+    attachAgentNameScroll() {
+      this.$nextTick(() => {
+        const wrap = document.querySelector(".agent-name-select-dropdown .el-select-dropdown__wrap");
+        if (!wrap || this.agentNameScrollBound) return;
+        wrap.addEventListener("scroll", this.handleAgentNameScroll);
+        this.agentNameScrollBound = true;
+      });
+    },
+    handleAgentNameScroll(event) {
+      const el = event.target;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 8) {
+        this.fetchAgentNameOptions(true);
+      }
+    },
     exportAgent() {
       this.filterbox.columns = getAgentInfoTitle(this)
       let timeRange = null
@@ -985,82 +1202,75 @@ export default {
     submit(form) {
       this.$refs[form].validate(valid => {
         if (valid) {
-           this.agentInfo.channelIds = this.agentInfo.channelIdList
-           if (this.modifyType === 'edit') {
-             // modify
-             modifyAgentInfo(this.agentInfo).then((res) => {
-               if (res.status === 200 && res.data.code === 0) {
-                 this.search()
-                 this.dialogFormVisible = false
-                 this.dialogTitle = ''
-                 this.$notify({
-                   title: this.$t('common.success'),
-                   type: 'success',
-                   duration: 5000,
-                   position: 'bottom-right',
-                   message: this.$t('agentInfo.message.modifySuccess')
-                 })
-               } else if (res.status === 200 && res.data.code !== 0) {
-                 this.$notify({
-                   title: this.$t('common.error'),
-                   type: 'error',
-                   duration: 5000,
-                   position: 'bottom-right',
-                   message: res.data.message,
-                 })
-               } else {
-                 this.$notify({
-                   title: this.$t('common.error'),
-                   type: 'error',
-                   duration: 5000,
-                   position: 'bottom-right',
-                   message: this.$t('common.requestFailed')
-                 })
-               }
-             })
-           } else {
-             createAgentInfo(this.agentInfo).then((res) => {
-               if (res.status === 200 && res.data.code === 0) {
-                 this.search()
-                 this.dialogFormVisible = false
-                 this.dialogTitle = ''
-                 this.$notify({
-                   title: this.$t('common.success'),
-                   type: 'success',
-                   duration: 5000,
-                   position: 'bottom-right',
-                   message: this.$t('agentInfo.message.createSuccess')
-                 })
-               } else if (res.status === 200 && res.data.code !== 0) {
-                 this.$notify({
-                   title: this.$t('common.error'),
-                   type: 'error',
-                   duration: 5000,
-                   position: 'bottom-right',
-                   message: res.data.message,
-                 })
-               } else {
-                 this.$notify({
-                   title: this.$t('common.error'),
-                   type: 'error',
-                   duration: 5000,
-                   position: 'bottom-right',
-                   message: this.$t('common.requestFailed')
-                 })
-               }
-               this.modifyType = ''
-               this.createType = ''
-             })
-           }
+          this.pendingSubmitAction = this.modifyType === 'edit' ? 'edit' : 'create'
+          this.googleConfirmTitle = this.$t('agentInfo.dialog.googleVerify')
+          this.googleConfirmVisible = true
         }
+      })
+    },
+    cancelGoogleConfirm(form) {
+      if (this.$refs[form]) {
+        this.$refs[form].resetFields()
+      }
+      this.googleConfirmData.googleCode = ''
+      if (this.agentInfo) {
+        this.agentInfo.googleCode = ''
+      }
+      this.googleConfirmVisible = false
+      this.pendingSubmitAction = ''
+    },
+    submitGoogleConfirm(form) {
+      this.$refs[form].validate(valid => {
+        if (!valid) return
+        this.agentInfo.channelIds = this.agentInfo.channelIdList
+        this.agentInfo.googleCode = this.googleConfirmData.googleCode
+        const isEdit = this.pendingSubmitAction === 'edit'
+        const request = isEdit ? modifyAgentInfo(this.agentInfo) : createAgentInfo(this.agentInfo)
+        request.then((res) => {
+          if (res.status === 200 && res.data.code === 0) {
+            this.search()
+            this.dialogFormVisible = false
+            this.dialogTitle = ''
+            this.$notify({
+              title: this.$t('common.success'),
+              type: 'success',
+              duration: 5000,
+              position: 'bottom-right',
+              message: isEdit ? this.$t('agentInfo.message.modifySuccess') : this.$t('agentInfo.message.createSuccess')
+            })
+            this.cancelGoogleConfirm(form)
+            this.modifyType = ''
+            this.createType = ''
+            this.clearAgentDraft()
+            this.agentInfo = buildEmptyAgentInfo()
+          } else if (res.status === 200 && res.data.code !== 0) {
+            this.$notify({
+              title: this.$t('common.error'),
+              type: 'error',
+              duration: 5000,
+              position: 'bottom-right',
+              message: res.data.message,
+            })
+          } else {
+            this.$notify({
+              title: this.$t('common.error'),
+              type: 'error',
+              duration: 5000,
+              position: 'bottom-right',
+              message: this.$t('common.requestFailed')
+            })
+          }
+        })
       })
     },
     addFistLevelAgent() {
       this.modifyType = ''
+      this.agentInfo = buildEmptyAgentInfo()
       this.dialogFormVisible = true;
       this.dialogTitle = this.$t('agentInfo.dialog.addFirstLevel')
       this.agentInfo.level = 1
       this.createType = 'firstLevel'
+      this.loadAgentDraft()
     },
     cancelDialog(form) {
       this.modifyType = ''
@@ -1068,7 +1278,8 @@ export default {
       this.$refs[form].resetFields()
       this.dialogFormVisible = false;
       this.dialogTitle = ''
-      this.agentInfo = []
+      this.agentInfo = buildEmptyAgentInfo()
+      this.clearAgentDraft()
     },
     calcelParentDialog() {
       this.parentDialogVisible = false
@@ -1100,12 +1311,26 @@ export default {
       //this.agentInfo = val
       console.log(JSON.stringify(val.channelDtoList))
       this.createType = 'nextLevel'
+      this.agentInfo = buildEmptyAgentInfo()
       this.agentInfo.parentId = val.userId
       this.agentInfo.topAgentId = val.topAgentId
       this.agentInfo.parentChannelDtoList = val.channelDtoList
       this.agentInfo.level = val.level + 1
       this.dialogTitle = this.$t('agentInfo.dialog.addNextLevel')
       this.dialogFormVisible = true;
+      this.loadAgentDraft()
+    },
+    handlePayFeeBlur() {
+      if (this.$refs.createAgentForm) {
+        this.$refs.createAgentForm.validateField('payFixedFee')
+        this.$refs.createAgentForm.validateField('payRate')
+      }
+    },
+    handleCollectionFeeBlur() {
+      if (this.$refs.createAgentForm) {
+        this.$refs.createAgentForm.validateField('collectionFixedFee')
+        this.$refs.createAgentForm.validateField('collectionRate')
+      }
     },
     deleteAgentInfo() {
       this.$confirm(this.$t('agentInfo.confirm.deleteMessage'), this.$t('common.prompt'), {

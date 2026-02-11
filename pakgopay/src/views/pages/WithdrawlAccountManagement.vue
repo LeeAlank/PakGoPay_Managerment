@@ -532,6 +532,19 @@ import {
   getMerchantAccountTitle,
   loadingBody
 } from "@/api/common.js";
+import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
+
+const WITHDRAW_ACCOUNT_DRAFT_KEY = 'draft:WithdrawlAccountManagement:form';
+const buildEmptyWithdrawAccountInfo = () => ({
+  merchantAgentId: '',
+  userName: '',
+  walletName: '',
+  status: 1,
+  walletAddr: '',
+  merchantAccount: '',
+  balance: '',
+  googleCode: ''
+});
 
 const filterDateRange = ref('')
 export default {
@@ -587,23 +600,7 @@ export default {
       },
       withdrawAccountFormData: [],
       allMerchantInfo: [], /** 客服登陆 后端返回所有商户信息包括 商户名 商户账号 可用余额 。商户进入该页面，后端返回该商户单条信息 */
-      withdrawAccountInfo: {
-        /*merchantAccount: '',
-        merchantName: '',
-        balance: '',
-        withdrawlAccount: [],
-        withdrawlAccountOptions: [
-          {
-            value: 1,
-            label: '收款账号1'
-          },
-          {
-            value: 2,
-            label: '收款账号2'
-          }
-        ],
-        googleCode: '',*/
-      },
+      withdrawAccountInfo: buildEmptyWithdrawAccountInfo(),
       filterbox: {
         merchantAccount: "",
         withdrawlAccount: "",
@@ -695,7 +692,43 @@ export default {
       pageSizes: [10, 20, 50, 100, 200],
     }
   },
+  watch: {
+    dialogFormVisible(visible) {
+      if (visible) {
+        this.loadWithdrawAccountDraft();
+      }
+    },
+    withdrawAccountInfo: {
+      deep: true,
+      handler() {
+        this.saveWithdrawAccountDraft();
+      }
+    },
+    submitType() {
+      this.saveWithdrawAccountDraft();
+    }
+  },
   methods: {
+    saveWithdrawAccountDraft() {
+      if (!this.dialogFormVisible) return;
+      const mode = this.submitType || '';
+      const recordId = this.withdrawAccountInfo?.merchantAgentId || this.withdrawAccountInfo?.userId || this.withdrawAccountInfo?.id || '';
+      saveDraft(WITHDRAW_ACCOUNT_DRAFT_KEY, { mode, recordId, data: this.withdrawAccountInfo || {} });
+    },
+    loadWithdrawAccountDraft() {
+      const draft = loadDraft(WITHDRAW_ACCOUNT_DRAFT_KEY);
+      if (!draft || !draft.data) return;
+      const mode = this.submitType || '';
+      if (draft.mode && mode && draft.mode !== mode) return;
+      if (mode === 'edit') {
+        const recordId = this.withdrawAccountInfo?.merchantAgentId || this.withdrawAccountInfo?.userId || this.withdrawAccountInfo?.id || '';
+        if (draft.recordId && recordId && draft.recordId !== recordId) return;
+      }
+      this.withdrawAccountInfo = Object.assign(buildEmptyWithdrawAccountInfo(), draft.data || {});
+    },
+    clearWithdrawAccountDraft() {
+      clearDraft(WITHDRAW_ACCOUNT_DRAFT_KEY);
+    },
     cancelConfirmDialog(form) {
       this.$refs[form].resetFields();
       this.confirmDialogVisible = false
@@ -847,6 +880,9 @@ export default {
       this.dialogTitle = this.$t('withdrawlAccount.dialog.addTitle')
       this.selectAccountVisible = false;
       this.filterbox.submitType = 'create'
+      this.submitType = 'create'
+      this.withdrawAccountInfo = buildEmptyWithdrawAccountInfo()
+      this.loadWithdrawAccountDraft()
     },
     editMerchantInfo(row) {
       this.withdrawAccountInfo = row
@@ -854,6 +890,8 @@ export default {
       this.dialogTitle = this.$t('withdrawlAccount.dialog.editTitle')
       this.selectAccountVisible = true;
       this.filterbox.submitType = 'edit'
+      this.submitType = 'edit'
+      this.loadWithdrawAccountDraft()
     },
     handleChange(val) {
       //选择商户后自动填充商户账号
@@ -883,6 +921,8 @@ export default {
       this.dialogTitle = ''
       this.$refs[form].resetFields()
       this.updateMerchantAccount()
+      this.clearWithdrawAccountDraft()
+      this.submitType = ''
     },
     cancelMerchantGoogle() {
       this.merchantGoogleVisible = false;
@@ -927,6 +967,8 @@ export default {
             this.merchantGoogleInfo.googleCode = ''
             this.pendingMerchantAction = ''
             this.$refs.createMerchantAccountForm.resetFields()
+            this.clearWithdrawAccountDraft()
+            this.submitType = ''
             this.search()
           } else if (res.status === 200 && res.data.code !== 0) {
             this.$notify({

@@ -1,0 +1,22 @@
+/* Global dialog title alignment */
+.el-dialog__header {
+  text-align: left;
+  padding: 16px 20px 8px;
+}
+
+.el-dialog__title {
+  text-align: left;
+}
+
+/* Global dialog position: center within visible viewport */
+.el-overlay-dialog {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.el-overlay-dialog .el-dialog {
+  margin: 0 !important;
+  max-height: calc(100vh - 32px);
+}

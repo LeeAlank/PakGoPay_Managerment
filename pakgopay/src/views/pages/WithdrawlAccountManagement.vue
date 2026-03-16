@@ -163,16 +163,9 @@ import {getFormateDate, getFormateTimeByTimeBystamp} from "@/api/common.js";
             align="center"
         >
           <div>
-            <el-switch
-                v-model="row.status"
-                active-color="#13ce66"
-                inactive-color="#ff4949"
-                :active-text="$t('common.enable')"
-                :inactive-text="$t('common.disable')"
-                :inactive-value="0"
-                :active-value="1"
-                disabled>
-            </el-switch>
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+              {{ row.status === 1 ? $t('common.enable') : $t('common.disable') }}
+            </el-tag>
           </div>
         </el-table-column>
         <el-table-column

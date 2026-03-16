@@ -146,16 +146,9 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
             width="150px"
         >
           <div>
-            <el-switch
-                v-model="row.status"
-                active-color="#13ce66"
-                inactive-color="#ff4949"
-                :active-text="$t('common.enable')"
-                :inactive-text="$t('common.disable')"
-                :active-value="1"
-                :inactive-value="0"
-                disabled
-            ></el-switch>
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+              {{ row.status === 1 ? $t('common.enable') : $t('common.disable') }}
+            </el-tag>
           </div>
         </el-table-column>
         <el-table-column
@@ -499,35 +492,35 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
   <el-dialog
     :title="paymentDetailDialogTitle"
     v-model="paymentDetailVisible"
-    class="dialog left-top-title-dialog"
-    width="90%"
-    style="height: 600px;align-content: center"
+    class="dialog left-top-title-dialog path-channel-detail-dialog"
+    width="auto"
+    top="3vh"
   >
     <el-form
-        style="margin-top: 10px;width: 100%;margin-left: 2%;"
+        style="margin-top: 10px;width: 100%;"
         :model="paymentDetailInfo"
     >
       <el-row style="width: 100%">
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.channelNo')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.paymentNo}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.paymentNo" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.channelName')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.paymentName}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.paymentName" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.status')"
-              label-width="150px"
+              label-width="160px"
           >
             <el-switch
                 :model-value="paymentDetailInfo.status"
@@ -540,47 +533,49 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
             />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.isThird')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{ isThirdLabel(paymentDetailInfo.isThird) }}
+            <el-input class="detail-readonly-input" :model-value="isThirdLabel(paymentDetailInfo.isThird)" readonly />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row style="width: 100%">
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.supportType')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{ supportTypeLabel(paymentDetailInfo.supportType) }}
+            <el-input class="detail-readonly-input" :model-value="supportTypeLabel(paymentDetailInfo.supportType)" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.enableTimePeriod')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{
-              !paymentDetailInfo.enableTimePeriod ? $t('pathChannelList.label.allTime') : getFormateTimeByTimeBystamp(paymentDetailInfo.enableTimePeriod ? paymentDetailInfo.enableTimePeriod.split(',')[0] : '') + '-' + getFormateTimeByTimeBystamp(paymentDetailInfo.enableTimePeriod ? paymentDetailInfo.enableTimePeriod.split(',')[1] : '')
-            }}
+            <el-input
+              class="detail-readonly-input"
+              :model-value="!paymentDetailInfo.enableTimePeriod ? $t('pathChannelList.label.allTime') : getFormateTimeByTimeBystamp(paymentDetailInfo.enableTimePeriod ? paymentDetailInfo.enableTimePeriod.split(',')[0] : '') + '-' + getFormateTimeByTimeBystamp(paymentDetailInfo.enableTimePeriod ? paymentDetailInfo.enableTimePeriod.split(',')[1] : '')"
+              readonly
+            />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.paymentType')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{ paymentTypeLabel(paymentDetailInfo.paymentType) }}
+            <el-input class="detail-readonly-input" :model-value="paymentTypeLabel(paymentDetailInfo.paymentType)" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.checkoutCounter')"
               prop="isCheckoutCounter"
-              label-width="150px"
+              label-width="160px"
           >
             <el-switch
                 :model-value="paymentDetailInfo.isCheckoutCounter"
@@ -595,164 +590,212 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
         </el-col>
       </el-row>
       <el-row style="width: 100%">
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.singleLimit')"
-              label-width="150px"
+              label-width="160px"
           >
-            [{{paymentDetailInfo.paymentMinAmount}},{{paymentDetailInfo.paymentMaxAmount}}]
+            <el-input class="detail-readonly-input" :model-value="'[' + paymentDetailInfo.paymentMinAmount + ',' + paymentDetailInfo.paymentMaxAmount + ']'" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.collectionDailyLimit')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.collectionDailyLimit}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.collectionDailyLimit" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.collectionMonthlyLimit')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.collectionMonthlyLimit}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.collectionMonthlyLimit" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.payDailyLimit')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.payDailyLimit}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.payDailyLimit" readonly />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row style="width: 100%">
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.payMonthlyLimit')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.payMonthlyLimit}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.payMonthlyLimit" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.paymentRequestPayUrl')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.paymentRequestCollectionUrl}}
+            <el-input
+              class="detail-readonly-input"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 4 }"
+              :model-value="paymentDetailInfo.paymentRequestPayUrl"
+              readonly
+            />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.paymentRequestCollectionUrl')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.paymentRequestCollectionUrl}}
+            <el-input
+              class="detail-readonly-input"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 4 }"
+              :model-value="paymentDetailInfo.paymentRequestCollectionUrl"
+              readonly
+            />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.paymentCollectionRate')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.paymentCollectionRate}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.paymentCollectionRate" readonly />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row style="width: 100%">
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.paymentPayRate')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.paymentPayRate}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.paymentPayRate" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.paymentCheckPayUrl')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.paymentCheckPayUrl}}
+            <el-input
+              class="detail-readonly-input"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 4 }"
+              :model-value="paymentDetailInfo.paymentCheckPayUrl"
+              readonly
+            />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.paymentCheckCollectionUrl')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.paymentCheckCollectionUrl}}
+            <el-input
+              class="detail-readonly-input"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 4 }"
+              :model-value="paymentDetailInfo.paymentCheckCollectionUrl"
+              readonly
+            />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.collectionCallbackAddr')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.collectionCallbackAddr}}
+            <el-input
+              class="detail-readonly-input"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 4 }"
+              :model-value="paymentDetailInfo.collectionCallbackAddr"
+              readonly
+            />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row style="width: 100%">
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.payCallbackAddr')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.payCallbackAddr}}
+            <el-input
+              class="detail-readonly-input"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 4 }"
+              :model-value="paymentDetailInfo.payCallbackAddr"
+              readonly
+            />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.collectionInterfaceParam')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.collectionInterfaceParam}}
+            <el-input
+              class="detail-readonly-input"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 6 }"
+              :model-value="paymentDetailInfo.collectionInterfaceParam"
+              readonly
+            />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.payInterfaceParam')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.payInterfaceParam}}
+            <el-input
+              class="detail-readonly-input"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 6 }"
+              :model-value="paymentDetailInfo.payInterfaceParam"
+              readonly
+            />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.bankName')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.bankName}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.bankName" readonly />
           </el-form-item>
         </el-col>
       </el-row>
       <el-row style="width: 100%">
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.bankAccount')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.bankAccount}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.bankAccount" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('pathChannelList.form.bankUserName')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.bankUserName}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.bankUserName" readonly />
           </el-form-item>
         </el-col>
-        <el-col :span="6">
+        <el-col :span="8">
           <el-form-item
               :label="$t('common.currency')"
-              label-width="150px"
+              label-width="160px"
           >
-            {{paymentDetailInfo.currency}}
+            <el-input class="detail-readonly-input" :model-value="paymentDetailInfo.currency" readonly />
           </el-form-item>
         </el-col>
       </el-row>
@@ -1051,6 +1094,15 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
         </el-col>
         <el-col :span="12">
           <el-form-item
+              :label="$t('pathChannelList.form.balanceQueryUrl')"
+              label-width="150px"
+              prop="balanceQueryUrl"
+          >
+            <el-input v-model="createPathChannelInfo.balanceQueryUrl" style="width: 200px"/>
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item
               :label="$t('pathChannelList.form.payInterfaceParam')"
               label-width="150px"
               prop="payInterfaceParam"
@@ -1095,10 +1147,12 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
         </el-col>
       </el-row>
     </el-form>
-    <div slot="footer" class="dialog-footer" style="float: right;">
-      <el-button @click="cancelDialog">{{ $t('common.cancel') }}</el-button>
-      <el-button type="primary" @click="submitCreatePaymentInfo(submitType)">{{ $t('common.confirm') }}</el-button>
-    </div>
+    <template #footer>
+      <div class="dialog-footer path-channel-edit-footer">
+        <el-button @click="cancelDialog">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitCreatePaymentInfo(submitType)">{{ $t('common.confirm') }}</el-button>
+      </div>
+    </template>
   </el-dialog>
   <el-dialog
     :title="paramEditorTitle"
@@ -1929,8 +1983,8 @@ export default {
 <style>
 .dialog-footer {
   display: flex;
-  justify-content: right;
-  float: right;
+  justify-content: flex-end;
+  float: none !important;
 }
 
 .main-toolbar .el-input__inner,
@@ -2027,8 +2081,93 @@ export default {
 }
 
 .path-channel-edit-dialog .el-dialog__body {
-  max-height: calc(100vh - 180px);
+  max-height: calc(100vh - 240px);
   overflow-y: auto;
   padding-right: 16px;
+  padding-bottom: 16px;
+}
+
+.path-channel-edit-dialog .el-dialog__footer {
+  position: relative !important;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  border-top: 1px solid #ebeef5;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  min-height: 46px;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.path-channel-edit-footer {
+  width: auto;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  margin-top: 0;
+  margin-bottom: 0 !important;
+  padding-top: 0;
+}
+
+.path-channel-edit-dialog .el-dialog__footer .dialog-footer {
+  margin-right: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+.path-channel-detail-dialog .el-dialog__body {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 12px 20px 16px;
+}
+
+.path-channel-detail-dialog .el-dialog {
+  width: min(1600px, calc(100vw - 120px)) !important;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.path-channel-detail-dialog .el-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.path-channel-detail-dialog .el-row > .el-col {
+  flex: 0 0 33.3333% !important;
+  max-width: 33.3333% !important;
+}
+
+.path-channel-detail-dialog .el-form-item__content {
+  flex: 1;
+  min-width: 0;
+  overflow: visible;
+  display: block !important;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  line-height: 20px;
+}
+
+.path-channel-detail-dialog .el-form-item__label {
+  color: #303133;
+  font-weight: 700;
+}
+
+.path-channel-detail-dialog .detail-readonly-input {
+  width: 100%;
+}
+
+.path-channel-detail-dialog .detail-readonly-input .el-input__wrapper,
+.path-channel-detail-dialog .detail-readonly-input .el-textarea__inner {
+  background: #fff;
+}
+
+.path-channel-detail-dialog .detail-readonly-input .el-textarea__inner {
+  resize: none;
 }
 </style>

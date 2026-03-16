@@ -264,14 +264,6 @@ import {getCallBackStatus, getOrderStatus, getOrderStatusOptions, getTimeFromTim
             <div>{{ row.merchantOrderNo }}</div>
           </el-table-column>
           <el-table-column
-              prop="merchantAccount"
-              :label="$t('payingOrder.column.merchantNo')"
-              v-slot="{row}"
-              align="center"
-          >
-            <div>{{ row.merchantUserId }}</div>
-          </el-table-column>
-          <el-table-column
               prop="merchantName"
               :label="$t('payingOrder.column.merchantName')"
               v-slot="{row}"
@@ -350,14 +342,6 @@ import {getCallBackStatus, getOrderStatus, getOrderStatusOptions, getTimeFromTim
             <div>{{ getTimeFromTimestamp(row.requestTime) }}</div>
           </el-table-column>
           <el-table-column
-              prop="orderId"
-              :label="$t('payingOrder.column.requestIp')"
-              v-slot="{row}"
-              align="center"
-          >
-            <div>{{ row.requestIp }}</div>
-          </el-table-column>
-          <el-table-column
               width="100"
               :label="$t('common.operation')"
               align="center"
@@ -369,6 +353,7 @@ import {getCallBackStatus, getOrderStatus, getOrderStatusOptions, getTimeFromTim
               <SvgIcon name="more" width="30" height="30"/>
               <template #dropdown>
                 <el-dropdown-menu>
+                  <el-dropdown-item @click="openOrderDetail(row)">{{ $t('common.detail') }}</el-dropdown-item>
                   <el-dropdown-item v-if="row.orderStatus === 1" @click="startUser(row)">{{ $t('payingOrder.action.review') }}</el-dropdown-item>
                   <!--                  <el-dropdown-item @click="editUser(row)">编辑</el-dropdown-item>-->
                   <el-dropdown-item v-if="shouldShowCallbackAction(row)" @click="callback(row)">{{ $t('payingOrder.action.callback') }}</el-dropdown-item>
@@ -569,6 +554,27 @@ import {getCallBackStatus, getOrderStatus, getOrderStatusOptions, getTimeFromTim
       <el-button @click="orderFlowLogVisible = false">{{ $t('common.close') }}</el-button>
     </template>
   </el-drawer>
+  <el-dialog v-model="orderDetailVisible" :title="$t('common.detail')" width="760px">
+    <el-descriptions :column="2" border>
+      <el-descriptions-item :label="$t('payingOrder.column.orderId')">{{ orderDetailData.transactionNo || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.merchantOrderNo')">{{ orderDetailData.merchantOrderNo || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.merchantName')">{{ orderDetailData.merchantName || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.currency')">{{ orderDetailData.currencyType || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.status')">{{ orderDetailData.orderStatusText || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.orderType')">{{ orderDetailData.orderTypeText || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.amount')">{{ orderDetailData.amount ?? '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.channel')">{{ orderDetailData.channelName || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.paymentNo')">{{ orderDetailData.paymentNo || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.callbackStatus')">{{ orderDetailData.callbackStatusText || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.createTime')">{{ orderDetailData.createTime || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.completeTime')">{{ orderDetailData.completeTime || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('payingOrder.column.requestIp')">{{ orderDetailData.requestIp || '-' }}</el-descriptions-item>
+      <el-descriptions-item :label="$t('withdrawlAccount.form.remark')">{{ orderDetailData.remark || '-' }}</el-descriptions-item>
+    </el-descriptions>
+    <template #footer>
+      <el-button @click="orderDetailVisible = false">{{ $t('common.close') }}</el-button>
+    </template>
+  </el-dialog>
 </template>
 <script>
 import {
@@ -692,6 +698,8 @@ export default {
       },
       reverseOrderPayload: null,
       orderFlowLogVisible: false,
+      orderDetailVisible: false,
+      orderDetailData: {},
       orderFlowTransactionNo: '',
       orderFlowLogText: '',
       orderFlowLogTables: [],
@@ -1404,10 +1412,30 @@ export default {
     },
     shouldShowActionMenu(row) {
       if (!this.isAdmin) return false;
-      return row?.orderStatus === 1
+      return !!row
+        || row?.orderStatus === 1
         || this.shouldShowCallbackAction(row)
         || this.shouldShowReverseAction(row)
         || this.shouldShowOrderFlowLogAction(row);
+    },
+    openOrderDetail(row) {
+      this.orderDetailData = {
+        transactionNo: row?.transactionNo || '',
+        merchantOrderNo: row?.merchantOrderNo || '',
+        merchantName: this.merchantMaps[row?.merchantUserId] || row?.merchantName || '',
+        currencyType: row?.currencyType || '',
+        orderStatusText: getOrderStatus(row?.orderStatus),
+        orderTypeText: this.getOrderTypeLabel(row?.orderType),
+        amount: row?.amount,
+        channelName: this.channelMaps[row?.channelId] || '',
+        paymentNo: row?.paymentNo || '',
+        callbackStatusText: this.getCallbackStatusText(row || {}),
+        createTime: getTimeFromTimestamp(row?.requestTime),
+        completeTime: getTimeFromTimestamp(row?.successCallbackTime),
+        requestIp: row?.requestIp || '',
+        remark: row?.remark || ''
+      };
+      this.orderDetailVisible = true;
     },
     viewOrderFlowLogs(row) {
       const transactionNo = String(row?.transactionNo || '').trim();

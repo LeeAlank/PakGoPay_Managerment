@@ -167,17 +167,9 @@ import '@/assets/base.css'
             width="200px"
         >
           <div>
-            <el-switch
-                v-model="row.status"
-                active-color="#07c160"
-                inactive-color="#c0c4cc"
-                :active-text="$t('common.enable')"
-                :inactive-text="$t('common.disable')"
-                :inactive-value="0"
-                :active-value="1"
-                disabled
-            >
-            ></el-switch>
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+              {{ row.status === 1 ? $t('common.enable') : $t('common.disable') }}
+            </el-tag>
           </div>
         </el-table-column>
         <el-table-column

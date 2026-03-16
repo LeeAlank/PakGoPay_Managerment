@@ -290,6 +290,19 @@ export async function addNewLoginUser(form) {
     })
 }
 
+export async function editLoginUser(form) {
+    return service({
+        url: '/api/pakGoPay/server/SystemConfig/editUser',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        data: form,
+        responseType: 'json',
+    })
+}
+
 export function manageLoginUserStatus(user_id, status, googleCode) {
     return service({
         url: '/api/pakGoPay/server/SystemConfig/manageLoginUserStatus',

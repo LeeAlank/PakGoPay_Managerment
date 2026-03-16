@@ -122,62 +122,32 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             :label="$t('agentInfo.column.agentInfo')"
             v-slot="{row}"
             align="left"
-            width="300px"
+            width="420px"
             style="height: 95%;"
             fixed="left"
             class-name="agent-tree-cell"
         >
-          <div class="agent-tree-card-wrap">
+          <div class="agent-tree-card-wrap" :style="getAgentLevelIndentStyle(row)">
             <el-card class="box-card agent-tree-card" style="width: 100%">
-              <div class="agent-card-row agent-card-account">{{ $t('agentInfo.card.account') }}{{ row.accountName }}</div>
-              <div class="agent-card-row agent-card-name">{{ $t('agentInfo.card.name') }}{{ row.agentName }}</div>
+              <div class="agent-card-row agent-card-account agent-main-line">
+                <span class="agent-main-label">{{ $t('agentInfo.card.account') }}</span>
+                <span class="agent-main-value">{{ row.accountName || '-' }}</span>
+              </div>
+              <div class="agent-card-row agent-card-name agent-main-line">
+                <span class="agent-main-label">{{ $t('agentInfo.card.name') }}</span>
+                <span class="agent-main-value">{{ row.agentName || '-' }}</span>
+              </div>
               <div v-if="row.channelDtoList" class="agent-card-row agent-card-channel">
-                <div style="display: flex;align-items: center">
-                  <div class="agent-channel-label">{{ $t('agentInfo.card.channel') }}</div>
-                  <div class="agent-channel-values">
-                    <div class="agent-channel-item" v-for="item in row.channelDtoList">
-                      {{item.channelName}}
+                <div class="agent-main-line">
+                  <span class="agent-main-label">{{ $t('agentInfo.card.channel') }}</span>
+                  <div class="agent-main-channel-values">
+                    <div class="agent-main-channel-item" v-for="item in row.channelDtoList" :key="item.channelId || item.channelName">
+                      {{ item.channelName }}
                     </div>
                   </div>
                 </div>
               </div>
             </el-card>
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="secondLevelAgent"
-            :label="$t('agentInfo.column.parentAgent')"
-            v-slot="{row}"
-            align="center"
-            width="300px"
-            fixed="left"
-        >
-          <div style="height: auto;display: flex; justify-content: center;width: 100%;">
-            <el-card v-if="row.parentUserName" class="box-card" style="width: 100%">
-              <div class="agent-card-row agent-card-account">{{ $t('agentInfo.card.account') }}{{ row.parentUserName }}</div>
-              <div class="agent-card-row agent-card-name">{{ $t('agentInfo.card.name') }}{{ row.parentAgentName }}</div>
-              <div class="agent-card-row agent-card-channel">
-                <div style="display: flex;align-items: center">
-                  <div class="agent-channel-label">{{ $t('agentInfo.card.channel') }}</div>
-                  <div class="agent-channel-values">
-                    <div class="agent-channel-item" v-for="item in row.parentChannelDtoList">
-                      {{item.channelName}}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </el-card>
-          </div>
-        </el-table-column>
-        <el-table-column
-            prop="agentLevel"
-            :label="$t('agentInfo.column.level')"
-            v-slot="{row}"
-            align="center"
-            width="100px"
-        >
-          <div>
-            {{ row.level }}
           </div>
         </el-table-column>
         <el-table-column
@@ -187,16 +157,9 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             align="center"
         >
           <div>
-            <el-switch
-                v-model="row.status"
-                active-color="#13ce66"
-                inactive-color="#ff4949"
-                :active-text="$t('common.enable')"
-                :inactive-text="$t('common.disable')"
-                :inactive-value="0"
-                :active-value="1"
-                disabled
-            ></el-switch>
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+              {{ row.status === 1 ? $t('common.enable') : $t('common.disable') }}
+            </el-tag>
           </div>
         </el-table-column>
         <el-table-column
@@ -204,13 +167,15 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             :label="$t('agentInfo.column.rate')"
             v-slot="{row}"
             align="center"
-            width="200px"
+            width="240px"
         >
-          <div>
-            {{ $t('agentInfo.rate.collection') }}{{row.collectionRate ? row.collectionRate : 0 }}% + {{row.collectionFixedFee? row.collectionFixedFee : 0}}
+          <div class="agent-rate-line">
+            <span class="agent-rate-label">{{ $t('agentInfo.rate.collection') }}</span>
+            <span class="agent-rate-value">{{ row.collectionRate ? row.collectionRate : 0 }}% + {{ row.collectionFixedFee ? row.collectionFixedFee : 0 }}</span>
           </div>
-          <div>
-            {{ $t('agentInfo.rate.payout') }}{{row.payRate? row.payRate : 0}}% + {{row.payFixedFee? row.payFixedFee : 0}}
+          <div class="agent-rate-line">
+            <span class="agent-rate-label">{{ $t('agentInfo.rate.payout') }}</span>
+            <span class="agent-rate-value">{{ row.payRate ? row.payRate : 0 }}% + {{ row.payFixedFee ? row.payFixedFee : 0 }}</span>
           </div>
         </el-table-column>
 <!--        <el-table-column
@@ -268,14 +233,17 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
           width="300px"
         >
-            <div class="agent-card-row agent-card-account">
-              {{ $t('agentInfo.contact.name') }} {{row.contactName? row.contactName : '-'}}
-            </div>
-          <div class="agent-card-row agent-card-name">
-            {{ $t('agentInfo.contact.phone') }} {{row.contactPhone ? row.contactPhone: '-'}}
+          <div class="agent-card-row agent-card-account agent-main-line">
+            <span class="agent-main-label">{{ $t('agentInfo.contact.name') }}</span>
+            <span class="agent-contact-value-inline">{{ row.contactName ? row.contactName : '-' }}</span>
           </div>
-          <div class="agent-card-row agent-card-channel">
-            {{ $t('agentInfo.contact.email') }} {{row.contactEmail ? row.contactEmail: '-'}}
+          <div class="agent-card-row agent-card-name agent-main-line">
+            <span class="agent-main-label">{{ $t('agentInfo.contact.phone') }}</span>
+            <span class="agent-contact-value-inline">{{ row.contactPhone ? row.contactPhone : '-' }}</span>
+          </div>
+          <div class="agent-card-row agent-card-channel agent-main-line">
+            <span class="agent-main-label">{{ $t('agentInfo.contact.email') }}</span>
+            <span class="agent-contact-value-inline">{{ row.contactEmail ? row.contactEmail : '-' }}</span>
           </div>
         </el-table-column>
         <el-table-column
@@ -1405,6 +1373,15 @@ export default {
     getRowClassName({ row }) {
       return row && row.__childLoading ? 'agent-row-loading' : ''
     },
+    getAgentLevelIndentStyle(row) {
+      const level = Number(row?.level || 1)
+      const base = 0
+      const step = 22
+      const offset = Math.max(0, level - 1) * step + base
+      return {
+        marginLeft: `${offset}px`
+      }
+    },
     reset(form) {
       this.$refs[form].resetFields()
     },
@@ -1647,6 +1624,68 @@ export default {
   background-color: #f0f2f5;
 }
 
+.agent-main-line{
+  display: flex;
+  align-items: flex-start;
+}
+
+.agent-main-label{
+  width: 90px;
+  min-width: 90px;
+  text-align: right;
+  padding-right: 10px;
+  color: #1f2937;
+}
+
+.agent-main-value{
+  flex: 1;
+  border-left: solid 1px black;
+  padding-left: 12px;
+  word-break: break-all;
+}
+
+.agent-main-channel-values{
+  flex: 1;
+  border-left: solid 1px black;
+  padding-left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.agent-main-channel-item{
+  word-break: break-all;
+}
+
+.agent-contact-value-inline{
+  flex: 1;
+  padding-left: 12px;
+  text-align: left;
+  word-break: break-all;
+}
+
+.agent-rate-line{
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.agent-rate-label{
+  width: 76px;
+  min-width: 76px;
+  text-align: right;
+  padding-right: 8px;
+  color: #1f2937;
+}
+
+.agent-rate-value{
+  flex: 1;
+  padding-left: 6px;
+  text-align: left;
+  white-space: nowrap;
+  word-break: break-all;
+}
+
 .agent-channel-label{
   height: 100%;
   width: 150px;
@@ -1712,11 +1751,16 @@ export default {
 }
 
 .ip-label{
+  width: 90px;
+  min-width: 90px;
+  text-align: right;
+  padding-right: 10px;
   color: #374151;
   white-space: nowrap;
 }
 
 .ip-list{
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1788,7 +1832,19 @@ export default {
 
 :deep(.agentInfoTable .el-table__placeholder) {
   display: inline-block;
-  width: 0 !important;
+  width: 28px !important;
+  min-width: 28px !important;
+  position: relative;
+}
+
+:deep(.agentInfoTable .agent-tree-cell .el-table__placeholder::before) {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -16px;
+  bottom: -16px;
+  transform: translateX(-50%);
+  border-left: 1px solid #d1d5db;
 }
 
 :deep(.agentInfoTable .agent-tree-cell .cell) {
@@ -1865,9 +1921,21 @@ export default {
   align-items: center;
   width: 100%;
   margin-left: 10px;
+  position: relative;
 }
 
 .agent-tree-card {
   margin-left: 0 !important;
+  width: calc(100% - 2px);
+}
+
+.agent-tree-card-wrap::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 6px;
+  bottom: 6px;
+  border-left: 1px dashed #cbd5e1;
+  opacity: 0.8;
 }
 </style>

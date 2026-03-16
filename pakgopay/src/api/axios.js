@@ -24,6 +24,74 @@ let lastRateLimitNotifyAt = 0;
 const RATE_LIMIT_NOTIFY_COOLDOWN_MS = 3000;
 let lastAuthExpiredNotifyAt = 0;
 const AUTH_EXPIRED_NOTIFY_COOLDOWN_MS = 3000;
+const pendingSubmitRequestMap = new Map();
+const MUTATION_GET_URL_PATTERNS = [
+    "/SystemConfig/manageLoginUserStatus",
+    "/SystemConfig/deleteLoginUser",
+    "/SystemConfig/resetGoogleKey",
+    "/SystemConfig/bindGoogleKey",
+    "/notation/markNotation"
+];
+const MUTATION_POST_URL_KEYWORDS = [
+    "/add",
+    "/edit",
+    "/create",
+    "/update",
+    "/delete",
+    "/modify",
+    "/manual",
+    "/reset",
+    "/bind",
+    "/manage",
+    "/config"
+];
+
+function isSubmitMethod(method) {
+    const m = String(method || "").toLowerCase();
+    return m === "post" || m === "put" || m === "patch" || m === "delete";
+}
+
+function safeStringify(data) {
+    if (data === undefined || data === null) return "";
+    if (typeof data === "string") return data;
+    try {
+        return JSON.stringify(data);
+    } catch (e) {
+        return String(data);
+    }
+}
+
+function buildSubmitRequestKey(config) {
+    const method = String(config?.method || "").toLowerCase();
+    const url = String(config?.url || "");
+    const params = safeStringify(config?.params);
+    const data = safeStringify(config?.data);
+    return `${method}|${url}|${params}|${data}`;
+}
+
+function shouldPreventDuplicateSubmit(config) {
+    if (!config) return false;
+    if (config.allowRepeatSubmit === true) return false;
+    const method = String(config.method || "").toLowerCase();
+    const url = String(config.url || "");
+    if (method === "get") {
+        return MUTATION_GET_URL_PATTERNS.some((pattern) => url.includes(pattern));
+    }
+    if (method === "put" || method === "patch" || method === "delete") {
+        return true;
+    }
+    if (method === "post") {
+        return MUTATION_POST_URL_KEYWORDS.some((keyword) => url.includes(keyword));
+    }
+    return false;
+}
+
+function clearPendingSubmitByConfig(config) {
+    const key = config?.__submitRequestKey;
+    if (key && pendingSubmitRequestMap.has(key)) {
+        pendingSubmitRequestMap.delete(key);
+    }
+}
 
 function buildRateLimitedData(url) {
     if (!url) return JSON.stringify({});
@@ -175,6 +243,17 @@ function handleUnauthorizedByConfig(config, source) {
 }
 
 service.interceptors.request.use(config => {
+    if (shouldPreventDuplicateSubmit(config)) {
+        const requestKey = buildSubmitRequestKey(config);
+        if (pendingSubmitRequestMap.has(requestKey)) {
+            const err = new Error("duplicate submit");
+            err.isDuplicateSubmit = true;
+            err.config = config;
+            return Promise.reject(err);
+        }
+        config.__submitRequestKey = requestKey;
+        pendingSubmitRequestMap.set(requestKey, Date.now());
+    }
     return config;
 }, error => {
     console.info("some error happened when request interceptors", error)
@@ -182,6 +261,7 @@ service.interceptors.request.use(config => {
 })
 
 service.interceptors.response.use(response => {
+    clearPendingSubmitByConfig(response?.config);
     if (response?.status === 200 && (response?.data?.rateLimited === true || response?.data?.code === 429) && !response?.data?.rateLimitedNotified) {
         notifyRateLimitedOnce();
     }
@@ -190,6 +270,10 @@ service.interceptors.response.use(response => {
     }
     return response;
 }, error => {
+    clearPendingSubmitByConfig(error?.config);
+    if (error?.isDuplicateSubmit === true) {
+        return Promise.reject(error);
+    }
     if (error.response && error.response.status === 429) {
         notifyRateLimitedOnce();
         const fallbackData = buildRateLimitedData(error.config?.url);

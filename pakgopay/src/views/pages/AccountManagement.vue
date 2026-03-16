@@ -72,15 +72,20 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           align="center"
       >
         <div>
-          <el-switch
-              :model-value="row.status"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              :active-text="$t('common.enable')"
-              :inactive-text="$t('common.disable')"
-              :active-value = "1"
-              :inactive-value="0"
-          />
+          <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+            {{ row.status === 1 ? $t('common.enable') : $t('common.disable') }}
+          </el-tag>
+        </div>
+      </el-table-column>
+      <el-table-column
+          :label="$t('accountManagement.column.googleToken')"
+          v-slot="{row}"
+          align="center"
+      >
+        <div>
+          <el-tag :type="row.isBind ? 'success' : 'danger'">
+            {{ row.isBind ? $t('accountManagement.googleToken.bound') : $t('accountManagement.googleToken.unbound') }}
+          </el-tag>
         </div>
       </el-table-column>
       <el-table-column
@@ -239,16 +244,21 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
         </el-row>-->
       </el-form>
       <div slot="footer" class="dialog-footer">
-          <el-button @click="cancelDialog">{{ $t('common.cancel') }}</el-button>
-          <el-button type="primary" @click="submit('createUserInfo')">{{ $t('common.confirm') }}</el-button>
+          <el-button :disabled="submitUserLoading" @click="cancelDialog">{{ $t('common.cancel') }}</el-button>
+          <el-button
+            type="primary"
+            :loading="submitUserLoading"
+            :disabled="submitUserLoading"
+            @click="submit('createUserInfo')"
+          >{{ $t('common.confirm') }}</el-button>
       </div>
     </el-dialog>
     <el-dialog
       :title="$t('accountManagement.dialog.googleCodeTitle')"
       v-model="googleCodeDialogVisible"
-      class="dialog"
-      width="40%"
-      style="height: 240px;align-content: center"
+      class="dialog google-confirm-dialog"
+      width="480px"
+      style="align-content: center"
     
       align-center>
       <el-form
@@ -267,10 +277,17 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </el-col>
         </el-row>
       </el-form>
-      <div slot="footer" class="dialog-footer">
-        <el-button @click="cancelGoogleCodeDialog">{{ $t('common.cancel') }}</el-button>
-        <el-button type="primary" @click="confirmGoogleCode">{{ $t('common.confirm') }}</el-button>
+      <template #footer>
+      <div class="dialog-footer">
+        <el-button :disabled="submitUserLoading || googleConfirmLoading" @click="cancelGoogleCodeDialog">{{ $t('common.cancel') }}</el-button>
+        <el-button
+          type="primary"
+          :loading="submitUserLoading || googleConfirmLoading"
+          :disabled="submitUserLoading || googleConfirmLoading"
+          @click="confirmGoogleCode"
+        >{{ $t('common.confirm') }}</el-button>
       </div>
+      </template>
     </el-dialog>
     <el-dialog
         :title="dialogTitle2"
@@ -400,6 +417,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 <script>
 import {
   addNewLoginUser,
+  editLoginUser,
   loginUserList,
   refreshAccessToken,
   roleList,
@@ -478,6 +496,8 @@ export default {
       createUserInfo: buildEmptyCreateUserInfo(),
       dialogMode: '',
       googleCodeDialogVisible: false,
+      submitUserLoading: false,
+      googleConfirmLoading: false,
       googleCodeForm: {
         googleCode: ''
       },
@@ -593,13 +613,14 @@ export default {
       this.loadData()
     },
     editUser(row) {
-      this.createUserInfo = row;
+      this.createUserInfo = Object.assign(buildEmptyCreateUserInfo(), row || {});
       const filterInfo = this.roleInfoOptions.filter(roleInfo => (roleInfo.roleName === row.roleName))
       this.createUserInfo.roleId = filterInfo ? filterInfo[0].roleId : ''
       this.dialogVisible = true;
       this.dialogTitle = this.$t('accountManagement.dialog.editTitle')
       this.dialogMode = 'edit'
       this.loadAccountDraft()
+      this.createUserInfo.confirmPassword = this.createUserInfo.password || ''
     },
     deleteUser(row) {
       this.dialogVisible2 = true;
@@ -645,8 +666,13 @@ export default {
       this.$refs.googleCodeFormRef?.resetFields();
     },
     confirmGoogleCode() {
+      if (this.submitUserLoading || this.googleConfirmLoading) {
+        return;
+      }
+      this.googleConfirmLoading = true
       this.$refs.googleCodeFormRef.validate((valid) => {
         if (!valid) {
+          this.googleConfirmLoading = false
           return;
         }
         this.createUserInfo.googleCode = this.googleCodeForm.googleCode;
@@ -839,6 +865,9 @@ export default {
 
     },
     submit(createUserInfo) {
+      if (this.submitUserLoading) {
+        return;
+      }
       this.$refs[createUserInfo].validate((valid) => {
         if (!valid) {
           this.$notify({
@@ -856,12 +885,18 @@ export default {
       });
     },
     submitCreateUser() {
+      if (this.submitUserLoading) {
+        return Promise.resolve();
+      }
+      this.submitUserLoading = true
       this.createUserInfo.operatorId = localStorage.getItem("userId")
-      addNewLoginUser(this.createUserInfo).then(response => {
+      const submitMode = this.dialogMode
+      const requestFunc = submitMode === 'edit' ? editLoginUser : addNewLoginUser
+      return requestFunc(this.createUserInfo).then(response => {
         if (response.status !== 200) {
           this.$notify({
             title: this.$t('common.failed'),
-            message: this.$t('accountManagement.message.createFailed'),
+            message: submitMode === 'edit' ? this.$t('common.failed') : this.$t('accountManagement.message.createFailed'),
             type: 'error',
             position: 'bottom-right'
           });
@@ -875,7 +910,7 @@ export default {
           this.loadData()
           this.$notify({
             title: this.$t('common.success'),
-            message: this.$t('accountManagement.message.createSuccess'),
+            message: response.data.message || (submitMode === 'edit' ? this.$t('common.success') : this.$t('accountManagement.message.createSuccess')),
             type: 'success',
             position: 'bottom-right'
           });
@@ -888,6 +923,9 @@ export default {
             position: 'bottom-right'
           })
         }
+      }).finally(() => {
+        this.submitUserLoading = false
+        this.googleConfirmLoading = false
       })
       this.tablekey++
     },
@@ -984,6 +1022,14 @@ export default {
 
 .el-table .el-loading-mask {
   z-index: -1; /* 根据需要调整，确保它低于表头 */
+}
+
+.google-confirm-dialog :deep(.el-dialog__body) {
+  padding-bottom: 8px;
+}
+
+.google-confirm-dialog :deep(.el-dialog__footer) {
+  padding-top: 8px;
 }
 
 </style>

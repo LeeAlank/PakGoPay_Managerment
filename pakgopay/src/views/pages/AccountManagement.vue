@@ -327,10 +327,10 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
     <el-dialog
         :title="$t('accountManagement.dialog.resetGoogleKey')"
         v-model="resetGoogleVisible"
-        class="dialog"
+        class="dialog reset-google-dialog"
         center
-        width="40%"
-        style="height: 320px;align-content: center"
+        width="480px"
+        style="align-content: center"
     
       align-center>
       <el-form
@@ -380,10 +380,12 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           </el-col>
         </el-row>
       </el-form>
-      <div slot="footer" class="dialog-footer">
+      <template #footer>
+      <div class="dialog-footer">
         <el-button @click="cancelResetGoogleDialog">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitResetGoogleKey">{{ $t('common.confirm') }}</el-button>
       </div>
+      </template>
     </el-dialog>
 
     <el-dialog
@@ -714,6 +716,7 @@ export default {
             this.googleQrCodeUrl = qrCode;
             this.googleSecretKey = data.secretKey || '';
             this.googleQrVisible = true;
+            this.loadData();
             this.$notify({
               title: this.$t('common.success'),
               message: response.data.message || this.$t('accountManagement.message.resetGoogleSuccess'),
@@ -1030,6 +1033,17 @@ export default {
 
 .google-confirm-dialog :deep(.el-dialog__footer) {
   padding-top: 8px;
+}
+
+.reset-google-dialog :deep(.el-dialog__body) {
+  max-height: 58vh;
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+
+.reset-google-dialog :deep(.el-dialog__footer) {
+  padding-top: 10px;
+  padding-bottom: 12px;
 }
 
 </style>

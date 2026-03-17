@@ -16,29 +16,9 @@
         <div class="el-form-line">
           <el-form-item>
             <template #label>
-              <span class="flying-config-label">{{ $t('flyingConfig.telegram.chatId') }}</span>
-            </template>
-            <el-input v-model="form.chatId" :placeholder="$t('flyingConfig.telegram.chatIdPlaceholder')" style="width: 300px;" />
-          </el-form-item>
-        </div>
-        <div class="el-form-line">
-          <el-form-item>
-            <template #label>
               <span class="flying-config-label">{{ $t('flyingConfig.telegram.webhookSecret') }}</span>
             </template>
             <el-input v-model="form.webhookSecret" show-password :placeholder="$t('flyingConfig.telegram.webhookSecretPlaceholder')" style="width: 300px;" />
-          </el-form-item>
-        </div>
-        <div class="el-form-line">
-          <el-form-item>
-            <template #label>
-              <span class="flying-config-label">{{ $t('flyingConfig.telegram.allowedUserIds') }}</span>
-            </template>
-            <el-input
-              v-model="form.allowedUserIds"
-              :placeholder="$t('flyingConfig.telegram.allowedUserIdsPlaceholder')"
-              style="width: 300px;"
-            />
           </el-form-item>
         </div>
         <div class="el-form-line">
@@ -94,9 +74,7 @@ export default {
     return {
       form: {
         token: "",
-        chatId: "",
         webhookSecret: "",
-        allowedUserIds: "",
         enabled: 1
       },
       googleDialogVisible: false,
@@ -119,9 +97,7 @@ export default {
         if (res.status === 200 && res.data.code === 0) {
           const data = res.data.data ? JSON.parse(res.data.data) : {};
           this.form.token = data.token || "";
-          this.form.chatId = data.chatId || "";
           this.form.webhookSecret = data.webhookSecret || "";
-          this.form.allowedUserIds = data.allowedUserIds || "";
           this.form.enabled = data.enabled === undefined || data.enabled === null || data.enabled === "" ? 1 : Number(data.enabled);
         } else {
           this.$notify({

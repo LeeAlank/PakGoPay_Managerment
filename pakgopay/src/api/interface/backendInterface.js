@@ -381,9 +381,7 @@ export function updateTelegramConfig(form) {
         group: 'telegram',
         configItems: [
             { key: 'token', value: form?.token ?? '' },
-            { key: 'chatId', value: form?.chatId ?? '' },
             { key: 'webhookSecret', value: form?.webhookSecret ?? '' },
-            { key: 'allowedUserIds', value: form?.allowedUserIds ?? '' },
             { key: 'enabled', value: form?.enabled ?? 0 }
         ],
         googleCode: form?.googleCode
@@ -444,6 +442,26 @@ export function getCommonMessage() {
         params: {
             userName: localStorage.getItem('userName'),
         }
+    })
+}
+
+export function telegramBroadcast(form) {
+    return service({
+        url: '/api/pakGoPay/server/SystemConfig/telegramBroadcast',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        data: {
+            merchantAccounts: form?.merchantAccounts ?? [],
+            title: form?.title ?? '',
+            content: form?.content ?? '',
+            imageName: form?.imageName ?? '',
+            imageDataUrl: form?.imageDataUrl ?? '',
+            pinMessage: !!form?.pinMessage,
+            googleCode: form?.googleCode
+        },
     })
 }
 

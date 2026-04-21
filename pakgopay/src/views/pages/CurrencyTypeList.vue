@@ -23,14 +23,18 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
               filterable
           >
           </el-select>
-          <el-button @click="search" style="color: dodgerblue">{{ $t('common.query') }}</el-button>
+          <el-button @click="search" style="color: #ffffff">{{ $t('common.query') }}</el-button>
         </el-form-item>
       </el-row>
     </div>
 
   <div class="reportInfo">
     <div style="display:flex;justify-content: right;">
-      <el-button @click="createNewCurrency"><SvgIcon name="add"/>{{ $t('common.operate.add') }}</el-button>
+      <el-button @click="openSyncConfirm"><SvgIcon name="reset"/>{{ $t('currencyTypeList.action.sync') }}</el-button>
+    </div>
+    <div class="currency-sync-tip">
+      <SvgIcon name="notice2" class="currency-sync-tip-icon"/>
+      <span>{{ $t('currencyTypeList.tip.syncSource') }}</span>
     </div>
     <el-form style="height: 650px">
       <el-table
@@ -75,14 +79,6 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             v-slot="{row}">
           <div>{{row.exchangeRate}}</div>
         </el-table-column>-->
-        <el-table-column
-            :label="$t('common.operation')"
-            align="center"
-            v-slot="{row}">
-          <div style="display: flex;justify-content: center;">
-            <el-button class="filterButton" @click="editCurrency(row)">{{ $t('common.operate.edit') }}</el-button>
-          </div>
-        </el-table-column>
       </el-table>
       <el-pagination class="pageTool"
           background
@@ -200,18 +196,19 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       align-center
       width="420px"
     >
-      <el-form ref="confirmDataForm" :rules="confirmRule" :model="confirmData" style="height:100px;margin-top: 20px">
+      <el-form ref="confirmDataForm" :rules="confirmRule" :model="confirmData" class="currency-sync-confirm-form">
         <el-row class="confirm-row">
-          <el-col :span="24" style="display: flex;justify-content: center;justify-items: center;align-items: center;">
-            <div>
-              <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode" class="confirm-item">
+          <el-col :span="24" class="confirm-col">
+            <div class="confirm-item">
+              <el-form-item :label="$t('common.googleCode')" prop="googleCode" class="confirm-input-item confirm-input-item--labeled">
                 <el-input v-model="confirmData.googleCode" style="width: 200px"/>
               </el-form-item>
             </div>
+            
           </el-col>
         </el-row>
       </el-form>
-      <div slot="footer" class="dialog-footer" style="margin-right: 3%;height: 30px;">
+      <div slot="footer" class="dialog-footer currency-sync-confirm-footer">
         <el-button @click="cancelConfirmDialog('confirmDataForm')">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitConfirm('confirmDataForm')">{{ $t('common.confirm') }}</el-button>
       </div>
@@ -224,6 +221,7 @@ import {
   addCurrencyType,
   getAllCurrencyType,
   getCurrencyTypeByPage,
+  syncCurrencyType,
   updateCurrencyType
 } from "@/api/interface/backendInterface.js";
 import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
@@ -323,6 +321,7 @@ export default {
         ]
       },
       isEditing: false,
+      pendingAction: '',
     }
   },
   methods: {
@@ -395,9 +394,15 @@ export default {
       this.dialogFormVisible = true;
       this.dialogTitle = this.$t('currencyTypeList.dialog.add')
     },
+    openSyncConfirm() {
+      this.pendingAction = 'sync';
+      this.confirmDialogTitle = this.$t('currencyTypeList.dialog.sync');
+      this.confirmDialogVisible = true;
+    },
     editCurrency(row) {
       this.resetDialogForm();
       this.isEditing = true;
+      this.pendingAction = 'edit';
       this.dialogFormVisible = true;
       this.dialogTitle = this.$t('currencyTypeList.dialog.edit');
       this.addCurrencyTypeInfo = Object.assign(buildEmptyCurrencyTypeInfo(), row);
@@ -428,6 +433,7 @@ export default {
     submit(formName) {
       this.$refs[formName].validate(valid => {
         if (valid) {
+          this.pendingAction = this.isEditing ? 'edit' : 'add';
           this.confirmDialogTitle = this.$t('common.prompt')
           this.confirmDialogVisible = true
         }
@@ -439,41 +445,65 @@ export default {
         this.addCurrencyTypeInfo.googleCode = this.confirmData.googleCode
         this.confirmDialogVisible = false
         this.confirmDialogTitle = ''
-        const submitPayload = {
-          ...this.addCurrencyTypeInfo,
-          timeZone: this.addCurrencyTypeInfo.timezone
-        };
-        const request = this.isEditing
-          ? updateCurrencyType(submitPayload)
-          : addCurrencyType(submitPayload);
+        let request
+        if (this.pendingAction === 'sync') {
+          request = syncCurrencyType({
+            syncType: 1,
+            googleCode: this.confirmData.googleCode
+          })
+        } else {
+          const submitPayload = {
+            ...this.addCurrencyTypeInfo,
+            timeZone: this.addCurrencyTypeInfo.timezone
+          };
+          request = this.isEditing
+            ? updateCurrencyType(submitPayload)
+            : addCurrencyType(submitPayload);
+        }
         request.then(res => {
           if (res.status === 200) {
             if (res.data.code !== 0) {
+              const syncErrorMessage = this.pendingAction === 'sync'
+                ? this.resolveSyncErrorMessage(res.data.code, res.data.message)
+                : res.data.message
               this.$notify({
                 title: this.$t('common.failed'),
-                message: res.data.message,
+                message: syncErrorMessage,
                 type: 'error',
                 position: 'bottom-right'
               })
             } else {
+              const syncResult = this.pendingAction === 'sync' && res.data.data
+                ? JSON.parse(res.data.data)
+                : null
               this.$notify({
                 title: this.$t('common.success'),
-                message: this.isEditing
-                  ? this.$t('currencyTypeList.message.editSuccess')
-                  : this.$t('currencyTypeList.message.addSuccess'),
+                message: this.pendingAction === 'sync'
+                  ? this.$t('currencyTypeList.message.syncSuccess', {
+                    inserted: syncResult?.insertedCount ?? 0,
+                    skipped: syncResult?.skippedExistingCount ?? 0,
+                    invalid: syncResult?.invalidRowCount ?? 0
+                  })
+                  : this.isEditing
+                    ? this.$t('currencyTypeList.message.editSuccess')
+                    : this.$t('currencyTypeList.message.addSuccess'),
                 type: 'success',
                 position: 'bottom-right'
               })
               this.getCurrencyTypeList()
-              this.dialogFormVisible = false;
-              this.resetDialogForm();
-              this.isEditing = false;
-              this.clearCurrencyTypeDraft();
+              if (this.pendingAction !== 'sync') {
+                this.dialogFormVisible = false;
+                this.resetDialogForm();
+                this.isEditing = false;
+                this.clearCurrencyTypeDraft();
+              }
             }
           }
           this.confirmData.googleCode = ''
+          this.pendingAction = ''
         }).catch(() => {
           this.confirmData.googleCode = ''
+          this.pendingAction = ''
         })
       })
     },
@@ -481,9 +511,16 @@ export default {
       this.confirmDialogVisible = false
       this.confirmDialogTitle = ''
       this.confirmData.googleCode = ''
+      this.pendingAction = ''
       if (this.$refs[form]) {
         this.$refs[form].resetFields()
       }
+    },
+    resolveSyncErrorMessage(code, fallbackMessage) {
+      if (code === 100119) {
+        return this.$t('currencyTypeList.message.syncFileInvalid')
+      }
+      return fallbackMessage
     }
   },
   watch: {
@@ -531,11 +568,76 @@ export default {
   justify-content: center;
 }
 
-.confirm-item {
-  margin: 0 auto;
+.confirm-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.confirm-item :deep(.el-form-item__content) {
+.confirm-item {
+  width: 320px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  column-gap: 10px;
+}
+
+.confirm-label {
+  width: 110px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #606266;
+  white-space: nowrap;
+}
+
+.confirm-required {
+  color: #f56c6c;
+  margin-right: 4px;
+}
+
+.confirm-input-item {
+  margin-bottom: 0;
+}
+
+.confirm-input-item :deep(.el-form-item__content) {
   margin-left: 0;
+}
+
+.confirm-input-item--labeled {
+  width: 100%;
+}
+
+.confirm-input-item--labeled :deep(.el-form-item__label) {
+  width: 110px;
+  justify-content: flex-end;
+}
+
+.currency-sync-confirm-form {
+  margin-top: 20px;
+  min-height: 90px;
+}
+
+.currency-sync-confirm-footer {
+  margin-top: 12px;
+  padding-bottom: 4px;
+}
+
+.currency-sync-tip {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin: 8px 0 12px;
+  color: #f56c6c;
+  font-size: 12px;
+}
+
+.currency-sync-tip-icon {
+  width: 12px;
+  height: 12px;
 }
 </style>

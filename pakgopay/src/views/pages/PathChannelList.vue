@@ -10,7 +10,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
   <el-collapse v-model="activeTool">
     <el-collapse-item name="1">
       <template #title>
-        <span class="toolbarName">
+        <span class="toolbarName" style="color: #667eea;">
           {{ $t('common.toolbar') }}
         </span>
       </template>
@@ -101,8 +101,8 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
 
   <div class="reportInfo">
     <div class="main-views-form" style="height: 100%">
-      <div style="width: 100%">
-        <el-button @click="createPathChannel" style="float: right">
+      <div class="path-channel-add-row" style="width: 100%">
+        <el-button @click="createPathChannel" class="path-channel-add-btn">
           <svgIcon height="25px" width="25px" name="add"/>
           <div>{{ $t('common.operate.add') }}</div>
         </el-button>
@@ -468,6 +468,7 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
               <el-dropdown-menu>
                 <el-dropdown-item @click="editPathChannelInfo(row)">{{ $t('common.edit') }}</el-dropdown-item>
                 <el-dropdown-item @click="PathChannelDetailInfo(row)">{{ $t('common.detail') }}</el-dropdown-item>
+                <el-dropdown-item @click="openBindBankDialog(row)">{{ $t('pathChannelList.operate.bindBank') }}</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -1178,24 +1179,345 @@ import {getFormateTime, getFormateTimeByTimeBystamp} from "@/api/common.js";
     </div>
   </el-dialog>
   <el-dialog
+    :title="bindBankDialogTitle"
+    v-model="bindBankDialogVisible"
+    class="dialog left-top-title-dialog path-channel-bind-bank-dialog"
+    width="50vw"
+  >
+    <el-form
+      ref="bindBankFormRef"
+      :model="bindBankForm"
+      class="path-channel-bind-bank-form"
+      label-width="140px"
+    >
+      <div class="bind-bank-basic-row">
+        <el-form-item :label="$t('pathChannelList.form.channelName')">
+          <el-input class="bind-bank-input" :model-value="bindBankChannelInfo.paymentName || '-'" readonly />
+        </el-form-item>
+        <el-form-item :label="$t('common.currency')">
+          <el-input class="bind-bank-input" :model-value="currencyMaps[bindBankChannelInfo.currency] || bindBankChannelInfo.currency || '-'" readonly />
+        </el-form-item>
+        <el-form-item :label="$t('pathChannelList.form.supportType')">
+          <el-input class="bind-bank-input" :model-value="supportTypeLabel(bindBankChannelInfo.supportType)" readonly />
+        </el-form-item>
+      </div>
+      <div
+        v-if="showUnifiedBankSelect"
+        class="bind-bank-table-section"
+      >
+        <div class="bind-bank-table-label">{{ $t('pathChannelList.form.bankCodes') }}</div>
+        <el-table
+          :data="filteredBindBankOptions"
+          border
+          size="small"
+          class="bind-bank-table"
+          max-height="420"
+        >
+          <el-table-column align="center" width="90">
+            <template #header>
+              <el-checkbox
+                :model-value="isAllBindBankSelected('unifiedBankBindMap')"
+                :indeterminate="isBindBankIndeterminate('unifiedBankBindMap')"
+                @change="toggleBindBankSelection('unifiedBankBindMap', 'unifiedBankStatusMap', $event)"
+              >
+                {{ $t('pathChannelList.form.bankBinding') }}
+              </el-checkbox>
+            </template>
+            <template #default="{ row }">
+              <el-checkbox
+                :model-value="bindBankForm.unifiedBankBindMap[row.bankCode] === 1"
+                @change="setBindBankChecked('unifiedBankBindMap', 'unifiedBankStatusMap', row.bankCode, $event)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column align="left" width="140">
+            <template #header>
+              <div class="bind-bank-header">
+                <span class="bind-bank-header-title">{{ $t('bankCodeList.column.bankCode') }}</span>
+                <el-popover placement="bottom" :width="220" trigger="click" popper-class="bind-bank-filter-popper">
+                  <div class="bind-bank-filter-panel">
+                    <div class="bind-bank-filter-panel-title">{{ $t('bankCodeList.column.bankCode') }}</div>
+                    <el-input
+                      v-model="bindBankFilter.bankCode"
+                      :placeholder="$t('bankCodeList.placeholder.bankCode')"
+                      clearable
+                      size="small"
+                    />
+                  </div>
+                  <template #reference>
+                    <button type="button" class="bind-bank-filter-trigger" :class="{ 'is-active': !!bindBankFilter.bankCode }">
+                      <svg viewBox="0 0 16 16" class="bind-bank-filter-icon" aria-hidden="true">
+                        <path d="M2 3h12L9.2 8.2v3.6l-2.4 1.2V8.2L2 3z" fill="currentColor"/>
+                      </svg>
+                    </button>
+                  </template>
+                </el-popover>
+              </div>
+            </template>
+            <template #default="{ row }">
+              <div class="bind-bank-code-cell">{{ row.bankCode || '-' }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" min-width="180">
+            <template #header>
+              <div class="bind-bank-header">
+                <span class="bind-bank-header-title">{{ $t('bankCodeList.column.bankName') }}</span>
+                <el-popover placement="bottom" :width="220" trigger="click" popper-class="bind-bank-filter-popper">
+                  <div class="bind-bank-filter-panel">
+                    <div class="bind-bank-filter-panel-title">{{ $t('bankCodeList.column.bankName') }}</div>
+                    <el-input
+                      v-model="bindBankFilter.bankName"
+                      :placeholder="$t('bankCodeList.placeholder.bankName')"
+                      clearable
+                      size="small"
+                    />
+                  </div>
+                  <template #reference>
+                    <button type="button" class="bind-bank-filter-trigger" :class="{ 'is-active': !!bindBankFilter.bankName }">
+                      <svg viewBox="0 0 16 16" class="bind-bank-filter-icon" aria-hidden="true">
+                        <path d="M2 3h12L9.2 8.2v3.6l-2.4 1.2V8.2L2 3z" fill="currentColor"/>
+                      </svg>
+                    </button>
+                  </template>
+                </el-popover>
+              </div>
+            </template>
+            <template #default="{ row }">
+              <div class="bind-bank-name-cell">{{ row.bankName || '-' }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column :label="$t('pathChannelList.form.bankBindingStatus')" align="center" width="120">
+            <template #default="{ row }">
+              <el-switch
+                v-model="bindBankForm.unifiedBankStatusMap[row.bankCode]"
+                :active-value="1"
+                :inactive-value="0"
+                :disabled="bindBankForm.unifiedBankBindMap[row.bankCode] !== 1"
+              />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div
+        v-if="showCollectionBankSelect"
+        class="bind-bank-table-section"
+      >
+        <div class="bind-bank-table-label">{{ $t('pathChannelList.form.collectionBankCodes') }}</div>
+        <el-table
+          :data="filteredBindBankOptions"
+          border
+          size="small"
+          class="bind-bank-table"
+          max-height="420"
+        >
+          <el-table-column align="center" width="90">
+            <template #header>
+              <el-checkbox
+                :model-value="isAllBindBankSelected('collectionBankBindMap')"
+                :indeterminate="isBindBankIndeterminate('collectionBankBindMap')"
+                @change="toggleBindBankSelection('collectionBankBindMap', 'collectionBankStatusMap', $event)"
+              >
+                {{ $t('pathChannelList.form.bankBinding') }}
+              </el-checkbox>
+            </template>
+            <template #default="{ row }">
+              <el-checkbox
+                :model-value="bindBankForm.collectionBankBindMap[row.bankCode] === 1"
+                @change="setBindBankChecked('collectionBankBindMap', 'collectionBankStatusMap', row.bankCode, $event)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column align="left" width="140">
+            <template #header>
+              <div class="bind-bank-header">
+                <span class="bind-bank-header-title">{{ $t('bankCodeList.column.bankCode') }}</span>
+                <el-popover placement="bottom" :width="220" trigger="click" popper-class="bind-bank-filter-popper">
+                  <div class="bind-bank-filter-panel">
+                    <div class="bind-bank-filter-panel-title">{{ $t('bankCodeList.column.bankCode') }}</div>
+                    <el-input
+                      v-model="bindBankFilter.bankCode"
+                      :placeholder="$t('bankCodeList.placeholder.bankCode')"
+                      clearable
+                      size="small"
+                    />
+                  </div>
+                  <template #reference>
+                    <button type="button" class="bind-bank-filter-trigger" :class="{ 'is-active': !!bindBankFilter.bankCode }">
+                      <svg viewBox="0 0 16 16" class="bind-bank-filter-icon" aria-hidden="true">
+                        <path d="M2 3h12L9.2 8.2v3.6l-2.4 1.2V8.2L2 3z" fill="currentColor"/>
+                      </svg>
+                    </button>
+                  </template>
+                </el-popover>
+              </div>
+            </template>
+            <template #default="{ row }">
+              <div class="bind-bank-code-cell">{{ row.bankCode || '-' }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" min-width="180">
+            <template #header>
+              <div class="bind-bank-header">
+                <span class="bind-bank-header-title">{{ $t('bankCodeList.column.bankName') }}</span>
+                <el-popover placement="bottom" :width="220" trigger="click" popper-class="bind-bank-filter-popper">
+                  <div class="bind-bank-filter-panel">
+                    <div class="bind-bank-filter-panel-title">{{ $t('bankCodeList.column.bankName') }}</div>
+                    <el-input
+                      v-model="bindBankFilter.bankName"
+                      :placeholder="$t('bankCodeList.placeholder.bankName')"
+                      clearable
+                      size="small"
+                    />
+                  </div>
+                  <template #reference>
+                    <button type="button" class="bind-bank-filter-trigger" :class="{ 'is-active': !!bindBankFilter.bankName }">
+                      <svg viewBox="0 0 16 16" class="bind-bank-filter-icon" aria-hidden="true">
+                        <path d="M2 3h12L9.2 8.2v3.6l-2.4 1.2V8.2L2 3z" fill="currentColor"/>
+                      </svg>
+                    </button>
+                  </template>
+                </el-popover>
+              </div>
+            </template>
+            <template #default="{ row }">
+              <div class="bind-bank-name-cell">{{ row.bankName || '-' }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column :label="$t('pathChannelList.form.bankBindingStatus')" align="center" width="120">
+            <template #default="{ row }">
+              <el-switch
+                v-model="bindBankForm.collectionBankStatusMap[row.bankCode]"
+                :active-value="1"
+                :inactive-value="0"
+                :disabled="bindBankForm.collectionBankBindMap[row.bankCode] !== 1"
+              />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div
+        v-if="showPayoutBankSelect"
+        class="bind-bank-table-section"
+      >
+        <div class="bind-bank-table-label">{{ $t('pathChannelList.form.payoutBankCodes') }}</div>
+        <el-table
+          :data="filteredBindBankOptions"
+          border
+          size="small"
+          class="bind-bank-table"
+          max-height="420"
+        >
+          <el-table-column align="center" width="90">
+            <template #header>
+              <el-checkbox
+                :model-value="isAllBindBankSelected('payoutBankBindMap')"
+                :indeterminate="isBindBankIndeterminate('payoutBankBindMap')"
+                @change="toggleBindBankSelection('payoutBankBindMap', 'payoutBankStatusMap', $event)"
+              >
+                {{ $t('pathChannelList.form.bankBinding') }}
+              </el-checkbox>
+            </template>
+            <template #default="{ row }">
+              <el-checkbox
+                :model-value="bindBankForm.payoutBankBindMap[row.bankCode] === 1"
+                @change="setBindBankChecked('payoutBankBindMap', 'payoutBankStatusMap', row.bankCode, $event)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column align="left" width="140">
+            <template #header>
+              <div class="bind-bank-header">
+                <span class="bind-bank-header-title">{{ $t('bankCodeList.column.bankCode') }}</span>
+                <el-popover placement="bottom" :width="220" trigger="click" popper-class="bind-bank-filter-popper">
+                  <div class="bind-bank-filter-panel">
+                    <div class="bind-bank-filter-panel-title">{{ $t('bankCodeList.column.bankCode') }}</div>
+                    <el-input
+                      v-model="bindBankFilter.bankCode"
+                      :placeholder="$t('bankCodeList.placeholder.bankCode')"
+                      clearable
+                      size="small"
+                    />
+                  </div>
+                  <template #reference>
+                    <button type="button" class="bind-bank-filter-trigger" :class="{ 'is-active': !!bindBankFilter.bankCode }">
+                      <svg viewBox="0 0 16 16" class="bind-bank-filter-icon" aria-hidden="true">
+                        <path d="M2 3h12L9.2 8.2v3.6l-2.4 1.2V8.2L2 3z" fill="currentColor"/>
+                      </svg>
+                    </button>
+                  </template>
+                </el-popover>
+              </div>
+            </template>
+            <template #default="{ row }">
+              <div class="bind-bank-code-cell">{{ row.bankCode || '-' }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column align="center" min-width="180">
+            <template #header>
+              <div class="bind-bank-header">
+                <span class="bind-bank-header-title">{{ $t('bankCodeList.column.bankName') }}</span>
+                <el-popover placement="bottom" :width="220" trigger="click" popper-class="bind-bank-filter-popper">
+                  <div class="bind-bank-filter-panel">
+                    <div class="bind-bank-filter-panel-title">{{ $t('bankCodeList.column.bankName') }}</div>
+                    <el-input
+                      v-model="bindBankFilter.bankName"
+                      :placeholder="$t('bankCodeList.placeholder.bankName')"
+                      clearable
+                      size="small"
+                    />
+                  </div>
+                  <template #reference>
+                    <button type="button" class="bind-bank-filter-trigger" :class="{ 'is-active': !!bindBankFilter.bankName }">
+                      <svg viewBox="0 0 16 16" class="bind-bank-filter-icon" aria-hidden="true">
+                        <path d="M2 3h12L9.2 8.2v3.6l-2.4 1.2V8.2L2 3z" fill="currentColor"/>
+                      </svg>
+                    </button>
+                  </template>
+                </el-popover>
+              </div>
+            </template>
+            <template #default="{ row }">
+              <div class="bind-bank-name-cell">{{ row.bankName || '-' }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column :label="$t('pathChannelList.form.bankBindingStatus')" align="center" width="120">
+            <template #default="{ row }">
+              <el-switch
+                v-model="bindBankForm.payoutBankStatusMap[row.bankCode]"
+                :active-value="1"
+                :inactive-value="0"
+                :disabled="bindBankForm.payoutBankBindMap[row.bankCode] !== 1"
+              />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="cancelBindBankDialog">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="bindBankSubmitting" @click="submitBindBank">{{ $t('common.confirm') }}</el-button>
+      </div>
+    </template>
+  </el-dialog>
+  <el-dialog
     :title="confirmDialogTitle"
     v-model="confirmDialogVisible"
-    class="dialog left-top-title-dialog"
-    width="30%"
-    height="200px"
+    class="dialog left-top-title-dialog path-channel-confirm-dialog"
+    width="420px"
   >
-    <el-form ref="confirmDataForm" :rules="confirmRule" :model="confirmData" style="height:100px;margin-top: 20px">
-      <el-row>
-        <el-col :span="24" style="display: flex;justify-content: center;justify-items: center;align-items: center;">
-          <div>
-            <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode">
+    <el-form ref="confirmDataForm" :rules="confirmRule" :model="confirmData" class="path-channel-confirm-form">
+      <el-row class="confirm-row">
+        <el-col :span="24" class="confirm-col">
+          <div class="confirm-item">
+            <el-form-item :label="$t('common.googleCode')" prop="googleCode" class="confirm-input-item confirm-input-item--labeled">
               <el-input v-model="confirmData.googleCode" style="width: 200px"/>
             </el-form-item>
           </div>
         </el-col>
       </el-row>
     </el-form>
-    <div slot="footer" class="dialog-footer" style="margin-right: 3%;height: 30px;">
+    <div slot="footer" class="dialog-footer path-channel-confirm-footer">
       <el-button @click="cancelConfirmDialog('confirmDataForm')">{{ $t('common.cancel') }}</el-button>
       <el-button type="primary" @click="submitConfirm('confirmDataForm')">{{ $t('common.confirm') }}</el-button>
     </div>
@@ -1207,7 +1529,9 @@ import {
   createPaymentInfo,
   editPaymentInfo, exportMerchantReport, exportPayment,
   getAllCurrencyType,
-  getPaymentInfo
+  getPaymentInfo,
+  queryPaymentBankCode,
+  updatePaymentBankCodes
 } from "@/api/interface/backendInterface.js";
 import {exportExcel, getAgentAccountTitle, getFormateTime, getPaymentListTitle, loadingBody} from "@/api/common.js";
 import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
@@ -1367,6 +1691,24 @@ export default {
       pathChannelDialogTitle: "",
       dialogFormVisible: false,
       confirmDialogVisible: false,
+      bindBankDialogVisible: false,
+      bindBankDialogTitle: '',
+      bindBankLoading: false,
+      bindBankSubmitting: false,
+      bindBankChannelInfo: {},
+      bindBankOptions: [],
+      bindBankFilter: {
+        bankCode: '',
+        bankName: ''
+      },
+      bindBankForm: {
+        unifiedBankBindMap: {},
+        unifiedBankStatusMap: {},
+        collectionBankBindMap: {},
+        payoutBankBindMap: {},
+        collectionBankStatusMap: {},
+        payoutBankStatusMap: {}
+      },
       confirmDialogTitle: '',
       confirmData: {
         googleCode: ''
@@ -1436,6 +1778,255 @@ export default {
     }
   },
   methods: {
+    bindBankOptionLabel(item) {
+      const bankCode = String(item?.bankCode || '').trim()
+      const bankName = String(item?.bankName || '').trim()
+      if (bankCode && bankName) {
+        return `${bankName} (${bankCode})`
+      }
+      return bankName || bankCode || '-'
+    },
+    normalizeBankBindingRows(payload) {
+      if (!payload) return []
+      if (Array.isArray(payload)) return payload
+      if (Array.isArray(payload.paymentBankCodeDtoList)) return payload.paymentBankCodeDtoList
+      return []
+    },
+    buildBindBankOptions(list) {
+      const optionMap = new Map()
+      ;(list || []).forEach(item => {
+        const bankCode = String(item?.bankCode || '').trim()
+        if (!bankCode || optionMap.has(bankCode)) return
+        optionMap.set(bankCode, {
+          bankCode,
+          bankName: item?.bankName || ''
+        })
+      })
+      return Array.from(optionMap.values())
+    },
+    buildBindBankStatusMap(bankCodes, currentMap) {
+      const nextMap = {}
+      ;(bankCodes || []).forEach(bankCode => {
+        nextMap[bankCode] = currentMap && currentMap[bankCode] !== undefined ? currentMap[bankCode] : 1
+      })
+      return nextMap
+    },
+    buildBindBankBindMap(bankCodes) {
+      const nextMap = {}
+      ;(bankCodes || []).forEach(bankCode => {
+        nextMap[bankCode] = 1
+      })
+      return nextMap
+    },
+    isSelectedBankRow(item) {
+      return item?.selected === true || item?.selected === 'true'
+    },
+    getBindBankCheckedCount(mapKey) {
+      const bindMap = this.bindBankForm?.[mapKey] || {}
+      return this.filteredBindBankOptions.filter(item => bindMap[item.bankCode] === 1).length
+    },
+    isAllBindBankSelected(mapKey) {
+      return this.filteredBindBankOptions.length > 0 && this.getBindBankCheckedCount(mapKey) === this.filteredBindBankOptions.length
+    },
+    isBindBankIndeterminate(mapKey) {
+      const checkedCount = this.getBindBankCheckedCount(mapKey)
+      return checkedCount > 0 && checkedCount < this.filteredBindBankOptions.length
+    },
+    setBindBankChecked(mapKey, statusMapKey, bankCode, checked) {
+      if (!this.bindBankForm[mapKey]) {
+        this.bindBankForm[mapKey] = {}
+      }
+      if (!this.bindBankForm[statusMapKey]) {
+        this.bindBankForm[statusMapKey] = {}
+      }
+      this.bindBankForm[mapKey][bankCode] = checked ? 1 : 0
+      if (checked) {
+        this.bindBankForm[statusMapKey][bankCode] = 1
+      } else {
+        this.bindBankForm[statusMapKey][bankCode] = 0
+      }
+    },
+    toggleBindBankSelection(mapKey, statusMapKey, checked) {
+      const nextBindMap = {}
+      const nextStatusMap = { ...(this.bindBankForm?.[statusMapKey] || {}) }
+      this.filteredBindBankOptions.forEach(item => {
+        const bankCode = item.bankCode
+        nextBindMap[bankCode] = checked ? 1 : 0
+        nextStatusMap[bankCode] = checked ? 1 : 0
+      })
+      this.bindBankForm[mapKey] = {
+        ...(this.bindBankForm?.[mapKey] || {}),
+        ...nextBindMap
+      }
+      this.bindBankForm[statusMapKey] = nextStatusMap
+    },
+    openBindBankDialog(row) {
+      this.bindBankChannelInfo = Object.assign({}, row || {})
+      this.bindBankDialogTitle = this.$t('pathChannelList.dialog.bindBank')
+      this.bindBankDialogVisible = true
+      this.bindBankLoading = true
+      this.bindBankOptions = []
+      this.bindBankFilter.bankCode = ''
+      this.bindBankFilter.bankName = ''
+      this.bindBankForm.unifiedBankBindMap = {}
+      this.bindBankForm.unifiedBankStatusMap = {}
+      this.bindBankForm.collectionBankBindMap = {}
+      this.bindBankForm.payoutBankBindMap = {}
+      this.bindBankForm.collectionBankStatusMap = {}
+      this.bindBankForm.payoutBankStatusMap = {}
+      queryPaymentBankCode({
+        paymentId: row.paymentId,
+        currencyCode: row.currency
+      }).then(res => {
+        if (res.status === 200 && res.data.code === 0) {
+          const data = JSON.parse(res.data.data || '{}')
+          const list = this.normalizeBankBindingRows(data)
+          this.bindBankOptions = this.buildBindBankOptions(list)
+          if (row?.supportType === 2 || row?.supportType === '2') {
+            const unifiedBankCodes = list
+              .filter(item => this.isSelectedBankRow(item))
+              .map(item => item.bankCode)
+            const uniqueUnifiedBankCodes = Array.from(new Set(unifiedBankCodes))
+            this.bindBankForm.unifiedBankBindMap = this.buildBindBankBindMap(uniqueUnifiedBankCodes)
+            this.bindBankForm.unifiedBankStatusMap = {}
+            list
+              .filter(item => this.isSelectedBankRow(item))
+              .forEach(item => {
+                this.bindBankForm.unifiedBankStatusMap[item.bankCode] = item?.status === 0 || item?.status === '0' ? 0 : 1
+              })
+            this.bindBankForm.unifiedBankStatusMap = this.buildBindBankStatusMap(
+              uniqueUnifiedBankCodes,
+              this.bindBankForm.unifiedBankStatusMap
+            )
+          } else {
+            const collectionBankCodes = list
+              .filter(item => this.isSelectedBankRow(item) && (
+                item.supportType === 0 || item.supportType === '0' ||
+                item.supportType === 2 || item.supportType === '2'
+              ))
+              .map(item => item.bankCode)
+            const uniqueCollectionBankCodes = Array.from(new Set(collectionBankCodes))
+            this.bindBankForm.collectionBankBindMap = this.buildBindBankBindMap(uniqueCollectionBankCodes)
+            this.bindBankForm.collectionBankStatusMap = {}
+            list
+              .filter(item => this.isSelectedBankRow(item) && (
+                item.supportType === 0 || item.supportType === '0' ||
+                item.supportType === 2 || item.supportType === '2'
+              ))
+              .forEach(item => {
+                this.bindBankForm.collectionBankStatusMap[item.bankCode] = item?.status === 0 || item?.status === '0' ? 0 : 1
+              })
+            this.bindBankForm.collectionBankStatusMap = this.buildBindBankStatusMap(
+              uniqueCollectionBankCodes,
+              this.bindBankForm.collectionBankStatusMap
+            )
+            const payoutBankCodes = list
+              .filter(item => this.isSelectedBankRow(item) && (
+                item.supportType === 1 || item.supportType === '1' ||
+                item.supportType === 2 || item.supportType === '2'
+              ))
+              .map(item => item.bankCode)
+            const uniquePayoutBankCodes = Array.from(new Set(payoutBankCodes))
+            this.bindBankForm.payoutBankBindMap = this.buildBindBankBindMap(uniquePayoutBankCodes)
+            this.bindBankForm.payoutBankStatusMap = {}
+            list
+              .filter(item => this.isSelectedBankRow(item) && (
+                item.supportType === 1 || item.supportType === '1' ||
+                item.supportType === 2 || item.supportType === '2'
+              ))
+              .forEach(item => {
+                this.bindBankForm.payoutBankStatusMap[item.bankCode] = item?.status === 0 || item?.status === '0' ? 0 : 1
+              })
+            this.bindBankForm.payoutBankStatusMap = this.buildBindBankStatusMap(
+              uniquePayoutBankCodes,
+              this.bindBankForm.payoutBankStatusMap
+            )
+          }
+        } else {
+          this.$notify({
+            title: this.$t('common.error'),
+            message: res.data.message,
+            duration: 3000,
+            type: 'error',
+            position: 'bottom-right'
+          })
+          this.bindBankDialogVisible = false
+        }
+      }).catch(() => {
+        this.$notify({
+          title: this.$t('common.error'),
+          message: this.$t('common.requestFailed'),
+          duration: 3000,
+          type: 'error',
+          position: 'bottom-right'
+        })
+        this.bindBankDialogVisible = false
+      }).finally(() => {
+        this.bindBankLoading = false
+      })
+    },
+    cancelBindBankDialog() {
+      this.bindBankDialogVisible = false
+      this.bindBankDialogTitle = ''
+      this.bindBankLoading = false
+      this.bindBankSubmitting = false
+      this.bindBankChannelInfo = {}
+      this.bindBankOptions = []
+      this.bindBankFilter.bankCode = ''
+      this.bindBankFilter.bankName = ''
+      this.bindBankForm.unifiedBankBindMap = {}
+      this.bindBankForm.unifiedBankStatusMap = {}
+      this.bindBankForm.collectionBankBindMap = {}
+      this.bindBankForm.payoutBankBindMap = {}
+      this.bindBankForm.collectionBankStatusMap = {}
+      this.bindBankForm.payoutBankStatusMap = {}
+    },
+    submitBindBank() {
+      const items = []
+      if (this.bindBankChannelInfo?.supportType === 2 || this.bindBankChannelInfo?.supportType === '2') {
+        const unifiedBankCodes = Object.keys(this.bindBankForm.unifiedBankBindMap || {})
+          .filter(bankCode => this.bindBankForm.unifiedBankBindMap[bankCode] === 1)
+        unifiedBankCodes.forEach(bankCode => {
+          items.push({
+            bankCode,
+            supportType: 2,
+            status: this.bindBankForm.unifiedBankStatusMap?.[bankCode] === 0 ? 0 : 1
+          })
+        })
+      } else {
+        const collectionBankCodes = Object.keys(this.bindBankForm.collectionBankBindMap || {})
+          .filter(bankCode => this.bindBankForm.collectionBankBindMap[bankCode] === 1)
+        const payoutBankCodes = Object.keys(this.bindBankForm.payoutBankBindMap || {})
+          .filter(bankCode => this.bindBankForm.payoutBankBindMap[bankCode] === 1)
+        collectionBankCodes.forEach(bankCode => {
+          items.push({
+            bankCode,
+            supportType: 0,
+            status: this.bindBankForm.collectionBankStatusMap?.[bankCode] === 0 ? 0 : 1
+          })
+        })
+        payoutBankCodes.forEach(bankCode => {
+          items.push({
+            bankCode,
+            supportType: 1,
+            status: this.bindBankForm.payoutBankStatusMap?.[bankCode] === 0 ? 0 : 1
+          })
+        })
+      }
+      if (items.length === 0) {
+        this.$notify({
+          title: this.$t('common.error'),
+          message: this.$t('pathChannelList.validation.bindBankRequired'),
+          duration: 3000,
+          type: 'error',
+          position: 'bottom-right'
+        })
+        return
+      }
+      this.pendingSubmitType = 'bindBank'
+      this.confirmDialogTitle = this.$t('common.prompt')
+      this.confirmDialogVisible = true
+    },
     savePathChannelDraft() {
       if (!this.dialogFormVisible) return;
       const mode = this.submitType || '';
@@ -1874,19 +2465,91 @@ export default {
     submitConfirm(form) {
       this.$refs[form].validate(valid => {
         if (!valid) return
-        this.createPathChannelInfo.googleCode = this.confirmData.googleCode
-        const payload = this.buildSubmitPayload()
         this.confirmDialogVisible = false
         this.confirmDialogTitle = ''
         if (this.pendingSubmitType === 'create') {
+          this.createPathChannelInfo.googleCode = this.confirmData.googleCode
+          const payload = this.buildSubmitPayload()
           createPaymentInfo(payload).then(res => {
             this.handlePaymentResponse(res, this.$t('pathChannelList.message.createSuccess'))
             this.confirmData.googleCode = ''
             this.pendingSubmitType = ''
           })
         } else if (this.pendingSubmitType === 'edit') {
+          this.createPathChannelInfo.googleCode = this.confirmData.googleCode
+          const payload = this.buildSubmitPayload()
           editPaymentInfo(payload).then(res => {
             this.handlePaymentResponse(res, this.$t('pathChannelList.message.editSuccess'))
+            this.confirmData.googleCode = ''
+            this.pendingSubmitType = ''
+          })
+        } else if (this.pendingSubmitType === 'bindBank') {
+          const items = []
+          if (this.bindBankChannelInfo?.supportType === 2 || this.bindBankChannelInfo?.supportType === '2') {
+            const unifiedBankCodes = Object.keys(this.bindBankForm.unifiedBankBindMap || {})
+              .filter(bankCode => this.bindBankForm.unifiedBankBindMap[bankCode] === 1)
+            unifiedBankCodes.forEach(bankCode => {
+              items.push({
+                bankCode,
+                supportType: 2,
+                status: this.bindBankForm.unifiedBankStatusMap?.[bankCode] === 0 ? 0 : 1
+              })
+            })
+          } else {
+            const collectionBankCodes = Object.keys(this.bindBankForm.collectionBankBindMap || {})
+              .filter(bankCode => this.bindBankForm.collectionBankBindMap[bankCode] === 1)
+            const payoutBankCodes = Object.keys(this.bindBankForm.payoutBankBindMap || {})
+              .filter(bankCode => this.bindBankForm.payoutBankBindMap[bankCode] === 1)
+            collectionBankCodes.forEach(bankCode => {
+              items.push({
+                bankCode,
+                supportType: 0,
+                status: this.bindBankForm.collectionBankStatusMap?.[bankCode] === 0 ? 0 : 1
+              })
+            })
+            payoutBankCodes.forEach(bankCode => {
+              items.push({
+                bankCode,
+                supportType: 1,
+                status: this.bindBankForm.payoutBankStatusMap?.[bankCode] === 0 ? 0 : 1
+              })
+            })
+          }
+          this.bindBankSubmitting = true
+          updatePaymentBankCodes({
+            paymentId: this.bindBankChannelInfo.paymentId,
+            currencyCode: this.bindBankChannelInfo.currency,
+            googleCode: this.confirmData.googleCode,
+            items
+          }).then(res => {
+            if (res.status === 200 && res.data.code === 0) {
+              this.$notify({
+                title: this.$t('common.success'),
+                message: this.$t('pathChannelList.message.bindBankSuccess'),
+                duration: 3000,
+                type: 'success',
+                position: 'bottom-right'
+              })
+              this.cancelBindBankDialog()
+            } else {
+              this.$notify({
+                title: this.$t('common.error'),
+                message: res.data.message,
+                duration: 3000,
+                type: 'error',
+                position: 'bottom-right'
+              })
+            }
+          }).catch(() => {
+            this.$notify({
+              title: this.$t('common.error'),
+              message: this.$t('common.requestFailed'),
+              duration: 3000,
+              type: 'error',
+              position: 'bottom-right'
+            })
+          }).finally(() => {
+            this.bindBankSubmitting = false
             this.confirmData.googleCode = ''
             this.pendingSubmitType = ''
           })
@@ -1904,6 +2567,31 @@ export default {
       if (this.$refs[form]) {
         this.$refs[form].resetFields()
       }
+    }
+  },
+  computed: {
+    filteredBindBankOptions() {
+      const bankCode = String(this.bindBankFilter?.bankCode || '').trim().toLowerCase()
+      const bankName = String(this.bindBankFilter?.bankName || '').trim().toLowerCase()
+      return (this.bindBankOptions || []).filter(item => {
+        const currentBankCode = String(item?.bankCode || '').toLowerCase()
+        const currentBankName = String(item?.bankName || '').toLowerCase()
+        if (bankCode && !currentBankCode.includes(bankCode)) return false
+        if (bankName && !currentBankName.includes(bankName)) return false
+        return true
+      })
+    },
+    showUnifiedBankSelect() {
+      const supportType = this.bindBankChannelInfo?.supportType
+      return supportType === 2 || supportType === '2'
+    },
+    showCollectionBankSelect() {
+      const supportType = this.bindBankChannelInfo?.supportType
+      return supportType === 0 || supportType === '0'
+    },
+    showPayoutBankSelect() {
+      const supportType = this.bindBankChannelInfo?.supportType
+      return supportType === 1 || supportType === '1'
     }
   },
   async mounted() {
@@ -1945,6 +2633,8 @@ export default {
 
 .path-channel-list-filter-row{
   width: 100%;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 .path-channel-list-filter-col{
@@ -1954,6 +2644,82 @@ export default {
 
 .path-channel-list-filter-col .el-form-item{
   width: 350px;
+}
+
+.main-toolbar{
+  overflow-x: hidden;
+}
+
+.path-channel-add-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.path-channel-add-btn {
+  float: none !important;
+}
+
+.confirm-row {
+  display: flex;
+  justify-content: center;
+}
+
+.confirm-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.confirm-item {
+  width: 320px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  column-gap: 10px;
+}
+
+.confirm-label {
+  width: 110px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #606266;
+  white-space: nowrap;
+}
+
+.confirm-required {
+  color: #f56c6c;
+  margin-right: 4px;
+}
+
+.confirm-input-item {
+  margin-bottom: 0;
+}
+
+.confirm-input-item :deep(.el-form-item__content) {
+  margin-left: 0;
+}
+
+.confirm-input-item--labeled {
+  width: 100%;
+}
+
+.confirm-input-item--labeled :deep(.el-form-item__label) {
+  width: 110px;
+  justify-content: flex-end;
+}
+
+.path-channel-confirm-form {
+  margin-top: 20px;
+  min-height: 90px;
+}
+
+.path-channel-confirm-footer {
+  margin-top: 12px;
+  padding-bottom: 4px;
 }
 
 .path-channel-edit-form :deep(.el-form-item) {
@@ -1978,6 +2744,164 @@ export default {
 
 .path-channel-edit-form :deep(.path-channel-time-item .el-form-item__content) {
   flex: 0 0 auto;
+}
+
+.path-channel-bind-bank-form :deep(.el-form-item) {
+  margin-bottom: 18px;
+}
+
+.path-channel-bind-bank-form {
+  width: 100%;
+}
+
+.bind-bank-basic-row {
+  width: 80%;
+  margin: 0 auto 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 16px;
+  align-items: start;
+}
+
+.bind-bank-header {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.bind-bank-header-title {
+  line-height: 16px;
+}
+
+.bind-bank-filter-trigger {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid #d0d7e2;
+  border-radius: 3px;
+  background: #ffffff;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bind-bank-filter-trigger:hover {
+  border-color: #93c5fd;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.bind-bank-filter-trigger.is-active {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #dbeafe;
+}
+
+.bind-bank-filter-icon {
+  width: 10px;
+  height: 10px;
+}
+
+.bind-bank-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bind-bank-filter-panel-title {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.bind-bank-basic-row :deep(.el-form-item) {
+  width: 100%;
+  margin: 0;
+  justify-content: center;
+}
+
+.bind-bank-basic-row :deep(.el-form-item__content) {
+  justify-content: center;
+}
+
+.path-channel-bind-bank-form :deep(.el-form-item) {
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.path-channel-bind-bank-form :deep(.el-form-item__label) {
+  color: #606266;
+}
+
+.path-channel-bind-bank-form :deep(.el-form-item__content) {
+  flex: 0 0 auto;
+}
+
+.path-channel-bind-bank-form :deep(.bind-bank-input) {
+  width: 100%;
+}
+
+.path-channel-bind-bank-form :deep(.bind-bank-table) {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.path-channel-bind-bank-form :deep(.bind-bank-table th.el-table__cell) {
+  background: #eef5ff;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+.path-channel-bind-bank-form :deep(.bind-bank-table td.el-table__cell) {
+  background: #fbfdff;
+}
+
+.path-channel-bind-bank-form :deep(.bind-bank-table::before) {
+  background-color: #dbeafe;
+}
+
+.path-channel-bind-bank-form :deep(.bind-bank-table .el-table__border-left-patch) {
+  background-color: #eef5ff;
+}
+
+.path-channel-bind-bank-form :deep(.bind-bank-table .el-switch.is-checked .el-switch__core) {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.bind-bank-table-section {
+  width: 80%;
+  margin: 0 auto 18px;
+}
+
+.bind-bank-table-label {
+  color: #1e3a8a;
+  font-weight: 600;
+  line-height: 20px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+.bind-bank-name-cell {
+  line-height: 18px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+
+.bind-bank-code-cell {
+  text-align: left;
+  background: #ecfdf5;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: #166534;
+  font-weight: 600;
 }
 </style>
 <style>
@@ -2169,5 +3093,33 @@ export default {
 
 .path-channel-detail-dialog .detail-readonly-input .el-textarea__inner {
   resize: none;
+}
+
+.path-channel-bind-bank-dialog .el-dialog__body {
+  padding-top: 20px;
+  padding-bottom: 16px;
+  max-height: calc(80vh - 120px);
+  overflow-y: auto;
+  flex: 1;
+}
+
+.path-channel-bind-bank-dialog .el-dialog {
+  height: 80vh;
+  min-width: 720px;
+  display: flex;
+  flex-direction: column;
+}
+
+.path-channel-bind-bank-dialog .el-select,
+.path-channel-bind-bank-dialog .el-input {
+  width: 100%;
+}
+
+.path-channel-bind-bank-dialog .el-dialog__footer {
+  border-top: 1px solid #ebeef5;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background: #fff;
+  flex-shrink: 0;
 }
 </style>

@@ -57,6 +57,8 @@ export function logOut() {
                 localStorage.removeItem("userId")
                 localStorage.removeItem("currentPath")
                 localStorage.removeItem("refreshToken")
+                localStorage.removeItem("lastLoginTime")
+                localStorage.removeItem("loginTime")
                 localStorage.removeItem("ops_common_message_shown")
                 const coreNames = new Set(["default", "login", "pakGoPay"]);
                 router.getRoutes().forEach(route => {
@@ -228,6 +230,19 @@ export async function roleList(roleName) {
     })
 }
 
+export async function roleListPage(formData) {
+    return service({
+        url: '/api/pakGoPay/server/SystemConfig/roleList',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json;charset=UTF-8',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        data: formData,
+        responseType: 'json',
+    })
+}
+
 export async function loginUserList(formData) {
     return service({
         url: '/api/pakGoPay/server/SystemConfig/loginUserList',
@@ -382,6 +397,7 @@ export function updateTelegramConfig(form) {
         configItems: [
             { key: 'token', value: form?.token ?? '' },
             { key: 'webhookSecret', value: form?.webhookSecret ?? '' },
+            { key: 'alertChatId', value: form?.alertChatId ?? '' },
             { key: 'enabled', value: form?.enabled ?? 0 }
         ],
         googleCode: form?.googleCode
@@ -566,9 +582,33 @@ export function addCurrencyType(form) {
     })
 }
 
+export function syncCurrencyType(form) {
+    return service({
+        url: '/api/pakGoPay/server/SystemConfig/sync',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form,
+    })
+}
+
 export function updateCurrencyType(form) {
     return service({
         url: '/api/pakGoPay/server/CurrencyTypeManagement/updateCurrencyType',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form,
+    })
+}
+
+export function queryBankCode(form) {
+    return service({
+        url: '/api/pakGoPay/server/bankCode/queryBankCode',
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -924,6 +964,18 @@ export function createStatementeOrderApply(form) {
     })
 }
 
+export function createWithdrawOrder(form) {
+    return service({
+        url: '/api/withdrawOrder/create',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form
+    })
+}
+
 export function getWsMessages() {
     return service({
         url: '/api/pakGoPay/server/notation/queryNotation',
@@ -949,6 +1001,16 @@ export function markReadMessage(messageId) {
     })
 }
 
+export function clearAllMessages() {
+    return service({
+        url: '/api/pakGoPay/server/notation/clearAllNotations',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+    })
+}
+
 export function getWithdrawStatementeOrder(form) {
     return service({
         url: '/api/pakGoPay/server/merchant/queryAccountStatement',
@@ -964,6 +1026,30 @@ export function getWithdrawStatementeOrder(form) {
 export function modifyWithdrawStatementeOrder(form) {
     return service({
         url: '/api/pakGoPay/server/merchant/editAccountStatement',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form
+    })
+}
+
+export function getWithdrawOrderPage(form) {
+    return service({
+        url: '/api/withdrawOrder/page',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form
+    })
+}
+
+export function auditWithdrawOrder(form) {
+    return service({
+        url: '/api/withdrawOrder/audit',
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -1012,6 +1098,30 @@ export function manualCreateCollectionOrder(form) {
 export function queryMerchantAvailableChannels(form) {
     return service({
         url: '/api/pakGoPay/server/v1/queryMerchantAvailableChannels',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form
+    })
+}
+
+export function queryPaymentBankCode(form) {
+    return service({
+        url: '/api/pakGoPay/server/bankCode/queryPaymentBankCode',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form
+    })
+}
+
+export function updatePaymentBankCodes(form) {
+    return service({
+        url: '/api/pakGoPay/server/bankCode/updatePaymentBankCodes',
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -1072,6 +1182,18 @@ export function manualReverseOrder(form) {
 export function queryOrderFlowLogs(form) {
     return service({
         url: '/api/pakGoPay/server/v1/queryOrderFlowLogs',
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Content-Type': 'application/json;charset=UTF-8',
+        },
+        data: form
+    })
+}
+
+export function queryAccountStatementByOrderNo(form) {
+    return service({
+        url: '/api/pakGoPay/server/merchant/queryAccountStatementByOrderNo',
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,

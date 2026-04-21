@@ -52,8 +52,16 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             </el-col>
             <el-col :span="8" class="withdrawl-history-filter-col">
               <el-form-item :label="$t('withdrawlHistory.filter.agentName')" label-width="150px" prop="name">
-                <el-input v-model="filterbox.name" clearable type="text" :placeholder="$t('withdrawlHistory.placeholder.agentName')" class="withdrawl-history-filter-input">
-                </el-input>
+                <el-select
+                  v-model="filterbox.name"
+                  :options="agentOptions"
+                  :props="agentFilterProps"
+                  clearable
+                  filterable
+                  :placeholder="$t('withdrawlHistory.placeholder.agentName')"
+                  class="withdrawl-history-filter-input"
+                  :disabled="filterAvaiable"
+                />
               </el-form-item>
             </el-col>
             <el-col :span="8" class="withdrawl-history-filter-col">
@@ -120,7 +128,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
     </el-collapse-item>
   </el-collapse>
   <div class="reportInfo">
-    <div style="display: flex;justify-content: right;">
+    <div class="agent-account-action-row" style="display: flex;justify-content: right;">
 <!--      <el-button @click="exportAgentStatement()" class="filterButton">
         <SvgIcon class="filterButtonSvg" name="export"/>
         导出
@@ -470,34 +478,35 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
   <el-dialog
       :title="confirmDialogTitle"
       v-model="confirmDialogVisible"
-      class="dialog"
+      class="dialog withdrawl-history-google-confirm-dialog"
       center
       align-center
-      width="30%"
-      height="200px"
+      width="420px"
   >
-    <el-form ref="confirmDataForm" :rules="confirmRule" :model="confirmData" style="height:100px;margin-top: 20px">
-      <el-row>
-        <el-col :span="24" style="display: flex;justify-content: center;justify-items: center;align-items: center;">
-          <div>
-            <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode">
+    <el-form ref="confirmDataForm" :rules="confirmRule" :model="confirmData" class="withdrawl-history-google-confirm-form">
+      <el-row class="confirm-row">
+        <el-col :span="24" class="confirm-col">
+          <div class="confirm-item">
+            <el-form-item :label="$t('common.googleCode')" prop="googleCode" class="confirm-input-item confirm-input-item--labeled">
               <el-input v-model="confirmData.googleCode" style="width: 200px"/>
             </el-form-item>
           </div>
         </el-col>
       </el-row>
     </el-form>
-    <div slot="footer" class="dialog-footer" style="margin-right: 3%;height: 30px;">
-      <el-button @click="cancelConfirmDialog('confirmDataForm')">{{ $t('common.cancel') }}</el-button>
-      <el-button type="primary" @click="submitConfirm('confirmDataForm')">{{ $t('common.confirm') }}
-      </el-button>
-    </div>
+    <template #footer>
+      <div class="dialog-footer withdrawl-history-google-confirm-footer">
+        <el-button @click="cancelConfirmDialog('confirmDataForm')">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitConfirm('confirmDataForm')">{{ $t('common.confirm') }}
+        </el-button>
+      </div>
+    </template>
   </el-dialog>
 </template>
 
 <script>
 import {
-  createAgentAccountInfo, createStatementeOrderApply, exportAgentAccount, exportMerchantAccount,
+  createAgentAccountInfo, createStatementeOrderApply, createWithdrawOrder, exportAgentAccount, exportMerchantAccount,
   getAgentAccountInfo, getAgentInfo,
   getAllCurrencyType, getMerchantAccount, getMerchantInfo, modifyAgentAccountInfo,
   modifyAgentInfo
@@ -567,6 +576,10 @@ export default {
       agentProps: {
         label: 'agentName',
         value: 'userId'
+      },
+      agentFilterProps: {
+        label: 'agentName',
+        value: 'agentName'
       },
       submitType: '',
       currency: '',
@@ -997,7 +1010,7 @@ export default {
           this.dialogWithdrawVisible = false
           this.dialogWithdrawTitle = ''
           this.confirmData =  Object.assign({}, this.withdrawOrderInfo)
-          this.confirmData.userRole = 2
+          this.confirmData.userRole = 4
           this.confirmDialogTitle = this.$t('withdrawlHistory.dialog.confirmTitle')
           this.confirmDialogVisible = true
           this.$refs[form].resetFields()
@@ -1014,8 +1027,11 @@ export default {
       this.$refs[form].validate(validate => {
         if (validate) {
           // agent account page: always submit agent role implicitly
-          this.confirmData.userRole = 2
-          createStatementeOrderApply(this.confirmData).then(res => {
+          this.confirmData.userRole = 4
+          const request = this.confirmData.orderType === 2
+            ? createWithdrawOrder(this.buildWithdrawOrderPayload(this.confirmData))
+            : createStatementeOrderApply(this.confirmData)
+          request.then(res => {
             this.confirmDialogTitle=''
             this.confirmDialogVisible = false
             if (res.status === 200 && res.data.code === 0) {
@@ -1056,6 +1072,18 @@ export default {
           })
         }
       })
+    },
+    buildWithdrawOrderPayload(data) {
+      return {
+        userId: data.merchantAgentId,
+        name: data.merchantAgentName,
+        amount: data.amount,
+        currency: data.currency,
+        userRole: data.userRole,
+        walletAddr: data.walletAddr,
+        remark: data.remark,
+        googleCode: data.googleCode
+      }
     },
     submitAccountGoogle(form) {
       this.$refs[form].validate(validate => {
@@ -1151,12 +1179,8 @@ export default {
     submitManualAccountAdjustment(form) {
       this.$refs[form].validate(validate => {
         if (validate) {
-          const rawAmount = Number(this.manualAccountAdjustmentOrderInfo.amount || 0)
-          if (this.manualAccountAdjustmentOrderInfo.type === 0) {
-            this.manualAccountAdjustmentOrderInfo.amount = rawAmount === 0 ? 0 : -Math.abs(rawAmount)
-          } else {
-            this.manualAccountAdjustmentOrderInfo.amount = Math.abs(rawAmount)
-          }
+          this.manualAccountAdjustmentOrderInfo.orderType = this.manualAccountAdjustmentOrderInfo.type === 1 ? 41 : 42
+          this.manualAccountAdjustmentOrderInfo.amount = Math.abs(Number(this.manualAccountAdjustmentOrderInfo.amount || 0))
           this.dialogManualAccountAdjustmentVisible = false
           this.dialogManualAccountAdjustmentTitle = ''
           this.confirmData = Object.assign({}, this.manualAccountAdjustmentOrderInfo)
@@ -1314,6 +1338,13 @@ export default {
   align-content: center;
 }
 
+.agent-account-action-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
 :deep() .el-input__inner {
   text-align: center;
 }
@@ -1331,7 +1362,12 @@ export default {
 
 .dialog-footer {
   display: flex;
-  float: right;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  float: none;
+  box-sizing: border-box;
 }
 
 .form {
@@ -1362,5 +1398,73 @@ input::-webkit-inner-spin-button {
 
 :deep(.adjust-switch-dec .el-switch__label--right) {
   color: #9ca3af;
+}
+
+.confirm-row {
+  display: flex;
+  justify-content: center;
+}
+
+.confirm-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.confirm-item {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  column-gap: 10px;
+}
+
+.confirm-label {
+  width: 110px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #606266;
+  white-space: nowrap;
+}
+
+.confirm-required {
+  color: #f56c6c;
+  margin-right: 4px;
+}
+
+.confirm-input-item {
+  margin-bottom: 0;
+}
+
+.confirm-input-item :deep(.el-form-item__content) {
+  margin-left: 0;
+}
+
+.confirm-input-item--labeled {
+  width: 100%;
+}
+
+.confirm-input-item--labeled :deep(.el-form-item__label) {
+  width: 110px;
+  justify-content: flex-end;
+}
+
+.confirm-input-item--labeled :deep(.el-form-item__content) {
+  flex: 0 0 200px;
+  max-width: 200px;
+}
+
+.withdrawl-history-google-confirm-form {
+  margin-top: 20px;
+  min-height: 90px;
+}
+
+.withdrawl-history-google-confirm-footer {
+  margin-top: 12px;
+  padding-bottom: 4px;
 }
 </style>

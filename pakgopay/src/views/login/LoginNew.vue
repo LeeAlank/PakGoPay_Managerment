@@ -257,10 +257,17 @@ export default {
             localStorage.setItem("userId", response.data.userId);
             localStorage.setItem("refreshToken", response.data.refreshToken);
             localStorage.setItem("roleName", response.data.roleName);
+            localStorage.setItem("roleId", response.data.roleId);
+            if (response.data.lastLoginTime) {
+              localStorage.setItem("lastLoginTime", String(response.data.lastLoginTime));
+            } else {
+              localStorage.removeItem("lastLoginTime");
+            }
             menu().then((m) => {
               if (m.status === 200 && m.data.data) {
                 this.menuItems = JSON.parse(m.data.data);
                 localStorage.setItem("menu", JSON.stringify(this.menuItems));
+                window.dispatchEvent(new CustomEvent("menu-updated"));
                 getAsyncRoutes(this.menuItems).forEach((route) => {
                   router.addRoute(route);
                   router.push("/web/pakGoPay")

@@ -20,6 +20,19 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
   export default {
     name: 'app',
     methods: {
+      isSessionPaused() {
+        return !!window.__pakSessionPaused;
+      },
+      setSessionPaused(paused) {
+        window.__pakSessionPaused = !!paused;
+        window.dispatchEvent(new CustomEvent(paused ? "pak-session-paused" : "pak-session-resumed"));
+      },
+      stopHeartbeat() {
+        if (this.heartbeatTimer) {
+          clearInterval(this.heartbeatTimer);
+          this.heartbeatTimer = null;
+        }
+      },
       isLoginRoute() {
         return this.$route?.path === "/web/login" || this.$route?.meta?.showBar;
       },
@@ -41,6 +54,8 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
           return;
         }
         this.heartPrompting = true;
+        this.setSessionPaused(true);
+        this.stopHeartbeat();
         ElMessageBox.confirm(this.$t('app.sessionExpired'), this.$t('common.prompt'), {
           confirmButtonText: this.$t('common.confirm'),
           showCancelButton: false,
@@ -73,7 +88,7 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
       },
       startHeartbeat() {
         const runHeart = () => {
-          if (this.isLoginRoute() || !this.hasAuthToken()) {
+          if (this.isSessionPaused() || this.isLoginRoute() || !this.hasAuthToken()) {
             return;
           }
           heart().then(res => {
@@ -91,6 +106,7 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
       }
     },
     mounted() {
+      this.setSessionPaused(false);
       if (this.isLoginRoute() || !this.hasAuthToken()) {
         return;
       }
@@ -122,6 +138,7 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
                       let menuJson = JSON.parse(res.data.data)
                       let menu = JSON.stringify(JSON.parse(res.data.data))
                       localStorage.setItem('menu', menu)
+                      window.dispatchEvent(new CustomEvent("menu-updated"))
                       // 根据菜单提取路由
                        getAsyncRoutes(menuJson).forEach((route) => {
                         router.addRoute(route)
@@ -145,10 +162,7 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
       })
     },
     beforeUnmount() {
-      if (this.heartbeatTimer) {
-        clearInterval(this.heartbeatTimer);
-        this.heartbeatTimer = null;
-      }
+      this.stopHeartbeat();
     },
     data() {
       return {
@@ -195,10 +209,6 @@ import {getAsyncRoutes} from "@/router/asyncRouter.js";
 }
 .sidebar {
   position: fixed;
-  /*top: 1%;
-  left: 0.8%;
-  padding: 0;
-  height: 98%;*/
 }
 .beforeContent {
   position: fixed;

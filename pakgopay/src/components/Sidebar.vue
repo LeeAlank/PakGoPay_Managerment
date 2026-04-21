@@ -6,10 +6,10 @@
         <li v-for="item in menuItems" :key="item.menuId" @click="showItems(item)">
           <div class="first-menu-item" style="display: flex; justify-content: space-between;align-items: center">
             <div style=" display: flex;width: 90%;justify-content: space-between;align-items: center;">
-              <SvgIcon :name="resolveMenuIcon(item)" style="height: 22px;width:30px;align-items: center;"/>
-              <span v-if="!collapse" style="font-size: 15px;align-items: center;text-align: left;width: 75%;">{{ item.meta ? $t(JSON.parse(item.meta).title) : item.menuName}}</span>
+              <SvgIcon :name="resolveMenuIcon(item)" style="height: 34px;width:40px;align-items: center;"/>
+              <span v-if="!collapse" style="font-size: 17px;align-items: center;text-align: left;width: 75%;">{{ item.meta ? $t(JSON.parse(item.meta).title) : item.menuName}}</span>
             </div>
-            <SvgIcon v-if="!collapse" style="height: 10px;" :name="item.showItem?'right':'down'"/>
+            <SvgIcon v-if="!collapse" style="height: 16px;width:16px;" :name="item.showItem?'right':'down'"/>
           </div>
           <ul class="secondMenu" v-if="item.showItem" :key="item.menuId" v-for="child in item.children">
             <li v-if="!collapse" @click.stop="" :key="child.menuId" :class="[$route.path === child.path ? 'selectedClass' : 'unselectedClass']">
@@ -17,7 +17,6 @@
                   ref="routerLink"
                   class="menuRouter"
                   :to="child.path">
-<!--                {{child.menuName}}-->
                 {{ child.meta ? $t(JSON.parse(child.meta).title) : child.menuName }}
               </router-link>
             </li>
@@ -54,11 +53,23 @@ export default {
     }*/
   },
   mounted() {
-    this.menuItems = JSON.parse(localStorage.getItem('menu')) || []
-    this.ensureHomeMenu()
-    this.expandActiveMenu()
+    this.reloadMenuItems()
+    this._menuUpdatedListener = () => {
+      this.reloadMenuItems()
+    }
+    window.addEventListener("menu-updated", this._menuUpdatedListener)
+  },
+  beforeUnmount() {
+    if (this._menuUpdatedListener) {
+      window.removeEventListener("menu-updated", this._menuUpdatedListener)
+    }
   },
   methods: {
+    reloadMenuItems() {
+      this.menuItems = JSON.parse(localStorage.getItem('menu')) || []
+      this.ensureHomeMenu()
+      this.expandActiveMenu()
+    },
     normalizeMenuMetaTitle(item, titleKey) {
       if (!item) {
         return
@@ -177,7 +188,7 @@ export default {
 
 <style scoped>
 .sidebar {
-  background-color: #647387;
+  background-color: #334155;
   height: 100vh; /* 100% of the viewport height */
   /*width: 20vh;*/ /* Adjust as needed */
   width: 13%;
@@ -209,64 +220,65 @@ collapse-title {
   color: #f2f2f2;
   font-size: medium;
   /*margin: 10px;*/
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding-top: 0;
+  padding-bottom: 0;
   height: 100%;
-  /*padding: 2px;*/
   width: 100%;
   cursor: pointer;
 }
 .first-menu-item {
   transition: transform 0.15s ease, background-color 0.15s ease;
   border-radius: 10px;
-  padding: 4px 6px;
+  padding: 10px 6px;
 }
 
 .first-menu-item:hover {
   transform: scale(1.06);
   transform-origin: left center;
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: #475569;
+  box-shadow: inset 0 0 0 1px rgba(241, 245, 249, 0.18);
 }
 
 .menuRouter {
   transition: transform 0.15s ease, background-color 0.15s ease;
   border-radius: 10px;
+  box-sizing: border-box;
 }
 
 .menuRouter:hover {
-  transform: scale(1.06);
-  transform-origin: left center;
-  background-color: rgba(255, 255, 255, 0.12);
-  color: #ffffff;
-}
-
-.menuRouter:hover {
-  color: #ffffff;
+  transform: none;
+  background-color: #475569;
+  box-shadow: inset 0 0 0 1px rgba(241, 245, 249, 0.18);
+  color: #F1F5F9;
+  font-size: 20px;
 }
 
 .menuRouter {
   text-decoration: none;
-  color: #f2f2f2;
+  color: #CBD5E1;
   margin: 0;
   height: 100%;
-  padding: 4px 6px;
+  padding: 10px 6px;
   width: 100%;
   display: block;
   align-items: center;
   text-align: center;
+  font-size: 16px;
+  font-weight: 500;
 }
 
 .selectedClass {
   background-color: transparent;
-  transform: scale(1.06);
-  transform-origin: left center;
+  transform: none;
   color: #f2f2f2;
   margin: 0;
   border-radius: 10px;
 }
 
 .selectedClass .menuRouter {
-  background-color: #001529;
+  background-color: #475569;
+  color: #F8FAFC;
+  box-shadow: inset 0 0 0 1px rgba(241, 245, 249, 0.18);
 }
 
 .firstMenu {
@@ -284,6 +296,8 @@ collapse-title {
   font-size: 18px;
   padding: 0;
   margin-left: 15px;
+  margin-top: 0;
+  margin-bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -292,9 +306,14 @@ collapse-title {
   border-radius: 10px;
 }
 
+.secondMenu li {
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+}
+
 .unselectedClass {
-  /*background-color: #203030;*/
-  background: linear-gradient(to right, #5e6c7f, #627185); /* 渐变高亮 */
+  background: transparent;
   border-radius: 10px;
   overflow: hidden;
 }

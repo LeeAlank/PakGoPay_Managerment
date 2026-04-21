@@ -147,7 +147,15 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 
     <div class="collecting-test-footer">
       <el-button class="action-btn" @click="reset">{{ $t('common.reset') }}</el-button>
-      <el-button class="action-btn" type="primary" @click="submit">{{ $t('common.submit') }}</el-button>
+      <el-button
+        class="action-btn"
+        type="primary"
+        :loading="submitting"
+        :disabled="submitting"
+        @click="submit"
+      >
+        {{ $t('common.submit') }}
+      </el-button>
     </div>
   </div>
 
@@ -198,6 +206,7 @@ export default {
       googleConfirmData: {
         googleCode: ""
       },
+      submitting: false,
       formRules: {
         merchantId: [{ required: true, message: this.$t('orderCommon.validation.merchantIdRequired'), trigger: 'change' }],
         merchantOrderNo: [{ required: true, message: this.$t('orderCommon.validation.merchantOrderNoRequired'), trigger: 'blur' }],
@@ -312,6 +321,7 @@ export default {
       return ''
     },
     submit() {
+      if (this.submitting) return
       this.$refs.testFormRef.validate((valid) => {
         if (!valid) return
         this.googleConfirmVisible = true
@@ -324,6 +334,7 @@ export default {
       this.$refs.googleConfirmFormRef?.resetFields()
     },
     confirmSubmit() {
+      if (this.submitting) return
       this.$refs.googleConfirmFormRef.validate((valid) => {
         if (!valid) return
         const payload = {
@@ -336,6 +347,8 @@ export default {
           notificationUrl: this.apiTestInfo.notificationUrl,
           googleCode: this.googleConfirmData.googleCode
         }
+        this.googleConfirmVisible = false
+        this.submitting = true
         manualCreateCollectionOrder(payload).then((res) => {
           this.apiTestResult = JSON.stringify(res?.data ?? {}, null, 2)
           if (res.status === 200 && res.data.code === 0) {
@@ -344,12 +357,15 @@ export default {
             if (payUrl && Number(this.apiTestInfo.responseType) === 2) {
               window.open(payUrl, '_blank', 'noopener,noreferrer')
             }
-            this.closeGoogleConfirm()
             return
           }
           this.notifyError(res.data?.message)
         }).catch((err) => {
           this.notifyError(err.message)
+        }).finally(() => {
+          this.submitting = false
+          this.googleConfirmData.googleCode = ""
+          this.$refs.googleConfirmFormRef?.resetFields()
         })
       })
     }

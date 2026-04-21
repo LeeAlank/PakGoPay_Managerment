@@ -5,8 +5,21 @@ import '@/assets/base.css'
 </script>
 
 <template>
-  <div class="main-title">{{$t('route.merchantInfo')}}</div>
-  <el-collapse v-model="activeTool">
+  <div class="merchant-info-header">
+    <template v-if="isAdminDetailMode">
+      <div class="main-title merchant-info-breadcrumb">
+        <button type="button" class="merchant-info-breadcrumb-link" @click="backToMerchantList">
+          {{ $t('route.merchantInfo') }}
+        </button>
+        <span class="merchant-info-breadcrumb-separator">></span>
+        <span class="merchant-info-breadcrumb-current">
+          {{ (primaryMerchantInfo?.merchantName || primaryMerchantInfo?.accountName || '-') + $t('merchantInfo.detailSuffix') }}
+        </span>
+      </div>
+    </template>
+    <div v-else class="main-title">{{$t('route.merchantInfo')}}</div>
+  </div>
+  <el-collapse v-if="!isDetailView" v-model="activeTool">
     <el-collapse-item name="1">
       <template #title>
         <span class="toolbarName">
@@ -90,13 +103,285 @@ import '@/assets/base.css'
       </div>
     </el-collapse-item>
   </el-collapse>
-  <div class="reportInfo merchant-info-report">
-    <form id="merchantInfoForm" class="merchantInfoFormT merchant-info-form" style="height: 88%">
-      <el-button v-if="isAdmin" @click="addMerchant()" class="filterButton merchant-info-add" style="float: right">
+  <div class="reportInfo merchant-info-report" :class="{ 'merchant-info-report--merchant': isMerchantRole, 'merchant-info-report--detail': isAdminDetailMode }">
+    <form id="merchantInfoForm" class="merchantInfoFormT merchant-info-form" :class="{ 'merchant-info-form--detail': isAdminDetailMode }">
+      <el-button v-if="isAdmin && !isDetailView" @click="addMerchant()" class="filterButton merchant-info-add" style="float: right">
         <SvgIcon name="add" class="filterButtonSvg"/>
         <div>{{ $t('common.operate.add') }}</div>
       </el-button>
-      <div class="merchant-info-table-wrapper">
+      <div v-if="isDetailView" class="merchant-profile-view" :class="{ 'merchant-profile-view--detail': isAdminDetailMode }">
+        <template v-if="primaryMerchantInfo">
+        <section class="merchant-profile-layout">
+          <aside class="merchant-profile-section merchant-profile-sidebar">
+            <div class="merchant-profile-kicker">{{ $t('merchantInfo.column.basicInfo') }}</div>
+            <div class="merchant-profile-name">{{ primaryMerchantInfo.merchantName || '-' }}</div>
+            <div class="merchant-profile-sidebar-status">
+              <el-tag size="small" :type="primaryMerchantInfo.status === 1 ? 'success' : 'danger'">
+                {{ primaryMerchantInfo.status === 1 ? $t('common.enable') : $t('common.disable') }}
+              </el-tag>
+            </div>
+
+            <div class="merchant-profile-sidebar-group">
+              <div class="merchant-profile-inline-title">{{ $t('merchantInfo.column.basicInfo') }}</div>
+              <div class="merchant-profile-sidebar-item">
+                <span>{{ $t('merchantInfo.column.account') }}</span>
+                <strong>{{ primaryMerchantInfo.accountName || '-' }}</strong>
+              </div>
+              <div class="merchant-profile-sidebar-item">
+                <span>{{ $t('merchantInfo.column.code') }}</span>
+                <strong>{{ primaryMerchantInfo.userId || '-' }}</strong>
+              </div>
+              <div class="merchant-profile-sidebar-item">
+                <span>{{ $t('merchantInfo.column.createTime') }}</span>
+                <strong>{{ primaryMerchantInfo.createTime ? formatTimeByZone(primaryMerchantInfo.createTime) : '-' }}</strong>
+              </div>
+              <div class="merchant-profile-sidebar-item">
+                <span>{{ $t('merchantInfo.column.currency') }}</span>
+                <div class="merchant-profile-tags">
+                  <span
+                    v-for="currency in (primaryMerchantInfo.currencyList ? primaryMerchantInfo.currencyList.toLocaleString().split(',') : [])"
+                    :key="currency"
+                    class="merchant-profile-tag"
+                  >
+                    {{ currency.trim() }}
+                  </span>
+                  <span v-if="!primaryMerchantInfo.currencyList" class="merchant-profile-empty">-</span>
+                </div>
+              </div>
+              <div class="merchant-profile-sidebar-item">
+                <span>{{ $t('merchantInfo.column.channel') }}</span>
+                <div class="merchant-profile-channel-list">
+                  <template v-if="getMerchantChannelNames(primaryMerchantInfo).length">
+                    <div
+                      v-for="channelName in getMerchantChannelNames(primaryMerchantInfo)"
+                      :key="channelName"
+                      class="merchant-profile-channel-item"
+                    >
+                      {{ channelName }}
+                    </div>
+                  </template>
+                  <span v-else class="merchant-profile-empty">-</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="merchant-profile-sidebar-group">
+              <div class="merchant-profile-inline-title">{{ $t('merchantInfo.column.contactInfo') }}</div>
+              <div class="merchant-profile-meta merchant-profile-meta-compact">{{ $t('merchantInfo.contact.name') }}: {{ primaryMerchantInfo.contactName || '-' }}</div>
+              <div class="merchant-profile-meta merchant-profile-meta-compact">{{ $t('merchantInfo.contact.phone') }}: {{ primaryMerchantInfo.contactPhone || '-' }}</div>
+              <div class="merchant-profile-meta merchant-profile-meta-compact">{{ $t('merchantInfo.contact.email') }}: {{ primaryMerchantInfo.contactEmail || '-' }}</div>
+            </div>
+
+          </aside>
+
+          <div class="merchant-profile-content">
+            <section class="merchant-profile-section">
+              <div class="merchant-profile-section-title">{{ $t('merchantInfo.column.fee') }} / {{ $t('merchantInfo.column.merchantKey') }} / {{ $t('merchantInfo.column.accountInfo') }}</div>
+              <div class="merchant-profile-top-panel">
+                <div class="merchant-profile-top-stack">
+                  <div class="merchant-profile-content-card">
+                    <div class="merchant-profile-inline-title">{{ $t('merchantInfo.column.fee') }}</div>
+                    <div class="merchant-profile-rate-list">
+                      <div class="merchant-profile-rate-row">
+                        <span>{{ $t('merchantInfo.fee.collection') }}</span>
+                        <strong>{{ formatRatePair(primaryMerchantInfo.collectionFixedFee, primaryMerchantInfo.collectionRate) }}</strong>
+                      </div>
+                      <div class="merchant-profile-rate-row">
+                        <span>{{ $t('merchantInfo.fee.pay') }}</span>
+                        <strong>{{ formatRatePair(primaryMerchantInfo.payFixedFee, primaryMerchantInfo.payRate) }}</strong>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="merchant-profile-content-card">
+                    <div class="merchant-profile-block-header">
+                      <div class="merchant-profile-inline-title">{{ $t('merchantInfo.column.merchantKey') }}</div>
+                      <el-button size="small" type="primary" plain @click="showPlainSecret(primaryMerchantInfo)">
+                        {{ $t('merchantInfo.action.viewPlain') }}
+                      </el-button>
+                    </div>
+                    <div class="merchant-profile-meta merchant-profile-meta-compact">apiKey: {{ maskSecret(primaryMerchantInfo.apiKey) }}</div>
+                    <div class="merchant-profile-meta merchant-profile-meta-compact">signKey: {{ maskSecret(primaryMerchantInfo.signKey) }}</div>
+                  </div>
+                </div>
+                <div class="merchant-profile-content-card merchant-profile-content-card--account">
+                  <div class="merchant-profile-inline-title">{{ $t('merchantInfo.column.accountInfo') }}</div>
+                  <el-tabs v-model="activeBalanceKey" class="merchant-profile-balance-tabs">
+                    <el-tab-pane
+                      v-for="item in getBalanceEntries(primaryMerchantInfo.balanceInfo)"
+                      :key="item.key"
+                      :name="item.key"
+                    >
+                      <template #label>
+                        <span class="merchant-profile-balance-key merchant-profile-balance-key--tab">{{ item.key }}</span>
+                      </template>
+                      <div class="merchant-profile-balance-grid merchant-profile-balance-grid--single">
+                        <div class="merchant-profile-balance-card">
+                          <div class="merchant-profile-balance-row merchant-profile-balance-row--primary">
+                            <span>{{ $t('merchantInfo.account.total') }}</span>
+                            <strong>{{ item.value.total || '-' }}</strong>
+                          </div>
+                          <div class="merchant-profile-balance-row">
+                            <span>{{ $t('merchantInfo.account.available') }}</span>
+                            <strong>{{ item.value.available || '-' }}</strong>
+                          </div>
+                          <div class="merchant-profile-balance-row">
+                            <span>{{ $t('merchantInfo.account.frozen') }}</span>
+                            <strong>{{ item.value.frozen || '-' }}</strong>
+                          </div>
+                        </div>
+                      </div>
+                    </el-tab-pane>
+                  </el-tabs>
+                </div>
+              </div>
+            </section>
+
+            <section class="merchant-profile-section">
+              <div class="merchant-profile-section-title">{{ $t('merchantInfo.column.ipWhitelist') }}</div>
+              <div class="merchant-profile-whitelist-grid">
+                <div
+                  v-for="card in getIpCards(primaryMerchantInfo)"
+                  :key="card.key"
+                  class="merchant-profile-ip-card"
+                >
+                  <div class="merchant-profile-ip-title">{{ card.title }}</div>
+                  <div v-for="line in card.lines" :key="line.key" class="merchant-profile-ip-line">
+                    <span v-if="line.label" class="merchant-profile-ip-label">{{ line.label }}</span>
+                    <div class="merchant-profile-ip-values">
+                      <div v-for="(ip, index) in line.values" :key="`${line.key}-${index}`">{{ ip }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+          </div>
+        </section>
+        <section class="merchant-profile-section merchant-profile-section--wide merchant-profile-channel-section">
+          <div class="merchant-profile-section-title">{{ $t('merchantInfo.paymentChannelInfo') }}</div>
+          <el-table
+            v-if="getMerchantPaymentChannelRows().length"
+            :data="getMerchantPaymentChannelRows()"
+            row-key="key"
+            border
+            stripe
+            class="merchant-profile-channel-table"
+            header-cell-class-name="merchant-profile-channel-table__header"
+            cell-class-name="merchant-profile-channel-table__cell"
+            @expand-change="handleMerchantPaymentExpand"
+          >
+            <el-table-column type="expand" width="56">
+              <template #default="{ row }">
+                <div class="merchant-profile-bank-expand">
+                  <div v-if="merchantPaymentBankLoadingMap[row.key]" class="merchant-profile-bank-loading">
+                    {{ $t('common.loading') }}
+                  </div>
+                  <el-table
+                    v-else-if="getMerchantPaymentBankRows(row).length"
+                    :data="getMerchantPaymentBankRows(row)"
+                    border
+                    size="small"
+                    class="merchant-profile-bank-table"
+                    header-cell-class-name="merchant-profile-channel-table__header"
+                    cell-class-name="merchant-profile-channel-table__cell"
+                  >
+                    <el-table-column
+                      prop="bankCode"
+                      :label="$t('merchantInfo.channelTable.bankCode')"
+                      align="center"
+                      min-width="160"
+                    />
+                    <el-table-column
+                      prop="bankName"
+                      :label="$t('exportTitle.paymentList.bankName')"
+                      align="center"
+                      min-width="180"
+                    />
+                    <el-table-column
+                      prop="currencyCode"
+                      :label="$t('common.currency')"
+                      align="center"
+                      min-width="120"
+                    />
+                    <el-table-column
+                      prop="supportType"
+                      :label="$t('merchantInfo.channelTable.bankSupportType')"
+                      align="center"
+                      min-width="140"
+                    >
+                      <template #default="{ row: bankRow }">
+                        {{ supportTypeLabel(bankRow.supportType) }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column
+                      prop="status"
+                      :label="$t('merchantInfo.channelTable.availableStatus')"
+                      align="center"
+                      min-width="120"
+                    >
+                      <template #default="{ row: bankRow }">
+                        <el-tag size="small" :type="Number(bankRow.status) === 1 ? 'success' : 'danger'">
+                          {{ Number(bankRow.status) === 1 ? $t('common.enable') : $t('common.disable') }}
+                        </el-tag>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                  <div v-else class="merchant-profile-empty">-</div>
+                </div>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="paymentName"
+              :label="$t('exportTitle.paymentList.paymentName')"
+              align="center"
+              min-width="180"
+            />
+            <el-table-column
+              prop="paymentNo"
+              :label="$t('exportTitle.paymentList.paymentNo')"
+              align="center"
+              min-width="180"
+            />
+            <el-table-column
+              prop="status"
+              :label="$t('exportTitle.paymentList.status')"
+              align="center"
+              min-width="140"
+            >
+              <template #default="{ row }">
+                <el-tag size="small" :type="Number(row.status) === 1 ? 'success' : 'danger'">
+                  {{ Number(row.status) === 1 ? $t('common.enable') : $t('common.disable') }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="supportType"
+              :label="$t('exportTitle.paymentList.supportType')"
+              align="center"
+              min-width="140"
+            >
+              <template #default="{ row }">
+                {{ supportTypeLabel(row.supportType) }}
+              </template>
+            </el-table-column>
+          </el-table>
+          <div v-else class="merchant-profile-empty">-</div>
+        </section>
+
+        </template>
+        <div v-else class="merchant-profile-loading">
+          <div class="merchant-profile-loading-shell">
+            <div class="merchant-profile-loading-line merchant-profile-loading-line--title"></div>
+            <div class="merchant-profile-loading-grid">
+              <div class="merchant-profile-loading-line"></div>
+              <div class="merchant-profile-loading-line"></div>
+              <div class="merchant-profile-loading-line"></div>
+              <div class="merchant-profile-loading-line"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else class="merchant-info-table-wrapper">
         <el-table
             border
             :data="merchantInfoFormData"
@@ -319,6 +604,7 @@ import '@/assets/base.css'
                 <el-dropdown-menu>
                   <el-dropdown-item @click="editMerchantInfo(row)">{{ $t('common.edit') }}</el-dropdown-item>
                   <el-dropdown-item @click="deleteMerchant(row.merchantAccount)">{{ $t('common.operate.delete') }}</el-dropdown-item>
+                  <el-dropdown-item @click="openMerchantDetail(row)">{{ $t('common.detail') }}</el-dropdown-item>
                   <el-dropdown-item @click="showPlainSecret(row)">{{ $t('merchantInfo.action.viewPlain') }}</el-dropdown-item>
                   <el-dropdown-item @click="showResetSignKey(row)">{{ $t('merchantInfo.action.resetSignKey') }}</el-dropdown-item>
                 </el-dropdown-menu>
@@ -328,7 +614,7 @@ import '@/assets/base.css'
         </el-table-column>
         </el-table>
       </div>
-      <el-pagination class="pageTool merchant-info-pagination"
+      <el-pagination v-if="!isDetailView" class="pageTool merchant-info-pagination"
           background
           layout="sizes, prev, pager, next, jumper, total"
           :total="totalCount"
@@ -649,24 +935,26 @@ import '@/assets/base.css'
   <el-dialog
       :title="$t('merchantInfo.dialog.verifyTitle')"
       v-model="editVerifyVisible"
-      class="dialog"
+      class="dialog merchant-google-confirm-dialog"
       center
       align-center
-      width="480px"
+      width="420px"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
   >
-    <el-form>
-      <el-row style="display: flex;justify-items: center;">
-        <el-col :span="24" style="display: flex;justify-content: center;align-items: center;height: 50px;">
-          <el-form-item :label="$t('common.googleCode')" label-width="150px" required>
-            <el-input type="number" maxlength="6" v-model="editVerifyCode" style="width: 200px"/>
-          </el-form-item>
+    <el-form class="merchant-google-confirm-form">
+      <el-row class="confirm-row">
+        <el-col :span="24" class="confirm-col">
+          <div class="confirm-item">
+            <el-form-item :label="$t('common.googleCode')" class="confirm-input-item confirm-input-item--labeled" required>
+              <el-input type="number" maxlength="6" v-model="editVerifyCode" style="width: 200px"/>
+            </el-form-item>
+          </div>
         </el-col>
       </el-row>
     </el-form>
     <template #footer>
-      <div class="dialog-footer">
+      <div class="dialog-footer merchant-google-confirm-footer">
         <el-button @click="editVerifyVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="confirmEditSubmit">{{ $t('common.confirm') }}</el-button>
       </div>
@@ -783,21 +1071,22 @@ import '@/assets/base.css'
   <el-dialog
       :title="dialogDeleteTitle"
       v-model="dialogDeleteVisible"
-      class="dialog"
+      class="dialog merchant-google-confirm-dialog"
       center
-      width="70%"
-      height="60%"
+      width="420px"
   >
-    <el-form style="height: 120px">
-      <el-row style="display: flex;justify-items: center;">
-        <el-col :span="24" style="display: flex;justify-content: center;align-items: center;height: 50px;">
-          <el-form-item :label="$t('common.googleCode')" label-width="150px"  >
-            <el-input type="number" maxlength="6" v-model="deleteMerchantInfo.verifyCode" style="width: 200px"/>
-          </el-form-item>
+    <el-form class="merchant-google-confirm-form">
+      <el-row class="confirm-row">
+        <el-col :span="24" class="confirm-col">
+          <div class="confirm-item">
+            <el-form-item :label="$t('common.googleCode')" class="confirm-input-item confirm-input-item--labeled" required>
+              <el-input type="number" maxlength="6" v-model="deleteMerchantInfo.verifyCode" style="width: 200px"/>
+            </el-form-item>
+          </div>
         </el-col>
       </el-row>
     </el-form>
-    <div slot="footer" class="dialog-footer" style="position: absolute;bottom: 5px;right: 3%">
+    <div slot="footer" class="dialog-footer merchant-google-confirm-footer">
       <el-button @click="cancelDeleteDialog">{{ $t('common.cancel') }}</el-button>
       <el-button type="primary" @click="submitDelete">{{ $t('common.confirm') }}</el-button>
     </div>
@@ -805,42 +1094,46 @@ import '@/assets/base.css'
   <el-dialog
       :title="$t('merchantInfo.dialog.keyVerifyTitle')"
       v-model="plainKeyVerifyVisible"
-      class="dialog"
-      center
-      width="40%"
+      class="dialog merchant-plain-key-dialog"
+      width="500px"
       :close-on-click-modal="false"
       :close-on-press-escape="false"
   >
-    <el-form>
-      <el-row>
-        <el-col :span="24" style="display: flex;justify-content: center;align-items: center;height: 50px;">
-          <el-form-item :label="$t('merchantInfo.form.name')" label-width="150px">
-            <el-select
-              :model-value="pendingPlainMerchantAccount"
-              disabled
-              style="width: 200px"
-            >
-              <el-option
-                :label="pendingPlainMerchantName || '-'"
-                :value="pendingPlainMerchantAccount || ''"
+    <el-form class="merchant-plain-key-form">
+      <el-row class="confirm-row">
+        <el-col :span="24" class="confirm-col">
+          <div class="confirm-item">
+            <el-form-item :label="$t('merchantInfo.form.name')" class="confirm-input-item confirm-input-item--labeled">
+              <el-input
+                :model-value="pendingPlainMerchantName || '-'"
+                disabled
+                style="width: 200px"
               />
-            </el-select>
-          </el-form-item>
+            </el-form-item>
+          </div>
         </el-col>
-        <el-col :span="24" style="display: flex;justify-content: center;align-items: center;height: 50px;" v-if="!isAdmin">
-          <el-form-item :label="$t('merchantInfo.form.password')" label-width="150px" required>
-            <el-input type="password" v-model="plainKeyVerifyForm.password" style="width: 200px"/>
-          </el-form-item>
+      </el-row>
+      <el-row v-if="!isAdmin" class="confirm-row">
+        <el-col :span="24" class="confirm-col">
+          <div class="confirm-item">
+            <el-form-item :label="$t('merchantInfo.form.password')" class="confirm-input-item confirm-input-item--labeled" required>
+              <el-input type="password" v-model="plainKeyVerifyForm.password" style="width: 200px"/>
+            </el-form-item>
+          </div>
         </el-col>
-        <el-col :span="24" style="display: flex;justify-content: center;align-items: center;height: 50px;">
-          <el-form-item :label="$t('common.googleCode')" label-width="150px" required>
-            <el-input type="number" maxlength="6" v-model="plainKeyVerifyForm.googleCode" style="width: 200px"/>
-          </el-form-item>
+      </el-row>
+      <el-row class="confirm-row">
+        <el-col :span="24" class="confirm-col">
+          <div class="confirm-item">
+            <el-form-item :label="$t('common.googleCode') + ':'" class="confirm-input-item confirm-input-item--labeled" required>
+              <el-input type="number" maxlength="6" v-model="plainKeyVerifyForm.googleCode" style="width: 200px"/>
+            </el-form-item>
+          </div>
         </el-col>
       </el-row>
     </el-form>
     <template #footer>
-      <div class="dialog-footer">
+      <div class="dialog-footer merchant-plain-key-footer">
         <el-button @click="cancelPlainKeyVerify">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitPlainKeyVerify">{{ $t('common.confirm') }}</el-button>
       </div>
@@ -854,7 +1147,7 @@ import {
   createMerchantInfo, getAgentInfo,
   getAllCurrencyType, getChannelInfo,
   getMerchantInfo,
-  getPaymentInfo, modifyMerchantInfo, queryMerchantSecretKey, resetMerchantSignKey
+  getPaymentInfo, modifyMerchantInfo, queryMerchantAvailableChannels, queryPaymentBankCode, queryMerchantSecretKey, resetMerchantSignKey
 } from "@/api/interface/backendInterface.js";
 import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
 
@@ -922,9 +1215,23 @@ export default {
     },
     showAgentCollectionHint() {
       return this.merchantAddInfo.supportCollection === 1 && this.merchantAddInfo.useAgent === 1 && !!this.merchantAddInfo.parentId;
+    },
+    primaryMerchantInfo() {
+      return Array.isArray(this.merchantInfoFormData) && this.merchantInfoFormData.length > 0
+        ? this.merchantInfoFormData[0]
+        : null;
+    },
+    isAdminDetailMode() {
+      return this.isAdmin && this.$route?.path === '/web/pakGoPay/MerchantInfo/detail';
+    },
+    isDetailView() {
+      return this.isMerchantRole || this.isAdminDetailMode;
     }
   },
   watch: {
+    '$route.fullPath'() {
+      this.applyRouteModeFromRoute(true);
+    },
     dialogAddFormVisible(visible) {
       if (visible) {
         this.loadMerchantDraft();
@@ -978,6 +1285,9 @@ export default {
     }
   },
   data() {
+    const roleName = localStorage.getItem('roleName');
+    const isAdminRole = roleName === 'admin';
+    const isMerchantRole = roleName === 'merchant';
     const cashFloatNumValidate = (rule, value, callback) => {
       if (this.merchantAddInfo.isFloat === 1 && !value) {
         callback(new Error(this.$t('merchantInfo.validation.floatRangeRequired')))
@@ -1239,8 +1549,9 @@ export default {
       callback();
     };
     return {
-      isAdmin: false,
-      filterAvaiable: false,
+      isAdmin: isAdminRole,
+      isMerchantRole,
+      filterAvaiable: isMerchantRole,
       merchantAccountOptions: [],
       merchantAccountLoading: false,
       merchantAccountHasMore: true,
@@ -1393,6 +1704,10 @@ export default {
       pendingPlainMerchantAccount: '',
       pendingPlainMerchantName: '',
       pendingPlainKeyUserId: '',
+      activeBalanceKey: '',
+      merchantPaymentChannelList: [],
+      merchantPaymentBankMap: {},
+      merchantPaymentBankLoadingMap: {},
       accountInfoExpandMap: {},
       ipInfoExpandMap: {},
       deleteMerchantInfo: {},
@@ -1463,6 +1778,10 @@ export default {
         value: balanceInfo[key] || {}
       }));
     },
+    getDefaultBalanceKey(balanceInfo) {
+      const entries = this.getBalanceEntries(balanceInfo);
+      return entries.length > 0 ? entries[0].key : '';
+    },
     isAccountInfoExpanded(row) {
       const key = this.getMerchantRowKey(row);
       if (!key) return false;
@@ -1532,6 +1851,220 @@ export default {
           ]
         }
       ];
+    },
+    getMerchantChannelRows(row) {
+      if (!row) return [];
+      if (Array.isArray(row.channelDtoList) && row.channelDtoList.length > 0) {
+        return row.channelDtoList.map((channel) => ({
+          channelId: channel?.channelId ?? '-',
+          channelName: channel?.channelName || '-',
+          bankCode: channel?.bankCode || '-',
+          bankName: channel?.bankName || '-',
+          remark: channel?.remark || '-'
+        }));
+      }
+      const ids = String(row.channelIds || '')
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean);
+      return ids.map((channelId) => ({
+        channelId,
+        channelName: this.channelMaps[channelId] || '-',
+        bankCode: '-',
+        bankName: '-',
+        remark: '-'
+      }));
+    },
+    getMerchantChannelNames(row) {
+      if (!row) return [];
+      if (Array.isArray(row.channelDtoList) && row.channelDtoList.length > 0) {
+        return row.channelDtoList
+          .map(channel => channel?.channelName || '')
+          .filter(Boolean);
+      }
+      return String(row.channelIds || '')
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean)
+        .map(channelId => this.channelMaps[channelId] || channelId);
+    },
+    extractAvailableChannelList(rawData) {
+      if (!rawData) return [];
+      if (Array.isArray(rawData)) return rawData;
+      if (typeof rawData === 'string') {
+        try {
+          const parsed = JSON.parse(rawData);
+          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed?.paymentDtoList)) return parsed.paymentDtoList;
+          return [];
+        } catch (e) {
+          return [];
+        }
+      }
+      if (Array.isArray(rawData.paymentDtoList)) return rawData.paymentDtoList;
+      return [];
+    },
+    loadMerchantPaymentChannels(merchantId) {
+      if (!merchantId || (!this.isMerchantRole && !this.isAdminDetailMode)) {
+        this.merchantPaymentChannelList = [];
+        this.merchantPaymentBankMap = {};
+        this.merchantPaymentBankLoadingMap = {};
+        return Promise.resolve();
+      }
+      return queryMerchantAvailableChannels({ merchantId }).then((res) => {
+        if (res.status !== 200 || res.data.code !== 0) {
+          this.merchantPaymentChannelList = [];
+          this.merchantPaymentBankMap = {};
+          this.merchantPaymentBankLoadingMap = {};
+          return;
+        }
+        this.merchantPaymentChannelList = this.extractAvailableChannelList(res.data?.data)
+          .filter((item) => {
+            const supportType = Number(item?.supportType);
+            return Number.isNaN(supportType) || supportType === 0 || supportType === 1 || supportType === 2;
+          });
+        this.merchantPaymentBankMap = {};
+        this.merchantPaymentBankLoadingMap = {};
+      }).catch(() => {
+        this.merchantPaymentChannelList = [];
+        this.merchantPaymentBankMap = {};
+        this.merchantPaymentBankLoadingMap = {};
+      });
+    },
+    extractPaymentBankCodeList(rawData) {
+      if (!rawData) return [];
+      if (Array.isArray(rawData)) return rawData;
+      if (typeof rawData === 'string') {
+        try {
+          const parsed = JSON.parse(rawData);
+          if (Array.isArray(parsed)) return parsed;
+          if (Array.isArray(parsed?.paymentBankCodeDtoList)) return parsed.paymentBankCodeDtoList;
+          return [];
+        } catch (e) {
+          return [];
+        }
+      }
+      if (Array.isArray(rawData.paymentBankCodeDtoList)) return rawData.paymentBankCodeDtoList;
+      return [];
+    },
+    getMerchantPaymentChannelRows() {
+      if (!Array.isArray(this.merchantPaymentChannelList) || this.merchantPaymentChannelList.length === 0) {
+        return [];
+      }
+      return this.merchantPaymentChannelList.map((payment, index) => ({
+        key: String(payment?.paymentId || payment?.paymentNo || index),
+        paymentId: payment?.paymentId ?? null,
+        currencyCode: String(payment?.currency || payment?.currencyCode || payment?.currencyType || '').trim(),
+        paymentName: payment?.paymentName || '-',
+        paymentNo: payment?.paymentNo || '-',
+        status: payment?.status ?? null,
+        supportType: payment?.supportType ?? null
+      }));
+    },
+    getMerchantPaymentBankRows(row) {
+      if (!row?.key) return [];
+      return this.merchantPaymentBankMap[row.key] || [];
+    },
+    handleMerchantPaymentExpand(row, expandedRows) {
+      const expanded = Array.isArray(expandedRows) && expandedRows.some(item => item.key === row.key);
+      if (!expanded) return;
+      this.loadMerchantPaymentBankRows(row);
+    },
+    loadMerchantPaymentBankRows(row) {
+      if (!row?.key || !row.paymentId || !row.currencyCode) {
+        return;
+      }
+      if (Array.isArray(this.merchantPaymentBankMap[row.key])) {
+        return;
+      }
+      this.merchantPaymentBankLoadingMap = {
+        ...this.merchantPaymentBankLoadingMap,
+        [row.key]: true
+      };
+      queryPaymentBankCode({
+        paymentId: row.paymentId,
+        currencyCode: row.currencyCode,
+        pageNo: 1,
+        pageSize: 200
+      }).then((res) => {
+        if (res.status !== 200 || res.data.code !== 0) {
+          this.merchantPaymentBankMap = {
+            ...this.merchantPaymentBankMap,
+            [row.key]: []
+          };
+          return;
+        }
+        const rows = this.extractPaymentBankCodeList(res.data?.data)
+          .filter(item => item?.selected)
+          .map((item, index) => ({
+            key: `${row.key}-${item?.bankCode || index}`,
+            bankCode: item?.bankCode || '-',
+            bankName: item?.bankName || '-',
+            currencyCode: item?.currencyCode || '-',
+            supportType: item?.supportType ?? null,
+            status: item?.status ?? 0
+          }));
+        this.merchantPaymentBankMap = {
+          ...this.merchantPaymentBankMap,
+          [row.key]: rows
+        };
+      }).catch(() => {
+        this.merchantPaymentBankMap = {
+          ...this.merchantPaymentBankMap,
+          [row.key]: []
+        };
+      }).finally(() => {
+        this.merchantPaymentBankLoadingMap = {
+          ...this.merchantPaymentBankLoadingMap,
+          [row.key]: false
+        };
+      });
+    },
+    supportTypeLabel(value) {
+      if (value === 0 || value === '0') return this.$t('pathChannelList.label.collection');
+      if (value === 1 || value === '1') return this.$t('pathChannelList.label.payout');
+      if (value === 2 || value === '2') return this.$t('pathChannelList.label.collectionPayout');
+      return '-';
+    },
+    applyRouteModeFromRoute(shouldSearch = false) {
+      const isDetailRoute = this.$route?.path === '/web/pakGoPay/MerchantInfo/detail';
+      const storedMerchantUserName = localStorage.getItem('merchantInfoDetailMerchantUserName') || '';
+      const queryMerchantUserName = this.$route?.query?.merchantUserName || storedMerchantUserName;
+      this.filterAvaiable = this.isMerchantRole || isDetailRoute;
+      if (this.isMerchantRole) {
+        this.filterbox.merchantUserName = localStorage.getItem('userName') || '';
+        localStorage.removeItem('merchantInfoDetailMerchantUserName');
+        localStorage.removeItem('merchantInfoDetailReturnPath');
+      } else if (isDetailRoute) {
+        this.filterbox.merchantUserName = queryMerchantUserName;
+        if (queryMerchantUserName) {
+          localStorage.setItem('merchantInfoDetailMerchantUserName', queryMerchantUserName);
+        }
+      } else {
+        localStorage.removeItem('merchantInfoDetailMerchantUserName');
+        localStorage.removeItem('merchantInfoDetailReturnPath');
+      }
+      if (shouldSearch && (this.isMerchantRole || queryMerchantUserName || !isDetailRoute)) {
+        this.search();
+      }
+    },
+    openMerchantDetail(row) {
+      const merchantUserName = row?.accountName || '';
+      if (!merchantUserName) return;
+      localStorage.setItem('merchantInfoDetailMerchantUserName', merchantUserName);
+      localStorage.setItem('merchantInfoDetailReturnPath', this.$route?.fullPath || '/web/pakGoPay/MerchantInfo');
+      this.$router.push({
+        path: '/web/pakGoPay/MerchantInfo/detail',
+        query: {
+          merchantUserName
+        }
+      });
+    },
+    backToMerchantList() {
+      const returnPath = localStorage.getItem('merchantInfoDetailReturnPath') || '/web/pakGoPay/MerchantInfo';
+      localStorage.removeItem('merchantInfoDetailMerchantUserName');
+      localStorage.removeItem('merchantInfoDetailReturnPath');
+      this.$router.push(returnPath);
     },
     getVisibleIpCards(row) {
       const cards = this.getIpCards(row);
@@ -1646,10 +2179,37 @@ export default {
             apiKey = raw;
             signKey = '';
           }
-          const plainHtml = `apiKey: ${apiKey || '-'}<br/>signKey: ${signKey || '-'}`
+          const copyButtonLabel = this.getCompactCopyLabel();
+          const plainHtml = `
+            <div style="display:flex;flex-direction:column;gap:10px;font-family:Menlo,Monaco,Consolas,'Courier New',monospace;font-size:11px;line-height:1.45;">
+              <div style="display:grid;grid-template-columns:64px 1fr 46px;align-items:center;column-gap:8px;">
+                <span style="width:64px;min-width:64px;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;border-radius:8px;background:#eef3ff;color:#2f4b8f;font-weight:600;white-space:nowrap;">apiKey</span>
+                <span style="display:inline-flex;align-items:center;padding:6px 0;white-space:nowrap;overflow:hidden;text-overflow:clip;">${this.escapeHtml(apiKey || '-')}</span>
+                <button
+                  type="button"
+                  onclick="window.__merchantInfoCopySecret && window.__merchantInfoCopySecret('${this.encodeClipboardValue(apiKey || '-')}')"
+                  onmouseover="this.style.background='#edf3ff';this.style.borderColor='#b9c8eb';this.style.color='#163a70'"
+                  onmouseout="this.style.background='#f7f8fb';this.style.borderColor='#d8dce5';this.style.color='#222'"
+                  style="width:54px;height:32px;border:1px solid #d8dce5;border-radius:8px;background:#f7f8fb;color:#222;padding:0;font-size:11px;cursor:pointer;white-space:nowrap;box-shadow:none;transition:background-color .18s ease,border-color .18s ease,color .18s ease;"
+                >${copyButtonLabel}</button>
+              </div>
+              <div style="display:grid;grid-template-columns:64px 1fr 46px;align-items:center;column-gap:8px;">
+                <span style="width:64px;min-width:64px;display:inline-flex;align-items:center;justify-content:center;padding:5px 8px;border-radius:8px;background:#eef3ff;color:#2f4b8f;font-weight:600;white-space:nowrap;">signKey</span>
+                <span style="display:inline-flex;align-items:center;padding:6px 0;white-space:nowrap;overflow:hidden;text-overflow:clip;">${this.escapeHtml(signKey || '-')}</span>
+                <button
+                  type="button"
+                  onclick="window.__merchantInfoCopySecret && window.__merchantInfoCopySecret('${this.encodeClipboardValue(signKey || '-')}')"
+                  onmouseover="this.style.background='#edf3ff';this.style.borderColor='#b9c8eb';this.style.color='#163a70'"
+                  onmouseout="this.style.background='#f7f8fb';this.style.borderColor='#d8dce5';this.style.color='#222'"
+                  style="width:54px;height:32px;border:1px solid #d8dce5;border-radius:8px;background:#f7f8fb;color:#222;padding:0;font-size:11px;cursor:pointer;white-space:nowrap;box-shadow:none;transition:background-color .18s ease,border-color .18s ease,color .18s ease;"
+                >${copyButtonLabel}</button>
+              </div>
+            </div>`
           this.$alert(plainHtml, this.$t('merchantInfo.dialog.merchantKeyPlainTitle'), {
             confirmButtonText: this.$t('common.confirm'),
-            dangerouslyUseHTMLString: true
+            dangerouslyUseHTMLString: true,
+            customClass: 'merchant-plain-key-alert',
+            width: '1800px'
           });
           this.cancelPlainKeyVerify();
           return;
@@ -1680,6 +2240,88 @@ export default {
       const fixedDisplay = fixedEmpty ? '-' : fixedFee;
       const rateDisplay = rateEmpty ? '-' : `${rate}%`;
       return `${fixedDisplay}+${rateDisplay}`;
+    },
+    escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    },
+    encodeClipboardValue(value) {
+      return encodeURIComponent(String(value));
+    },
+    async copySecretValue(encodedValue) {
+      const value = decodeURIComponent(String(encodedValue || ''));
+      try {
+        await navigator.clipboard.writeText(value);
+        this.showCopySuccessOverlay();
+      } catch (e) {
+        this.$notify({
+          title: this.$t('common.error'),
+          type: 'error',
+          message: this.$t('common.requestFailed'),
+          duration: 2000,
+          position: 'bottom-right'
+        });
+      }
+    },
+    showCopySuccessOverlay() {
+      const existing = document.getElementById('merchant-copy-success-overlay');
+      if (existing) {
+        existing.remove();
+      }
+      const overlay = document.createElement('div');
+      overlay.id = 'merchant-copy-success-overlay';
+      overlay.setAttribute(
+        'style',
+        [
+          'position:fixed',
+          'left:50%',
+          'top:50%',
+          'transform:translate(-50%,-50%) scale(0.9)',
+          'min-width:112px',
+          'padding:18px 20px 16px',
+          'border-radius:28px',
+          'background:rgba(20,30,48,0.32)',
+          'backdrop-filter:blur(6px)',
+          'display:flex',
+          'flex-direction:column',
+          'align-items:center',
+          'justify-content:center',
+          'color:#ffffff',
+          'z-index:99999',
+          'opacity:0',
+          'transition:opacity .18s ease, transform .18s ease',
+          'pointer-events:none',
+          'box-shadow:0 16px 40px rgba(15,35,55,0.18)'
+        ].join(';')
+      );
+      overlay.innerHTML = `
+        <div style="font-size:48px;font-weight:700;line-height:1;">&#10003;</div>
+        <div style="margin-top:8px;font-size:14px;font-weight:600;line-height:1.2;white-space:nowrap;">${this.$t('common.copied')}</div>
+      `;
+      document.body.appendChild(overlay);
+      requestAnimationFrame(() => {
+        overlay.style.opacity = '1';
+        overlay.style.transform = 'translate(-50%,-50%) scale(1)';
+      });
+      window.setTimeout(() => {
+        overlay.style.opacity = '0';
+        overlay.style.transform = 'translate(-50%,-50%) scale(0.94)';
+      }, 900);
+      window.setTimeout(() => {
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      }, 1150);
+    },
+    getCompactCopyLabel() {
+      const locale = String(this.$i18n?.locale || '').toLowerCase();
+      if (locale.startsWith('zh')) return '复制';
+      if (locale.startsWith('ms')) return 'Salin';
+      return 'Copy';
     },
     formatIpLines(value) {
       if (!value) return ['-'];
@@ -1844,7 +2486,8 @@ export default {
     },
     search() {
       this.filterbox.isNeedCardData = true
-      const loadingInstance = loadingBody(this, 'merchantInfos-table')
+      const loadingClass = this.isDetailView ? 'merchant-profile-view' : 'merchantInfos-table';
+      const loadingInstance = loadingBody(this, loadingClass)
       getMerchantInfo(this.filterbox).then(res => {
          //this.merchantInfoFormData
         if(res.status === 200 && res.data.code === 0) {
@@ -1854,8 +2497,15 @@ export default {
           const allList = all.merchantInfoDtoList
           this.accountInfoExpandMap = {}
           this.ipInfoExpandMap = {}
+          this.merchantPaymentChannelList = []
+          this.merchantPaymentBankMap = {}
+          this.merchantPaymentBankLoadingMap = {}
           this.merchantInfoFormData = null;
           this.merchantInfoFormData = Object.assign([], allList)
+          this.activeBalanceKey = this.getDefaultBalanceKey(allList[0]?.balanceInfo)
+          if ((this.isMerchantRole || this.isAdminDetailMode) && allList.length > 0) {
+            this.loadMerchantPaymentChannels(allList[0].userId)
+          }
           if(!this.isAdmin && allList.length > 0) {
             this.filterbox.merchantName = allList[0].merchantName
             this.filterbox.merchantUserName = allList[0].accountName
@@ -1864,6 +2514,15 @@ export default {
           }
           this.tableKey++
         }
+      }).catch(() => {
+        this.$notify({
+          title: this.$t('common.error'),
+          message: this.$t('merchantInfo.message.getFailed'),
+          duration: 3000,
+          type: 'error',
+          position: 'bottom-right'
+        })
+      }).finally(() => {
         loadingInstance.close()
       })
     },
@@ -1907,6 +2566,9 @@ export default {
       this.filterbox.belongAgent = [];
       this.filterbox.merchantName = '';
       this.$refs[form].resetFields();
+      if (this.isMerchantRole) {
+        this.filterbox.merchantUserName = localStorage.getItem('userName') || '';
+      }
     },
     addMerchant() {
       this.merchantInfo = [],
@@ -2082,6 +2744,7 @@ export default {
     }
   },
   async mounted() {
+    window.__merchantInfoCopySecret = (encodedValue) => this.copySecretValue(encodedValue);
     this._timeZoneListener = (event) => {
       this.timeZoneKey = event.detail || localStorage.getItem("timeZone") || "UTC+8";
     };
@@ -2114,17 +2777,21 @@ export default {
       }
     })
     let roleName = localStorage.getItem('roleName')
-    this.isAdmin = roleName === 'admin'
     if (roleName === 'merchant') {
-      //filterData.merchantUserId = localStorage.getItem('userId')
       this.filterbox.merchantUserName = localStorage.getItem('userName')
-      this.filterAvaiable = true
       if (this.filterbox.merchantUserName) {
         this.merchantAccountOptions = [{
           value: this.filterbox.merchantUserName,
           label: this.filterbox.merchantUserName
         }]
       }
+    }
+    if (this.$route?.query?.merchantUserName) {
+      this.filterbox.merchantUserName = this.$route.query.merchantUserName
+      this.merchantAccountOptions = [{
+        value: this.filterbox.merchantUserName,
+        label: this.filterbox.merchantUserName
+      }]
     }
     await getAgentInfo({}).then((res) => {
       if (res.status === 200 && res.data.code === 0) {
@@ -2141,7 +2808,7 @@ export default {
         this.channelOptions.forEach(channel => {
           this.channelMaps[channel.channelId] = channel.channelName
         })
-        this.search()
+        this.applyRouteModeFromRoute(true)
       } else {
         this.$notify({
           title: this.$t('common.error'),
@@ -2154,6 +2821,9 @@ export default {
 
   },
   beforeUnmount() {
+    if (window.__merchantInfoCopySecret) {
+      delete window.__merchantInfoCopySecret;
+    }
     if (this._timeZoneListener) {
       window.removeEventListener("timezone-change", this._timeZoneListener);
     }
@@ -2187,7 +2857,156 @@ export default {
 
 
   .toolbarName{
-    color: black;
+    color: #667eea;
+  }
+
+  .merchant-info-header {
+    display: flex;
+    align-items: center;
+    min-height: 32px;
+  }
+
+  .merchant-info-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .merchant-info-breadcrumb-link {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: #2563eb;
+    font-size: inherit;
+    font-weight: 700;
+    line-height: inherit;
+    cursor: pointer;
+  }
+
+  .merchant-info-breadcrumb-link:hover {
+    color: #1d4ed8;
+  }
+
+  .merchant-info-breadcrumb-separator {
+    color: #94a3b8;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .merchant-info-breadcrumb-current {
+    color: #0f172a;
+    font-size: inherit;
+    font-weight: 700;
+    line-height: inherit;
+  }
+
+  .confirm-row {
+    display: flex;
+    justify-content: center;
+  }
+
+  .confirm-col {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .confirm-item {
+    width: 320px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    column-gap: 10px;
+  }
+
+  .confirm-label {
+    width: 110px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: #606266;
+    white-space: nowrap;
+  }
+
+  .confirm-required {
+    color: #f56c6c;
+    margin-right: 4px;
+  }
+
+  .confirm-input-item {
+    margin-bottom: 0;
+  }
+
+  .confirm-input-item :deep(.el-form-item__content) {
+    margin-left: 0;
+  }
+
+  .confirm-input-item--labeled {
+    width: 100%;
+  }
+
+  .confirm-input-item--labeled :deep(.el-form-item__label) {
+    width: 110px;
+    justify-content: flex-end;
+  }
+
+  .merchant-google-confirm-form {
+    margin-top: 20px;
+    min-height: 90px;
+  }
+
+  .merchant-google-confirm-footer {
+    margin-top: 12px;
+    padding-bottom: 4px;
+  }
+
+  .merchant-plain-key-form {
+    margin-top: 20px;
+    padding-bottom: 12px;
+  }
+
+  .merchant-plain-key-form .confirm-input-item--labeled {
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  .merchant-plain-key-form .confirm-input-item--labeled :deep(.el-form-item__label) {
+    width: 130px;
+    justify-content: flex-end;
+    white-space: nowrap;
+  }
+
+  .merchant-plain-key-form .confirm-row + .confirm-row {
+    margin-top: 10px;
+  }
+
+  .merchant-plain-key-form .confirm-row:last-child {
+    margin-bottom: 12px;
+  }
+
+  .merchant-plain-key-footer {
+    margin-top: 22px;
+    padding-bottom: 4px;
+  }
+
+  .merchant-plain-key-dialog :deep(.el-dialog__body) {
+    padding-bottom: 8px;
+  }
+
+  .merchant-plain-key-dialog :deep(.el-dialog__footer) {
+    padding-top: 22px;
+  }
+
+  :deep(.merchant-plain-key-alert) {
+    width: min(1800px, 99vw) !important;
+    max-width: min(1800px, 99vw);
+  }
+
+  :deep(.merchant-plain-key-alert .el-message-box__message) {
+    overflow: visible;
   }
 
   .merchant-info-report {
@@ -2197,10 +3016,27 @@ export default {
     overflow: hidden;
   }
 
+  .merchant-info-report--merchant {
+    height: auto;
+    min-height: calc(100vh - 300px);
+    overflow: visible;
+  }
+
+  .merchant-info-report--detail {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
   .merchant-info-form {
     height: 100%;
     display: flex;
     flex-direction: column;
+    min-height: 0;
+  }
+
+  .merchant-info-form--detail {
+    height: auto;
     min-height: 0;
   }
 
@@ -2218,10 +3054,726 @@ export default {
 
   .merchant-info-add {
     align-self: flex-end;
-    margin-bottom: 8px;
+    margin-bottom: 20px;
     padding: 4px 12px;
     height: 32px;
     line-height: 20px;
+  }
+
+  .merchant-info-add + .merchant-info-table-wrapper {
+    margin-top: 10px;
+  }
+
+  .merchant-profile-view {
+    flex: 1;
+    overflow: auto;
+    padding: 8px 4px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .merchant-profile-view--detail {
+    overflow: visible;
+    padding-bottom: 8px;
+  }
+
+  .merchant-profile-channel-section {
+    width: 100%;
+  }
+
+  .merchant-profile-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .merchant-profile-main-grid {
+    align-items: start;
+  }
+
+  .merchant-profile-bottom-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+  }
+
+  .merchant-profile-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+    gap: 18px;
+    align-items: stretch;
+  }
+
+  .merchant-profile-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+    height: 100%;
+  }
+
+  .merchant-profile-sidebar-status {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .merchant-profile-sidebar-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+  }
+
+  .merchant-profile-sidebar-group:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .merchant-profile-sidebar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .merchant-profile-sidebar-item span {
+    font-size: 12px;
+    color: #64748b;
+  }
+
+  .merchant-profile-sidebar-item strong {
+    color: #0f172a;
+    font-size: 14px;
+    word-break: break-all;
+  }
+
+  .merchant-profile-channel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .merchant-profile-channel-item {
+    color: #0f172a;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-all;
+  }
+
+  .merchant-profile-channel-section {
+    margin-top: 18px;
+    width: 100%;
+  }
+
+  .merchant-profile-channel-table {
+    width: 100%;
+  }
+
+  .merchant-profile-bank-expand {
+    padding: 8px 12px;
+    background: #f8fafc;
+  }
+
+  .merchant-profile-bank-table {
+    width: 100%;
+  }
+
+  .merchant-profile-bank-loading {
+    padding: 12px 0;
+    text-align: center;
+    color: #64748b;
+    font-size: 14px;
+  }
+
+  .merchant-profile-channel-table :deep(.merchant-profile-channel-table__header) {
+    text-align: center;
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  .merchant-profile-channel-table :deep(.merchant-profile-channel-table__cell) {
+    text-align: center;
+    color: #1f2937;
+  }
+
+  .merchant-profile-content {
+    display: grid;
+    gap: 18px;
+  }
+
+  .merchant-profile-top-panel {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .merchant-profile-top-stack {
+    display: grid;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .merchant-profile-content-top {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 16px;
+  }
+
+  .merchant-profile-content-card {
+    border-radius: 14px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    padding: 14px 16px;
+  }
+
+  .merchant-profile-content-card--account {
+    height: 100%;
+  }
+
+  .merchant-profile-summary-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.15fr) minmax(240px, 0.85fr);
+    gap: 20px 32px;
+  }
+
+  .merchant-profile-summary-block {
+    min-width: 0;
+    padding-right: 8px;
+  }
+
+  .merchant-profile-info-block {
+    min-height: 100%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(219, 234, 254, 0.9);
+  }
+
+  .merchant-profile-subtitle {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .merchant-profile-section {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    padding: 18px 20px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  }
+
+  .merchant-profile-hero {
+    display: flex;
+    align-items: stretch;
+    background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 55%, #f0fdf4 100%);
+  }
+
+  .merchant-profile-hero-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .merchant-profile-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+    gap: 18px;
+    margin-top: 8px;
+  }
+
+  .merchant-profile-overview-card {
+    padding: 18px 20px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(219, 234, 254, 0.95);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  }
+
+  .merchant-profile-overview-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .merchant-profile-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 18px;
+  }
+
+  .merchant-profile-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .merchant-profile-stat span {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .merchant-profile-stat strong {
+    font-size: 15px;
+    line-height: 1.4;
+    color: #0f172a;
+    word-break: break-all;
+  }
+
+  .merchant-profile-stat--full {
+    grid-column: 1 / -1;
+  }
+
+  .merchant-profile-overview-divider {
+    height: 1px;
+    margin: 18px 0 16px;
+    background: linear-gradient(90deg, rgba(148, 163, 184, 0.24), rgba(148, 163, 184, 0.08));
+  }
+
+  .merchant-profile-contact-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .merchant-profile-side-stack {
+    display: grid;
+    gap: 18px;
+  }
+
+  .merchant-profile-info-block--compact {
+    background: rgba(255, 255, 255, 0.82);
+  }
+
+  .merchant-profile-kicker {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  .merchant-profile-name {
+    font-size: 28px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.2;
+  }
+
+  .merchant-profile-meta {
+    font-size: 14px;
+    color: #334155;
+  }
+
+  .merchant-profile-meta-compact {
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  .merchant-profile-block-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .merchant-profile-block-header .merchant-profile-inline-title {
+    margin-bottom: 0;
+  }
+
+  .merchant-profile-block-header .el-button {
+    flex-shrink: 0;
+  }
+
+  .merchant-profile-key-actions {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .merchant-profile-account-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .merchant-profile-currency-block {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .merchant-profile-currency-label {
+    flex-shrink: 0;
+  }
+
+  .merchant-profile-rate-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .merchant-profile-rate-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(239, 246, 255, 0.85);
+    color: #475569;
+  }
+
+  .merchant-profile-rate-row strong {
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  .merchant-profile-inline-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  .merchant-profile-section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 12px;
+  }
+
+  .merchant-profile-section--wide {
+    min-width: 0;
+  }
+
+  .merchant-profile-pair {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 20px;
+    font-size: 14px;
+    color: #475569;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e2e8f0;
+  }
+
+  .merchant-profile-pair:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .merchant-profile-contact-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .merchant-profile-pair strong {
+    color: #0f172a;
+    text-align: right;
+    min-width: 110px;
+    word-break: break-all;
+  }
+
+  .merchant-profile-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .merchant-profile-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #e8f2ff;
+    color: #1d4ed8;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .merchant-profile-empty {
+    color: #94a3b8;
+  }
+
+  .merchant-profile-loading {
+    min-height: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .merchant-profile-loading-shell {
+    width: 100%;
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    padding: 20px;
+  }
+
+  .merchant-profile-loading-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .merchant-profile-loading-line {
+    height: 120px;
+    border-radius: 14px;
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f8fafc 63%);
+    background-size: 400% 100%;
+    animation: merchant-profile-skeleton 1.4s ease infinite;
+  }
+
+  .merchant-profile-loading-line--title {
+    height: 44px;
+  }
+
+  .merchant-profile-loading-card {
+    width: min(520px, 100%);
+    padding: 28px 24px;
+    border-radius: 18px;
+    border: 1px solid #e5e7eb;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    text-align: center;
+  }
+
+  .merchant-profile-loading-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .merchant-profile-loading-text {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #64748b;
+  }
+
+  @keyframes merchant-profile-skeleton {
+    0% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0 50%;
+    }
+  }
+
+  .merchant-profile-balance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .merchant-profile-balance-grid--single {
+    grid-template-columns: 1fr;
+  }
+
+  .merchant-profile-balance-tabs {
+    margin-top: 4px;
+  }
+
+  .merchant-profile-balance-tabs :deep(.el-tabs__header) {
+    margin-bottom: 16px;
+  }
+
+  .merchant-profile-balance-tabs :deep(.el-tabs__nav-wrap::after) {
+    background-color: #e5e7eb;
+  }
+
+  .merchant-profile-balance-tabs :deep(.el-tabs__active-bar) {
+    background-color: transparent;
+  }
+
+  .merchant-profile-balance-tabs :deep(.el-tabs__item) {
+    height: auto;
+    padding: 0 12px 10px 0;
+  }
+
+  .merchant-profile-balance-card {
+    border-radius: 14px;
+    border: 1px solid #dbeafe;
+    background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+    padding: 16px 18px;
+  }
+
+  .merchant-profile-balance-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .merchant-profile-balance-key {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .merchant-profile-balance-key--tab {
+    padding: 6px 12px;
+    transition: all 0.2s ease;
+  }
+
+  .merchant-profile-balance-tabs :deep(.is-active .merchant-profile-balance-key--tab) {
+    background: #1d4ed8;
+    color: #ffffff;
+  }
+
+  .merchant-profile-balance-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-top: 1px dashed #dbeafe;
+    color: #475569;
+    font-size: 14px;
+  }
+
+  .merchant-profile-balance-row:first-of-type {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .merchant-profile-balance-row strong {
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .merchant-profile-balance-row--primary strong {
+    font-size: 28px;
+    color: #1d4ed8;
+  }
+
+  .merchant-profile-ip-card {
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #ffffff;
+    padding: 14px 16px;
+  }
+
+  .merchant-profile-whitelist-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .merchant-profile-channel-table {
+    margin-top: 4px;
+  }
+
+  .merchant-profile-ip-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 10px;
+  }
+
+  .merchant-profile-ip-line {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+
+  .merchant-profile-ip-line:last-child {
+    margin-bottom: 0;
+  }
+
+  .merchant-profile-ip-label {
+    min-width: 64px;
+    color: #64748b;
+    font-size: 12px;
+  }
+
+  .merchant-profile-ip-values {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: #0f172a;
+    font-size: 13px;
+    word-break: break-all;
+  }
+
+  @media (max-width: 960px) {
+    .merchant-profile-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .merchant-profile-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .merchant-profile-loading-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .merchant-profile-top-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .merchant-profile-top-stack {
+      grid-template-rows: none;
+    }
+
+    .merchant-profile-bottom-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .merchant-profile-summary-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .merchant-profile-hero {
+      flex-direction: column;
+    }
+
+    .merchant-profile-shell {
+      grid-template-columns: 1fr;
+    }
+
+    .merchant-profile-overview-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .merchant-profile-content-top {
+      grid-template-columns: 1fr;
+    }
+
+    .merchant-profile-contact-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .merchant-profile-overview-head,
+    .merchant-profile-rate-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 
   .account-info-wrap {

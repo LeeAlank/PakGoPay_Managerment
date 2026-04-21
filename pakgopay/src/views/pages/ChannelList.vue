@@ -319,24 +319,23 @@ import {getTimeFromTimestamp} from "@/api/common.js";
   <el-dialog
       :title="confirmDialogTitle"
       v-model="confirmDialogVisible"
-      class="dialog"
+      class="dialog channel-google-confirm-dialog"
       center
       align-center
-      width="30%"
-      height="200px"
+      width="420px"
   >
-    <el-form ref="confirmDataForm" :rules="confirmRule" :model="confirmData" style="height:100px;margin-top: 20px">
-      <el-row>
-        <el-col :span="24" style="display: flex;justify-content: center;justify-items: center;align-items: center;">
-          <div>
-            <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode">
+    <el-form ref="confirmDataForm" :rules="confirmRule" :model="confirmData" class="channel-google-confirm-form">
+      <el-row class="confirm-row">
+        <el-col :span="24" class="confirm-col">
+          <div class="confirm-item">
+            <el-form-item :label="$t('common.googleCode')" prop="googleCode" class="confirm-input-item confirm-input-item--labeled">
               <el-input v-model="confirmData.googleCode" style="width: 200px"/>
             </el-form-item>
           </div>
         </el-col>
       </el-row>
     </el-form>
-    <div slot="footer" class="dialog-footer" style="margin-right: 3%;height: 30px;">
+    <div slot="footer" class="dialog-footer channel-google-confirm-footer">
       <el-button @click="cancelConfirmDialog('confirmDataForm')">{{ $t('common.cancel') }}</el-button>
       <el-button type="primary" @click="submitConfirm('confirmDataForm')">{{ $t('common.confirm') }}</el-button>
     </div>
@@ -1010,6 +1009,72 @@ export default {
 
 .channel-card-pay-alt {
   background-color: #f1faf4;
+}
+
+.confirm-row {
+  display: flex;
+  justify-content: center;
+}
+
+.confirm-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.confirm-item {
+  width: 320px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  column-gap: 10px;
+}
+
+.confirm-label {
+  width: 110px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #606266;
+  white-space: nowrap;
+}
+
+.confirm-required {
+  color: #f56c6c;
+  margin-right: 4px;
+}
+
+.confirm-input-item {
+  margin-bottom: 0;
+}
+
+.confirm-input-item :deep(.el-form-item__content) {
+  margin-left: 0;
+}
+
+.confirm-input-item--labeled {
+  width: 100%;
+}
+
+.confirm-input-item--labeled :deep(.el-form-item__label) {
+  width: 110px;
+  justify-content: flex-end;
+}
+
+.toolbarName {
+  color: #667eea;
+}
+
+.channel-google-confirm-form {
+  margin-top: 20px;
+  min-height: 90px;
+}
+
+.channel-google-confirm-footer {
+  margin-top: 12px;
+  padding-bottom: 4px;
 }
 
 </style>

@@ -55,9 +55,15 @@ import {getTimeFromTimestamp} from "@/api/common.js";
                         class="agent-statement-filter-input"
                         clearable
                     >
-                      <el-option :label="$t('agentStatement.transactionType.recharge')" :value="1"></el-option>
-                      <el-option :label="$t('agentStatement.transactionType.withdraw')" :value="2"></el-option>
-                      <el-option :label="$t('agentStatement.transactionType.manualReconcile')" :value="3"></el-option>
+                      <el-option :label="$t('agentStatement.transactionType.collectionCredit')" :value="11"></el-option>
+                      <el-option :label="$t('agentStatement.transactionType.payoutFreeze')" :value="21"></el-option>
+                      <el-option :label="$t('agentStatement.transactionType.payoutUnfreeze')" :value="22"></el-option>
+                      <el-option :label="$t('agentStatement.transactionType.payoutConfirmDebit')" :value="23"></el-option>
+                      <el-option :label="$t('agentStatement.transactionType.withdrawFreeze')" :value="31"></el-option>
+                      <el-option :label="$t('agentStatement.transactionType.withdrawUnfreeze')" :value="32"></el-option>
+                      <el-option :label="$t('agentStatement.transactionType.withdrawConfirmDebit')" :value="33"></el-option>
+                      <el-option :label="$t('agentStatement.transactionType.manualAdd')" :value="41"></el-option>
+                      <el-option :label="$t('agentStatement.transactionType.manualSubtract')" :value="42"></el-option>
                     </el-select>
                   </el-form-item>
                 </el-col>
@@ -98,7 +104,7 @@ import {getTimeFromTimestamp} from "@/api/common.js";
           align="center"
         >
           <div>
-            {{row.id}}
+            {{ row.serialNo || row.id }}
           </div>
         </el-table-column>
         <el-table-column
@@ -119,6 +125,16 @@ import {getTimeFromTimestamp} from "@/api/common.js";
         >
           <div>
             {{transactionTypeLabel(row.orderType)}}
+          </div>
+        </el-table-column>
+        <el-table-column
+          prop="status"
+          :label="$t('agentStatement.column.status')"
+          v-slot="{row}"
+          align="center"
+        >
+          <div>
+            {{statusLabel(row.status)}}
           </div>
         </el-table-column>
         <el-table-column
@@ -242,14 +258,32 @@ export default {
   },
   methods: {
     transactionTypeLabel(type) {
-      if (type === 1 || type === '1') {
-        return this.$t('agentStatement.transactionType.recharge')
+      const typeMap = {
+        11: 'collectionCredit',
+        21: 'payoutFreeze',
+        22: 'payoutUnfreeze',
+        23: 'payoutConfirmDebit',
+        31: 'withdrawFreeze',
+        32: 'withdrawUnfreeze',
+        33: 'withdrawConfirmDebit',
+        41: 'manualAdd',
+        42: 'manualSubtract'
       }
-      if (type === 2 || type === '2') {
-        return this.$t('agentStatement.transactionType.withdraw')
+      const key = typeMap[String(type)]
+      return key ? this.$t(`agentStatement.transactionType.${key}`) : '-'
+    },
+    statusLabel(status) {
+      if (status === 0 || status === '0') {
+        return this.$t('agentStatement.status.pendingApproval')
       }
-      if (type === 3 || type === '3') {
-        return this.$t('agentStatement.transactionType.manualReconcile')
+      if (status === 1 || status === '1') {
+        return this.$t('agentStatement.status.success')
+      }
+      if (status === 2 || status === '2') {
+        return this.$t('agentStatement.status.failed')
+      }
+      if (status === 3 || status === '3') {
+        return this.$t('agentStatement.status.processing')
       }
       return '-'
     },
@@ -280,7 +314,7 @@ export default {
             this.filterbox.startTime = getTodayStartTimestamp()
         this.filterbox.endTime = getTodayStartTimestamp() + 86399
       }
-      this.filterbox.userRole = 2
+      this.filterbox.userRole = 4
       getWithdrawStatementeOrder(this.filterbox).then(response => {
         this.agentStatementsFormData = [];
         let result = JSON.parse(response.data.data);
@@ -345,6 +379,9 @@ export default {
 }
 
 .main-toolform-line {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
   margin-right: 0;
 }
 

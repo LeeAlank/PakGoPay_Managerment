@@ -1,21 +1,10 @@
 <script>
-import {getWsMessages, heart, logOut, markReadMessage, refreshAccessToken, menu} from "@/api/interface/backendInterface.js";
+import {getWsMessages, heart, logOut, markReadMessage, refreshAccessToken, menu, clearAllMessages} from "@/api/interface/backendInterface.js";
 import router from "@/router/index.js";
 import SvgIcon from "@/components/SvgIcon/index.vue";
 import { connectWebSocket, disconnectWebSocket } from "@/util/websocket.js"
 import { getAsyncRoutes } from "@/router/asyncRouter.js";
 import { buildFullTimeZoneOptions } from "@/util/timezoneOptions.js";
-
-const showNewMessage = (message) => {
-  this.$notify({
-    title: this.$t('topbar.newMessage'),
-    message: message.content,
-    type: "info",
-    duration: 0,
-    position: "top-right",
-  })
-  this.speak(message)
-}
 export default {
   name: 'Topbar',
   components: {SvgIcon},
@@ -33,13 +22,39 @@ export default {
       collapse: false,
       username: "",
       userId: "",
+      userRole: "",
+      lastLoginAt: "",
       notifications: [],
       expandedNotificationId: null,
       selectedLang: 'zh-cn',
       selectedTimeZone: 'Asia/Shanghai',
       clearingNotifications: false,
       languageOptions: [],
-      timeZoneOptions: []
+      timeZoneOptions: [],
+      speechUnlocked: false,
+      pendingSpeechText: '',
+      voiceChangeHandler: null,
+      lastAnnouncedNotificationKey: '',
+      wsMessagePollTimer: null,
+      speechTimer: null,
+      speechAfterNoticeHandler: null,
+      speechRequestId: 0,
+      hasLoadedNotifications: false,
+      pendingNoticeTone: false,
+      noticeToneCooldownUntil: 0,
+      speechQueue: [],
+      speechPlaying: false,
+      speechStartedAt: 0,
+      speechUtteranceTimer: null,
+      speechCircuitUntil: 0,
+      speechFailureCount: 0,
+      announcementBatchCount: 0,
+      announcementBatchTitle: '',
+      announcementBatchTimer: null,
+      notificationChannelEnabled: true,
+      sessionPaused: false,
+      sessionPauseHandler: null,
+      sessionResumeHandler: null,
     }
   },
   created() {
@@ -56,12 +71,26 @@ export default {
     this.selectedLang = storedLang || this.$i18n.locale || "zh-cn";
     this.$i18n.locale = this.selectedLang;
     this.refreshLanguageOptions();
+    this.notificationChannelEnabled = localStorage.getItem("notificationChannelEnabled") !== "0";
   },
   mounted() {
     this.username = localStorage.getItem("userName")
     this.userId = localStorage.getItem("userId")
-    if (this.username) {
-      this.stomp = connectWebSocket(this.userId+'/newOrder', this.showNewMessage, null)
+    this.userRole = localStorage.getItem("roleName") || localStorage.getItem("role") || ""
+    this.lastLoginAt = localStorage.getItem("lastLoginTime") || localStorage.getItem("loginTime") || ""
+    this.connectNotificationChannel()
+    document.addEventListener("click", this.unlockSpeech, { passive: true })
+    document.addEventListener("keydown", this.unlockSpeech, { passive: true })
+    if ("speechSynthesis" in window) {
+      this.voiceChangeHandler = () => {
+        try {
+          window.speechSynthesis.getVoices()
+        } catch (error) {
+          console.warn("load voices failed", error)
+        }
+      }
+      window.speechSynthesis.onvoiceschanged = this.voiceChangeHandler
+      window.speechSynthesis.getVoices()
     }
 
     /*this.username = localStorage.getItem("userName");
@@ -69,16 +98,101 @@ export default {
       this.logOut()
     }*/
    /* this.heartBeat();*/
-    this.fetchWsMessages()
+    this.sessionPaused = !!window.__pakSessionPaused
+    this.sessionPauseHandler = () => {
+      this.sessionPaused = true
+      this.stopWsMessagePolling()
+    }
+    this.sessionResumeHandler = () => {
+      this.sessionPaused = false
+      this.startWsMessagePolling()
+    }
+    window.addEventListener("pak-session-paused", this.sessionPauseHandler)
+    window.addEventListener("pak-session-resumed", this.sessionResumeHandler)
+    this.startWsMessagePolling()
   },
   beforeUnmount() {
-    if (this.stomp) {
-      disconnectWebSocket();
+    this.disconnectNotificationChannel()
+    document.removeEventListener("click", this.unlockSpeech)
+    document.removeEventListener("keydown", this.unlockSpeech)
+    if ("speechSynthesis" in window && window.speechSynthesis.onvoiceschanged === this.voiceChangeHandler) {
+      window.speechSynthesis.onvoiceschanged = null
     }
-
+    this.stopWsMessagePolling()
+    if (this.sessionPauseHandler) {
+      window.removeEventListener("pak-session-paused", this.sessionPauseHandler)
+      this.sessionPauseHandler = null
+    }
+    if (this.sessionResumeHandler) {
+      window.removeEventListener("pak-session-resumed", this.sessionResumeHandler)
+      this.sessionResumeHandler = null
+    }
+    if (this.speechUtteranceTimer) {
+      window.clearTimeout(this.speechUtteranceTimer)
+      this.speechUtteranceTimer = null
+    }
+    if (this.announcementBatchTimer) {
+      window.clearTimeout(this.announcementBatchTimer)
+      this.announcementBatchTimer = null
+    }
+    if (this.speechTimer) {
+      window.clearTimeout(this.speechTimer)
+      this.speechTimer = null
+    }
+    if (this.$refs.noticePlayer && this.speechAfterNoticeHandler) {
+      this.$refs.noticePlayer.removeEventListener("ended", this.speechAfterNoticeHandler)
+      this.speechAfterNoticeHandler = null
+    }
   },
   methods: {
     logOut,
+    connectNotificationChannel() {
+      if (!this.notificationChannelEnabled || !this.username || this.stomp) {
+        return
+      }
+      // RabbitMQ STOMP topic destination does not allow extra '/' segments.
+      // Use a dot-delimited routing key: /topic/<userId>.newOrder
+      this.stomp = connectWebSocket(this.userId + '.newOrder', (message) => this.showNewMessage(message), null)
+    },
+    disconnectNotificationChannel() {
+      if (this.stomp) {
+        disconnectWebSocket()
+        this.stomp = null
+      }
+    },
+    handleNotificationChannelToggle(value) {
+      const enabled = !!value
+      this.notificationChannelEnabled = enabled
+      localStorage.setItem("notificationChannelEnabled", enabled ? "1" : "0")
+      if (enabled) {
+        this.connectNotificationChannel()
+        this.startWsMessagePolling()
+        this.fetchWsMessages()
+        return
+      }
+      this.pendingNoticeTone = false
+      this.noticeToneCooldownUntil = 0
+      if (this.$refs.noticePlayer) {
+        this.$refs.noticePlayer.pause()
+      }
+      this.stopWsMessagePolling()
+      this.disconnectNotificationChannel()
+    },
+    startWsMessagePolling() {
+      if (this.sessionPaused || this.wsMessagePollTimer || !this.notificationChannelEnabled) {
+        return
+      }
+      this.fetchWsMessages()
+      this.wsMessagePollTimer = window.setInterval(() => {
+        this.fetchWsMessages()
+      }, 10000)
+    },
+    stopWsMessagePolling() {
+      if (this.wsMessagePollTimer) {
+        window.clearInterval(this.wsMessagePollTimer)
+        this.wsMessagePollTimer = null
+      }
+    },
     async heartBeat() {
        console.log("heartBeat");
       await heart().then(res => {
@@ -143,19 +257,194 @@ export default {
       this.collapse = !this.collapse;
       this.$emit("changeBar", this.collapse);
     },
-    speak() {
-      if ('speechSynthesis' in window) {
-        if (this.speech){
-          window.speechSynthesis.cancel() //取消之前的语音
+    getUserInitial() {
+      const name = (this.username || "").trim()
+      if (!name) {
+        return "U"
+      }
+      return name.charAt(0).toUpperCase()
+    },
+    formatLastLoginLabel() {
+      if (!this.lastLoginAt) {
+        return "-"
+      }
+      return this.formatDateByTs(this.lastLoginAt)
+    },
+    formatUserRoleLabel() {
+      const role = (this.userRole || "").toLowerCase()
+      if (role === "admin") return this.$t("topbar.role.admin")
+      if (role === "merchant") return this.$t("topbar.role.merchant")
+      if (role === "agent") return this.$t("topbar.role.agent")
+      return this.userRole || this.$t("topbar.role.user")
+    },
+    unlockSpeech() {
+      if (!("speechSynthesis" in window) || this.speechUnlocked) {
+        return
+      }
+      try {
+        const synthesis = window.speechSynthesis
+        synthesis.resume()
+        synthesis.getVoices()
+        this.speechUnlocked = true
+        if (this.pendingNoticeTone) {
+          this.pendingNoticeTone = false
+          this.triggerNoticeTone(true)
         }
-        this.speech = new SpeechSynthesisUtterance(this.textToSpeak)
-        //this.speech.lang = 'ja-JP'
-        window.speechSynthesis.speak(this.speech)
-      } else {
-        alert(this.$t('topbar.speechUnsupported'))
+        if (this.pendingSpeechText) {
+          const text = this.pendingSpeechText
+          this.pendingSpeechText = ''
+          this.enqueueSpeech(text)
+        }
+      } catch (error) {
+        console.warn("speech unlock failed", error)
       }
     },
+    resolveSpeechLang() {
+      if (this.selectedLang === 'zh-cn') {
+        return 'zh-CN'
+      }
+      if (this.selectedLang === 'ms') {
+        return 'ms-MY'
+      }
+      return 'en-US'
+    },
+    speak(text = this.textToSpeak) {
+      if (!('speechSynthesis' in window)) {
+        console.warn(this.$t('topbar.speechUnsupported'))
+        return
+      }
+      const speechText = String(text || '').trim()
+      if (!speechText) {
+        return
+      }
+      try {
+        const synthesis = window.speechSynthesis
+        const requestId = ++this.speechRequestId
+        synthesis.resume()
+        const utterance = new SpeechSynthesisUtterance(speechText)
+        utterance.onstart = () => {
+          this.speechPlaying = true
+          this.speechStartedAt = Date.now()
+          this.pendingSpeechText = ''
+        }
+        utterance.onerror = (event) => {
+          if (event?.error === 'canceled') {
+            this.finishSpeechPlayback(false)
+            return
+          }
+          this.pendingSpeechText = speechText
+          this.finishSpeechPlayback(true)
+          console.warn("speech play failed", event)
+        }
+        utterance.onend = () => {
+          if (this.speechRequestId === requestId) {
+            this.pendingSpeechText = ''
+          }
+          this.finishSpeechPlayback(false)
+        }
+        this.speech = utterance
+        if (this.speechUtteranceTimer) {
+          window.clearTimeout(this.speechUtteranceTimer)
+        }
+        this.speechUtteranceTimer = window.setTimeout(() => {
+          try {
+            if (window.speechSynthesis?.speaking) {
+              window.speechSynthesis.cancel()
+            }
+          } finally {
+            this.finishSpeechPlayback(true)
+          }
+        }, 8000)
+        synthesis.speak(utterance)
+      } catch (error) {
+        this.finishSpeechPlayback(true)
+        console.warn("speech play failed", error)
+      }
+    },
+    finishSpeechPlayback(hasFailure) {
+      if (this.speechUtteranceTimer) {
+        window.clearTimeout(this.speechUtteranceTimer)
+        this.speechUtteranceTimer = null
+      }
+      this.speechPlaying = false
+      this.speechStartedAt = 0
+        if (hasFailure) {
+        this.speechFailureCount += 1
+        if (this.speechFailureCount >= 3) {
+          this.speechCircuitUntil = Date.now() + 60000
+          this.speechQueue = []
+          this.pendingSpeechText = ''
+        }
+      } else {
+        this.speechFailureCount = 0
+      }
+      window.setTimeout(() => this.drainSpeechQueue(), 0)
+    },
+    enqueueSpeech(text) {
+      const speechText = String(text || '').trim()
+      if (!speechText) {
+        return
+      }
+      if (Date.now() < this.speechCircuitUntil) {
+        return
+      }
+      if (this.speechQueue.length >= 5) {
+        const count = this.speechQueue.length + 1
+        this.speechQueue = [this.$t('topbar.newNotificationsCount', { count })]
+      } else {
+        this.speechQueue.push(speechText)
+      }
+      this.drainSpeechQueue()
+    },
+    drainSpeechQueue() {
+      if (!('speechSynthesis' in window)) {
+        return
+      }
+      if (Date.now() < this.speechCircuitUntil) {
+        return
+      }
+      if (this.speechPlaying) {
+        return
+      }
+      const synthesis = window.speechSynthesis
+      if (synthesis.speaking) {
+        if (!this.speechStartedAt || Date.now() - this.speechStartedAt > 8000) {
+          synthesis.cancel()
+        } else {
+          return
+        }
+      }
+      const nextText = this.speechQueue.shift()
+      if (!nextText) {
+        return
+      }
+      if (!this.speechUnlocked) {
+        this.pendingSpeechText = nextText
+        return
+      }
+      this.speak(nextText)
+    },
+    queueAnnouncementSpeech(title) {
+      const normalizedTitle = String(title || '').trim()
+      this.announcementBatchCount += 1
+      this.announcementBatchTitle = normalizedTitle || this.announcementBatchTitle || 'new message'
+      if (this.announcementBatchTimer) {
+        return
+      }
+      this.announcementBatchTimer = window.setTimeout(() => {
+        const count = this.announcementBatchCount
+        const titleToSpeak = this.announcementBatchTitle || 'new message'
+        this.announcementBatchCount = 0
+        this.announcementBatchTitle = ''
+        this.announcementBatchTimer = null
+        const summary = count > 1 ? this.$t('topbar.newNotificationsCount', { count }) : titleToSpeak
+        this.enqueueSpeech(summary)
+      }, 3000)
+    },
     showNewMessage(message) {
+      if (!this.notificationChannelEnabled) {
+        return
+      }
       let messageData = JSON.parse(message)
       /*this.$notify({
         title: 'new message',
@@ -180,37 +469,82 @@ export default {
         timestamp: messageData.timestamp
       })
       this.fetchWsMessages()
-      this.textToSpeak = this.formatNotificationTitle({ title: messageData.title })
-      this.playNotice()
-      if (this.textToSpeak) {
-        this.speak()
-      }
+      this.announceNotification(messageData)
     },
     fetchWsMessages() {
+      if (this.sessionPaused || !this.notificationChannelEnabled) {
+        return
+      }
       getWsMessages().then(res => {
         if (res.status === 200 && res.data.code === 0) {
           let data = JSON.parse(res.data.data)
+          const previousIds = new Set((this.notifications || []).map(item => item?.id))
           this.messageCount = data.messageCount
           this.notifications = data.messages
           if (!this.notifications.some(item => item.id === this.expandedNotificationId)) {
             this.expandedNotificationId = null
           }
+          const latestUnread = this.notifications.find(item => !item?.read)
+          if (this.hasLoadedNotifications && latestUnread && !previousIds.has(latestUnread.id)) {
+            this.announceNotification(latestUnread)
+          }
+          this.hasLoadedNotifications = true
         }
       })
     },
+    announceNotification(notification) {
+      const notificationKey = String(notification?.id || '')
+      if (!notificationKey || this.lastAnnouncedNotificationKey === notificationKey) {
+        return
+      }
+      this.lastAnnouncedNotificationKey = notificationKey
+      this.textToSpeak = this.formatSpeechTitle({ title: notification?.title })
+      const noticePlayer = this.$refs.noticePlayer
+      if (noticePlayer && this.speechAfterNoticeHandler) {
+        noticePlayer.removeEventListener("ended", this.speechAfterNoticeHandler)
+        this.speechAfterNoticeHandler = null
+      }
+      if (this.speechUnlocked) {
+        this.triggerNoticeTone(false)
+      } else {
+        this.pendingNoticeTone = true
+      }
+      if (this.textToSpeak) {
+        this.queueAnnouncementSpeech(this.textToSpeak)
+      }
+    },
+    triggerNoticeTone(force) {
+      const now = Date.now()
+      if (!force && now < this.noticeToneCooldownUntil) {
+        return
+      }
+      const noticePlayer = this.$refs.noticePlayer
+      if (noticePlayer && !noticePlayer.paused) {
+        return
+      }
+      this.noticeToneCooldownUntil = now + 5000
+      this.playNotice().catch((error) => {
+        console.warn("notice audio play failed", error)
+      })
+    },
     async playNotice() {
-      this.$refs.noticePlayer.muted=true
-      this.$refs.noticePlayer.muted=false
+      if (!this.$refs.noticePlayer) {
+        return
+      }
+      this.$refs.noticePlayer.pause()
+      this.$refs.noticePlayer.currentTime = 0
+      this.$refs.noticePlayer.muted = true
+      this.$refs.noticePlayer.muted = false
       await this.$refs.noticePlayer.play()
     },
     async navigateToNotification(notification) {
       const targetPath = notification?.path
       if (targetPath) {
         await this.ensureRouteLoaded()
-        const dayTimestamp = this.toDayStartTimestamp(notification?.timestamp)
+        const messageTimestamp = this.normalizeNotificationTimestamp(notification?.timestamp)
         const notifyQuery = {
           orderNo: notification?.id,
-          timestamp: dayTimestamp
+          timestamp: messageTimestamp
         }
         if (router.hasRoute(targetPath)) {
           await router.push({
@@ -272,15 +606,19 @@ export default {
         return
       }
       this.clearingNotifications = true
-      const ids = this.notifications
-        .map(item => item?.id)
-        .filter(id => id !== null && id !== undefined && id !== '')
-      if (ids.length) {
-        await Promise.allSettled(ids.map(id => markReadMessage(id)))
+      try {
+        const res = await clearAllMessages()
+        if (res?.status === 200 && res?.data?.code === 0) {
+          const data = typeof res.data.data === 'string' ? JSON.parse(res.data.data) : res.data.data
+          this.messageCount = data?.messageCount || 0
+          this.notifications = data?.messages || []
+        } else {
+          await this.fetchWsMessages()
+        }
+      } finally {
+        this.expandedNotificationId = null
+        this.clearingNotifications = false
       }
-      this.expandedNotificationId = null
-      await this.fetchWsMessages()
-      this.clearingNotifications = false
     },
     resolveNotificationTypeLabel(rawTitle) {
       const key = String(rawTitle || '').toLowerCase()
@@ -318,6 +656,18 @@ export default {
       return { orderNo, amount }
     },
     toDayStartTimestamp(rawTimestamp) {
+      const normalized = this.normalizeNotificationTimestamp(rawTimestamp)
+      if (!normalized) {
+        return undefined
+      }
+      const date = new Date(Number(normalized))
+      if (Number.isNaN(date.getTime())) {
+        return undefined
+      }
+      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
+      return String(dayStart.getTime())
+    },
+    normalizeNotificationTimestamp(rawTimestamp) {
       const ts = Number(rawTimestamp)
       if (!Number.isFinite(ts)) {
         return undefined
@@ -327,8 +677,7 @@ export default {
       if (Number.isNaN(date.getTime())) {
         return undefined
       }
-      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
-      return String(dayStart.getTime())
+      return String(normalized)
     },
     async ensureRouteLoadedByPath(targetPath) {
       if (!String(targetPath).startsWith('/')) {
@@ -358,6 +707,7 @@ export default {
         if (res.status === 200 && res.data.data) {
           menuJson = JSON.parse(res.data.data)
           localStorage.setItem("menu", JSON.stringify(menuJson))
+          window.dispatchEvent(new CustomEvent("menu-updated"))
         }
       }
       if (menuJson) {
@@ -384,6 +734,17 @@ export default {
         return this.$t('topbar.title.collection')
       }
       return notification?.title || this.$t('topbar.newMessage')
+    },
+    formatSpeechTitle(notification) {
+      const rawTitle = String(notification?.title || '').trim()
+      if (!rawTitle) {
+        return this.$t('topbar.newMessage')
+      }
+      const typeLabel = this.resolveNotificationTypeLabel(rawTitle)
+      if (typeLabel && typeLabel !== this.$t('topbar.newMessage')) {
+        return this.$t('topbar.content.needHandle', { type: typeLabel })
+      }
+      return this.formatNotificationTitle({ title: rawTitle })
     },
     formatNotificationOrderNo(notification) {
       return this.resolveNotificationPayload(notification).orderNo
@@ -438,10 +799,13 @@ export default {
     </div>
     <!-- 顶部栏内容 -->
     <div class="userInfo" >
-      <div style="margin-left: 10%;display: flex;flex-direction: row;align-items: center;width: auto;">
-        <div style="display: flex; flex-direction: column">
-          <SvgIcon name="language" style="width: 25px;height: 25px;width: 50px;margin: 0" />
-          <div style="font-size: small;margin:0">{{$t('language')}}</div>
+        <div class="topbar-tools">
+        <div class="topbar-tool-item">
+          <el-tooltip :content="$t('language')" placement="bottom">
+            <span class="topbar-tool-icon-wrap">
+              <SvgIcon name="language" class="topbar-tool-icon" />
+            </span>
+          </el-tooltip>
         </div>
         <el-select v-model="selectedLang"
                    size="small"
@@ -460,9 +824,12 @@ export default {
             </span>
           </el-option>
         </el-select>
-        <div style="display: flex; flex-direction: column; margin-left: 12px;">
-          <SvgIcon name="clock" style="width: 22px;height: 22px;width: 50px;margin: 0" />
-          <div class="timezone-label" style="font-size: small;margin:0">{{$t('timezone')}}</div>
+        <div class="topbar-tool-item topbar-tool-item-spaced">
+          <el-tooltip :content="$t('timezone')" placement="bottom">
+            <span class="topbar-tool-icon-wrap">
+              <SvgIcon name="clock" class="topbar-tool-icon" />
+            </span>
+          </el-tooltip>
         </div>
         <el-select
             v-model="selectedTimeZone"
@@ -484,13 +851,32 @@ export default {
           <el-dropdown trigger="click" class="notice-dropdown" :hide-on-click="false">
             <span class="notice-trigger">
               <el-badge :value="unreadCount()" :hidden="unreadCount() === 0">
-                <SvgIcon name="bell" style="width: 22px;height: 22px"/>
+                <span class="topbar-tool-icon-wrap">
+                  <SvgIcon name="bell" class="topbar-tool-icon"/>
+                </span>
               </el-badge>
             </span>
             <template #dropdown>
               <el-dropdown-menu class="notice-menu">
+                <el-dropdown-item class="notice-toggle-row" @click.stop>
+                  <div class="notice-toggle-wrap">
+                    <span>{{ $t('topbar.notificationChannel') }}</span>
+                    <el-switch
+                      :model-value="notificationChannelEnabled"
+                      inline-prompt
+                      :active-text="$t('topbar.enabled')"
+                      :inactive-text="$t('topbar.disabled')"
+                      @change="handleNotificationChannelToggle"
+                    />
+                  </div>
+                </el-dropdown-item>
+                <el-dropdown-item v-if="notifications.length > 0" class="notice-clear-row notice-clear-row-top" @click.stop>
+                  <div class="notice-clear-all" @click.stop="clearAllNotifications">
+                    {{ clearingNotifications ? $t('topbar.clearing') : $t('topbar.clearAll') }}
+                  </div>
+                </el-dropdown-item>
                 <el-dropdown-item v-if="notifications.length === 0" disabled>
-                  {{ $t('topbar.noMessages') }}
+                  {{ notificationChannelEnabled ? $t('topbar.noMessages') : $t('topbar.notificationDisabled') }}
                 </el-dropdown-item>
                 <el-dropdown-item
                   v-for="item in notifications"
@@ -514,27 +900,44 @@ export default {
                     </div>
                   </div>
                 </el-dropdown-item>
-                <el-dropdown-item v-if="notifications.length > 0" divided class="notice-clear-row">
-                  <div class="notice-clear-all" @click.stop="clearAllNotifications">
-                    {{ clearingNotifications ? $t('topbar.clearing') : $t('topbar.clearAll') }}
-                  </div>
-                </el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
-          <el-avatar style="font-size: 30px;background-color: #647387; color: black;">{{username.charAt(0)}}</el-avatar>
-              {{username}}
-              <el-dropdown trigger="click">
-                <SvgIcon name="downBlack" style="width: 22px;height: 22px"/>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="logOut">
-                      <SvgIcon name="logout" style="height:22px"/>
-                      {{$t('topbar.logout')}}
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+          <el-dropdown trigger="click" class="user-dropdown">
+            <span class="user-profile-trigger">
+              <span class="user-avatar-wrapper">
+                <el-avatar class="user-avatar">{{ getUserInitial() }}</el-avatar>
+                <span class="user-online-dot"></span>
+              </span>
+              <span class="user-meta">
+                <span class="user-name">{{ username }}</span>
+                <span class="user-subtext">{{ formatUserRoleLabel() }}</span>
+              </span>
+              <SvgIcon name="downBlack" class="user-caret"/>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu class="user-menu">
+                <div class="user-menu-panel">
+                  <div class="user-menu-card">
+                    <div class="user-menu-card-top">
+                      <span class="user-menu-card-name">{{ username }}</span>
+                      <span class="user-role-tag">{{ formatUserRoleLabel() }}</span>
+                    </div>
+                    <div class="user-menu-card-sub">
+                      <span class="user-menu-label">{{ $t('topbar.lastLogin') }}</span>
+                      <span>{{ formatLastLoginLabel() }}</span>
+                    </div>
+                    <div class="user-menu-card-actions">
+                      <button type="button" class="user-menu-logout-inline" @click.stop="logOut">
+                        <SvgIcon name="logout" style="height:16px"/>
+                        {{$t('topbar.logout')}}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
 
         </div>
         <div v-else>
@@ -559,6 +962,53 @@ export default {
   padding-right: 40px;
 }
 
+.topbar-tools {
+  margin-left: 10%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  width: auto;
+}
+
+.topbar-tool-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.topbar-tool-item-spaced {
+  margin-left: 12px;
+}
+
+.topbar-tool-icon-wrap {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #eef2ff;
+  color: #475569;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.topbar-tool-icon-wrap:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.topbar-tool-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.topbar-tool-label {
+  font-size: 12px;
+  margin: 0;
+  line-height: 1.2;
+}
+
+
 .el-dropdown-link {
   cursor: pointer;
   color: #409EFF;
@@ -571,13 +1021,206 @@ export default {
   vertical-align: top;
 }
 .el-dropdown + .el-dropdown {
-  margin-left: 15px;
+  margin-left: 0;
 }
 .el-icon-arrow-down {
   font-size: 12px;
 }
 
 .notice-dropdown {
+  margin-right: 6px;
+}
+
+.notice-toggle-row {
+  cursor: default;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fff;
+}
+
+.notice-toggle-wrap {
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: #334155;
+}
+
+.user-dropdown {
+  margin-left: 2px;
+}
+
+.user-profile-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.user-profile-trigger:hover {
+  background-color: rgba(100, 115, 135, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(100, 115, 135, 0.22);
+}
+
+.user-avatar-wrapper {
+  position: relative;
+  width: 34px;
+  height: 34px;
+}
+
+.user-avatar {
+  width: 34px;
+  height: 34px;
+  font-size: 16px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #4f7cf7, #2f5fdb);
+  color: #ffffff;
+  border: 2px solid #e2e8f0;
+}
+
+.user-online-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #22c55e;
+  border: 2px solid #f8fafc;
+}
+
+.user-meta {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.user-name {
+  color: #1f2937;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.user-subtext {
+  color: #64748b;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.user-caret {
+  width: 14px;
+  height: 14px;
+  color: #64748b;
+}
+
+.user-menu {
+  min-width: 260px;
+}
+
+.user-menu-panel {
+  padding: 8px 10px;
+}
+
+.user-menu-summary-item {
+  cursor: default;
+}
+
+.user-menu-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.user-menu-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.user-menu-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.user-menu-card-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.user-menu-card-sub {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: #334155;
+}
+
+.user-menu-card-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.user-menu-logout-inline {
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.user-menu-logout-inline:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.user-menu-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  color: #1f2937;
+}
+
+.user-menu-label {
+  color: #64748b;
+}
+
+.speech-test-btn {
   margin-right: 12px;
 }
 
@@ -585,6 +1228,7 @@ export default {
   display: inline-flex;
   align-items: center;
   cursor: pointer;
+  border-radius: 8px;
 }
 
 .notice-menu {
@@ -644,6 +1288,14 @@ export default {
 .notice-clear-row {
   justify-content: center;
 }
+.notice-clear-row-top {
+  position: sticky;
+  top: 36px;
+  z-index: 2;
+  background: #fff;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+}
 .notice-clear-all {
   width: 100%;
   text-align: center;
@@ -676,13 +1328,11 @@ export default {
   position: fixed;
   margin-top:0;
   top: 0;
- /* background-color: #20b978;*/
 }
 .zhedie-zhedie {
   margin-top:0;
   top: 0;
   position: fixed;
-/*  background-color: #20b978;*/
 }
 </style>
 <style>

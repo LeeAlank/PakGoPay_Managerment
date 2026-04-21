@@ -26,13 +26,11 @@
     --color-background: var(--vt-c-white);
     --color-background-soft: var(--vt-c-white-soft);
     --color-background-mute: var(--vt-c-white-mute);
-
     --color-border: var(--vt-c-divider-light-2);
     --color-border-hover: var(--vt-c-divider-light-1);
 
     --color-heading: var(--vt-c-text-light-1);
     --color-text: var(--vt-c-text-light-1);
-
     --section-gap: 160px;
 }
 
@@ -93,7 +91,6 @@ body {
     padding-left: 10px;
     border-radius: 10px;
     width: 96%;
-    /* color: deepskyblue;*/
     height: 50px;
     display: flex;
     flex-direction: row;
@@ -163,6 +160,78 @@ body {
     font-weight: 700;
 }
 
+:root {
+    --btn-primary-start: #2563ff;
+    --btn-primary-end: #1d4ed8;
+    --btn-danger-start: #ff3b30;
+    --btn-danger-end: #dc2626;
+    --btn-default-text: #ffffff;
+    --btn-default-border: #3b82f6;
+    --btn-default-bg: linear-gradient(135deg, #60a5fa, #3b82f6);
+    --btn-default-bg-hover: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.el-button {
+    border-radius: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1px;
+    transition: all 0.2s ease;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.12);
+}
+
+.el-button:not(.el-button--primary):not(.el-button--danger) {
+    color: var(--btn-default-text);
+    border-color: var(--btn-default-border);
+    background: var(--btn-default-bg);
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.3);
+}
+
+.el-button:not(.el-button--primary):not(.el-button--danger) * {
+    color: inherit !important;
+}
+
+.el-button:not(.el-button--primary):not(.el-button--danger):hover {
+    color: #ffffff;
+    border-color: #2563eb;
+    background: var(--btn-default-bg-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(37, 99, 235, 0.36);
+}
+
+.el-button--primary {
+    color: #fff;
+    border: none;
+    background: linear-gradient(135deg, var(--btn-primary-start), var(--btn-primary-end));
+    box-shadow: 0 10px 22px rgba(37, 99, 255, 0.38);
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+    box-shadow: 0 14px 28px rgba(37, 99, 255, 0.46);
+}
+
+.el-button--danger {
+    color: #fff;
+    border: none;
+    background: linear-gradient(135deg, var(--btn-danger-start), var(--btn-danger-end));
+    box-shadow: 0 10px 22px rgba(220, 38, 38, 0.38);
+}
+
+.el-button--danger:hover,
+.el-button--danger:focus {
+    filter: brightness(1.08);
+    transform: translateY(-2px);
+}
+
+.el-button.is-disabled,
+.el-button.is-disabled:hover {
+    box-shadow: none;
+    transform: none;
+    opacity: 0.55;
+}
+
 .toolbarName {
     display:flex;
     justify-content: left;
@@ -180,8 +249,17 @@ body {
     margin-bottom: 12px;*/
     display: flex;
     flex-direction: row;
+    gap: 5px;
     float: right;
     margin-bottom: 10px;
+}
+
+.toolbar-action-row .filterButton {
+    margin: 0 !important;
+}
+
+.toolbar-action-row .filterButton + .filterButton {
+    margin-left: 5px !important;
 }
 
 .currency-tabs {
@@ -281,7 +359,7 @@ body {
 }
 
 :deep() .filterButton {
-    color: dodgerblue;
+    color: #ffffff !important;
     margin: 0 !important;
     display: flex;
 }

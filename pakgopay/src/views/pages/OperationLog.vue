@@ -20,12 +20,12 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <el-form class="main-toolform" ref="filterboxForm" :model="filterbox">
             <el-row style="display: flex;justify-content: space-between;">
               <el-col :span="8">
-                <el-form-item style="width: 300px;" prop="operateUserId">
+                <el-form-item style="width: 300px;" prop="operateUserName">
                   <template #label>
                     <span>{{ $t('log.operation.operator') }}</span>
                   </template>
                   <el-input
-                      v-model="filterbox.operateUserId"
+                      v-model="filterbox.operateUserName"
                       :placeholder="$t('common.placeholder.userName')"
                       clearable
                   />
@@ -199,7 +199,7 @@ export default {
       expandedOperateContent: {},
       filterbox: {
         operateType: null,
-        operateUserId: '',
+        operateUserName: '',
         filterDateRange: null,
         pageNo: 1,
         pageSize: 10,
@@ -292,7 +292,7 @@ export default {
       const { startTime, endTime } = this.resolveDateRangeToSeconds(this.filterbox.filterDateRange);
       return {
         operateType: this.filterbox.operateType,
-        operateUserId: this.filterbox.operateUserId || null,
+        operateUserName: this.filterbox.operateUserName || null,
         startTime,
         endTime,
         pageNo: this.currentPage,
@@ -357,7 +357,7 @@ export default {
         this.$refs[form].resetFields();
       }
       this.filterbox.operateType = null;
-      this.filterbox.operateUserId = '';
+      this.filterbox.operateUserName = '';
       this.filterbox.filterDateRange = null;
       this.currentPage = 1;
       this.pageSize = 10;

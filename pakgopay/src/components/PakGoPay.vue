@@ -244,6 +244,13 @@
                 :cy="collectionPointPositions[index]"
                 r="4"
               />
+              <text
+                class="trend-point-value value-collect"
+                :x="trendLabelPositions[index]"
+                :y="collectionLabelPositions[index]"
+              >
+                {{ formatTrendValue(value) }}
+              </text>
             </g>
             <g v-for="(value, index) in payingTrendValues" :key="`p-${index}`">
               <circle
@@ -260,6 +267,13 @@
                 :cy="payingPointPositions[index]"
                 r="4"
               />
+              <text
+                class="trend-point-value value-paying"
+                :x="trendLabelPositions[index]"
+                :y="payingLabelPositions[index]"
+              >
+                {{ formatTrendValue(value) }}
+              </text>
             </g>
             <polyline class="trend-line line-collect" :points="collectionPoints" />
             <polyline class="trend-line line-paying" :points="payingPoints" />
@@ -448,6 +462,12 @@ export default {
     },
     payingPointPositions() {
       return this.mapValuesToPositions(this.payingTrendValues);
+    },
+    collectionLabelPositions() {
+      return this.buildLabelPositions(this.collectionPointPositions, "top");
+    },
+    payingLabelPositions() {
+      return this.buildLabelPositions(this.payingPointPositions, "bottom");
     },
     trendLabelPositions() {
       const width = 640;
@@ -1061,6 +1081,14 @@ export default {
         return padding + ((this.trendMax - value) / range) * (height - padding * 2);
       });
     },
+    buildLabelPositions(pointPositions, direction = "top") {
+      const minY = 16;
+      const maxY = 232;
+      const offset = direction === "top" ? -10 : 14;
+      return pointPositions.map((y) => {
+        return Math.min(maxY, Math.max(minY, y + offset));
+      });
+    },
     formatTrendLabel(key) {
       if (!key) {
         return "";
@@ -1382,6 +1410,24 @@ export default {
 .trend-hit {
   fill: transparent;
   pointer-events: all;
+}
+
+.trend-point-value {
+  font-size: 10px;
+  font-family: "IBM Plex Sans", "Helvetica Neue", sans-serif;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: rgba(247, 244, 239, 0.95);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.value-collect {
+  fill: #0f4c5c;
+}
+
+.value-paying {
+  fill: #d97745;
 }
 
 .trend-tooltip {

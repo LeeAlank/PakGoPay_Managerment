@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router"
 import PAKGOPAY from "../components/PakGoPay.vue"
 import LOGIN from "../views/login/LoginNew.vue"
+import MerchantInfo from "@/views/pages/MerchantInfo.vue";
 import {menu, refreshAccessToken} from "@/api/interface/backendInterface.js";
 import {getAsyncRoutes} from "@/router/asyncRouter.js";
 
@@ -39,6 +40,15 @@ const router = createRouter({
                 needLogin: true,
                 title: "Pak GoPay",
             },
+        },
+        {
+            path: "/web/pakGoPay/MerchantInfo/detail",
+            name: "MerchantInfoDetail",
+            meta: {
+                needLogin: true,
+                title: "Merchant Info",
+            },
+            component: MerchantInfo
         }
         /*{
             path: "/web/pakGoPay/MerchantReport",
@@ -193,6 +203,7 @@ router.beforeEach(async (to, from, next) => {
                 let menuJson = JSON.parse(res.data.data)
                 let menuString = JSON.stringify(menuJson)
                 localStorage.setItem('menu', menuString)
+                window.dispatchEvent(new CustomEvent("menu-updated"))
                 getAsyncRoutes(menuJson).forEach((route) => {
                     router.addRoute(route)
                 })
@@ -211,6 +222,7 @@ router.beforeEach(async (to, from, next) => {
                 let menuJson = JSON.parse(menuRes.data.data)
                 let menuString = JSON.stringify(menuJson)
                 localStorage.setItem('menu', menuString)
+                window.dispatchEvent(new CustomEvent("menu-updated"))
                 getAsyncRoutes(menuJson).forEach((route) => {
                     router.addRoute(route)
                 })

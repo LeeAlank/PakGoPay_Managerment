@@ -377,14 +377,14 @@ export default {
   margin-right: 0;
   border-radius: 0;
   padding-left: 20px;
-  padding-top: 20px;
+  padding-top: 8px;
 }
 
 .telegram-broadcast-form {
   background-color: #fff;
   width: 96%;
   min-height: 560px;
-  margin-top: 20px;
+  margin-top: 8px;
   display: flex;
   justify-content: center;
   align-items: flex-start;

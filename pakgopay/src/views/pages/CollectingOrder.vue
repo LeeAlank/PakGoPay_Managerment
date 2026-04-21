@@ -357,6 +357,15 @@ import {
                     </el-icon>
                     <span v-else>{{ $t('log.operation.title') }}</span>
                   </el-dropdown-item>
+                  <el-dropdown-item
+                    :disabled="!isOrderSuccess(row) || isAccountEventsLoading(row)"
+                    @click="viewAccountEvents(row)"
+                  >
+                    <el-icon v-if="isAccountEventsLoading(row)" class="is-loading">
+                      <Loading />
+                    </el-icon>
+                    <span v-else>{{ $t('orderAccountEvents.action') }}</span>
+                  </el-dropdown-item>
                   <el-dropdown-item v-if="shouldShowReverseAction(row)" @click="reverseOrder(row)">{{ $t('common.reverse') }}</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -433,11 +442,13 @@ import {
     </template>
   </el-dialog>
   <el-dialog v-model="createGoogleConfirmVisible" :title="$t('common.googleCode')" width="420px"
-      align-center>
-    <el-form ref="createGoogleConfirmFormRef" :model="createGoogleConfirmForm" :rules="createGoogleConfirmRules" label-width="110px">
-      <el-form-item :label="$t('common.googleCode')" prop="googleCode">
-        <el-input v-model="createGoogleConfirmForm.googleCode" />
-      </el-form-item>
+      align-center class="google-confirm-dialog">
+    <el-form ref="createGoogleConfirmFormRef" :model="createGoogleConfirmForm" :rules="createGoogleConfirmRules" class="google-confirm-form">
+      <div class="confirm-row">
+        <el-form-item :label="$t('common.googleCode')" class="confirm-input-item confirm-input-item--labeled" prop="googleCode">
+          <el-input v-model="createGoogleConfirmForm.googleCode" />
+        </el-form-item>
+      </div>
     </el-form>
     <template #footer>
       <el-button @click="closeCreateGoogleConfirm">{{ $t('common.cancel') }}</el-button>
@@ -468,11 +479,13 @@ import {
     </template>
   </el-dialog>
   <el-dialog v-model="googleConfirmVisible" :title="$t('common.googleCode')" width="420px"
-      align-center>
-    <el-form ref="googleConfirmFormRef" :model="googleConfirmForm" :rules="googleConfirmRules" label-width="110px">
-      <el-form-item :label="$t('common.googleCode')" prop="googleCode">
-        <el-input v-model="googleConfirmForm.googleCode" />
-      </el-form-item>
+      align-center class="google-confirm-dialog">
+    <el-form ref="googleConfirmFormRef" :model="googleConfirmForm" :rules="googleConfirmRules" class="google-confirm-form">
+      <div class="confirm-row">
+        <el-form-item :label="$t('common.googleCode')" class="confirm-input-item confirm-input-item--labeled" prop="googleCode">
+          <el-input v-model="googleConfirmForm.googleCode" />
+        </el-form-item>
+      </div>
     </el-form>
     <template #footer>
       <el-button @click="closeGoogleConfirm">{{ $t('common.cancel') }}</el-button>
@@ -492,11 +505,13 @@ import {
     </template>
   </el-dialog>
   <el-dialog v-model="reverseGoogleConfirmVisible" :title="$t('common.googleCode')" width="420px"
-      align-center>
-    <el-form ref="reverseGoogleConfirmFormRef" :model="reverseGoogleConfirmForm" :rules="reverseGoogleConfirmRules" label-width="110px">
-      <el-form-item :label="$t('common.googleCode')" prop="googleCode">
-        <el-input v-model="reverseGoogleConfirmForm.googleCode" />
-      </el-form-item>
+      align-center class="google-confirm-dialog">
+    <el-form ref="reverseGoogleConfirmFormRef" :model="reverseGoogleConfirmForm" :rules="reverseGoogleConfirmRules" class="google-confirm-form">
+      <div class="confirm-row">
+        <el-form-item :label="$t('common.googleCode')" class="confirm-input-item confirm-input-item--labeled" prop="googleCode">
+          <el-input v-model="reverseGoogleConfirmForm.googleCode" />
+        </el-form-item>
+      </div>
     </el-form>
     <template #footer>
       <el-button @click="closeReverseGoogleConfirm">{{ $t('common.cancel') }}</el-button>
@@ -544,6 +559,22 @@ import {
       <el-button @click="orderFlowLogVisible = false">{{ $t('common.close') }}</el-button>
     </template>
   </el-drawer>
+  <el-dialog v-model="accountEventsVisible" :title="$t('orderAccountEvents.title')" width="1160px" class="account-events-dialog">
+    <div class="account-events-content">
+      <el-table :data="accountEventsList" border class="account-events-table">
+        <el-table-column prop="name" :label="$t('orderAccountEvents.userName')" width="140" />
+        <el-table-column prop="userRole" :label="$t('orderAccountEvents.role')" width="120" />
+        <el-table-column prop="transactionNo" :label="$t('orderAccountEvents.platformOrderNo')" width="200" />
+        <el-table-column prop="currency" :label="$t('orderAccountEvents.currency')" width="120" />
+        <el-table-column prop="amount" :label="$t('orderAccountEvents.amount')" width="140" />
+        <el-table-column prop="createTime" :label="$t('orderAccountEvents.createTime')" width="200" />
+        <el-table-column prop="updateTime" :label="$t('orderAccountEvents.updateTime')" width="200" />
+      </el-table>
+    </div>
+    <template #footer>
+      <el-button @click="accountEventsVisible = false">{{ $t('common.close') }}</el-button>
+    </template>
+  </el-dialog>
   <el-dialog v-model="orderDetailVisible" :title="$t('common.detail')" width="760px">
     <el-descriptions :column="2" border>
       <el-descriptions-item :label="$t('collectingOrder.column.orderId')">{{ orderDetailData.transactionNo || '-' }}</el-descriptions-item>
@@ -575,6 +606,7 @@ import {
   manualCreateCollectionOrder,
   manualNotifyCollectionOrder,
   manualReverseOrder,
+  queryAccountStatementByOrderNo,
   queryOrderFlowLogs,
   queryMerchantAvailableChannels,
   queryOpsOrderCardInfo
@@ -690,6 +722,10 @@ export default {
       orderFlowLogTables: [],
       orderFlowOutsideCloseHandler: null,
       orderFlowLoadingMap: {},
+      accountEventsVisible: false,
+      accountEventsTransactionNo: '',
+      accountEventsList: [],
+      accountEventsLoadingMap: {},
       callbackRules: {
         transactionNo: [{ required: true, message: this.$t('orderCommon.validation.merchantOrderNoRequired'), trigger: 'blur' }],
         merchantNo: [{ required: true, message: this.$t('orderCommon.validation.merchantIdRequired'), trigger: 'blur' }],
@@ -883,8 +919,8 @@ export default {
       if (Number.isNaN(date.getTime())) {
         return null
       }
-      const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0).getTime()
-      return [dayStart, dayStart]
+      const dayEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 0).getTime()
+      return [normalized, dayEnd]
     },
     createPathChannel() {
       if (!this.isAdmin) return
@@ -1494,7 +1530,7 @@ export default {
       if (!Number.isFinite(num)) {
         return '0.00%';
       }
-      return `${(num * 100).toFixed(2)}%`;
+      return `${(Math.trunc(num * 10000) / 100).toFixed(2)}%`;
     },
     getOrderStatusClass(status) {
       const map = {
@@ -1541,6 +1577,122 @@ export default {
       if (!this.isAdmin) return false;
       return !!String(row?.transactionNo || '').trim();
     },
+    isOrderSuccess(row) {
+      return String(row?.orderStatus ?? '').trim() === '2';
+    },
+    buildAccountEventsLoadingKey(payloadOrRow) {
+      const key = payloadOrRow?.transactionNo || payloadOrRow?.merchantOrderNo || payloadOrRow?.orderId || '';
+      return String(key || '').trim();
+    },
+    setAccountEventsLoading(key, loading) {
+      if (!key) return;
+      if (loading) {
+        this.accountEventsLoadingMap = { ...this.accountEventsLoadingMap, [key]: true };
+        return;
+      }
+      const nextMap = { ...this.accountEventsLoadingMap };
+      delete nextMap[key];
+      this.accountEventsLoadingMap = nextMap;
+    },
+    isAccountEventsLoading(row) {
+      const key = this.buildAccountEventsLoadingKey(row);
+      return !!(key && this.accountEventsLoadingMap[key]);
+    },
+    getAccountEventRoleName(roleId) {
+      const value = String(roleId ?? '').trim();
+      const normalized = value.toLowerCase();
+      const roleMap = {
+        '1': this.$t('orderAccountEvents.roleAdmin'),
+        '2': this.$t('orderAccountEvents.roleMerchant'),
+        '3': this.$t('orderAccountEvents.roleFinance'),
+        '4': this.$t('orderAccountEvents.roleAgent'),
+        '5': this.$t('orderAccountEvents.roleCustomerService'),
+        'admin': this.$t('orderAccountEvents.roleAdmin'),
+        'finance': this.$t('orderAccountEvents.roleFinance'),
+        'agent': this.$t('orderAccountEvents.roleAgent'),
+        'merchant': this.$t('orderAccountEvents.roleMerchant'),
+        'customerservice': this.$t('orderAccountEvents.roleCustomerService'),
+        'customer_service': this.$t('orderAccountEvents.roleCustomerService')
+      };
+      return roleMap[normalized] || roleMap[value] || (value ? `Role-${value}` : '-');
+    },
+    normalizeAccountEventsPayload(payload, fallbackTransactionNo) {
+      const defaultResult = { transactionNo: fallbackTransactionNo || '', accountEvents: [] };
+      if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+        const accountEvents = Array.isArray(payload.accountStatementsDtoList) ? payload.accountStatementsDtoList : [];
+        const transactionNo = String(payload.transactionNo || fallbackTransactionNo || '').trim();
+        return { transactionNo, accountEvents };
+      }
+      return defaultResult;
+    },
+    formatAccountEventTime(value) {
+      if (value === null || value === undefined || value === '') return '-';
+      const numeric = Number(value);
+      if (Number.isFinite(numeric)) {
+        return getTimeFromTimestamp(value);
+      }
+      const date = new Date(value);
+      if (!Number.isNaN(date.getTime())) {
+        return getTimeFromTimestamp(date.getTime());
+      }
+      return String(value);
+    },
+    viewAccountEvents(row) {
+      const orderNo = String(row?.transactionNo || '').trim();
+      if (!orderNo || !this.isOrderSuccess(row)) {
+        return;
+      }
+
+      const statementTime = String(row?.updateTime || '').trim();
+      if (!statementTime || !this.isOrderSuccess(row)) {
+        return;
+      }
+      const loadingKey = this.buildAccountEventsLoadingKey(row);
+      this.setAccountEventsLoading(loadingKey, true);
+      queryAccountStatementByOrderNo({ orderNo, statementTime }).then((res) => {
+        if (res.status === 200 && res.data?.code === 0) {
+          let payload = res.data?.data;
+          if (typeof payload === 'string') {
+            try {
+              payload = JSON.parse(payload);
+            } catch (e) {
+              payload = null;
+            }
+          }
+          const normalized = this.normalizeAccountEventsPayload(payload, row?.transactionNo);
+          this.accountEventsTransactionNo = normalized.transactionNo || row?.transactionNo || '-';
+          this.accountEventsList = (normalized.accountEvents || []).map((item) => ({
+            name: item?.name || '-',
+            userRole: this.getAccountEventRoleName(item?.userRole),
+            transactionNo: normalized.transactionNo || row?.transactionNo || '-',
+            currency: item?.currency || '-',
+            amount: item?.amount ?? '-',
+            createTime: this.formatAccountEventTime(item?.createTime),
+            updateTime: this.formatAccountEventTime(item?.updateTime)
+          }));
+          this.closeActionDropdowns();
+          this.accountEventsVisible = true;
+          return;
+        }
+        this.$notify({
+          title: this.$t('common.error'),
+          type: 'error',
+          duration: 3000,
+          position: 'bottom-right',
+          message: res.data?.message || this.$t('common.requestFailed')
+        });
+      }).catch((err) => {
+        this.$notify({
+          title: this.$t('common.error'),
+          type: 'error',
+          duration: 3000,
+          position: 'bottom-right',
+          message: err.message || this.$t('common.requestFailed')
+        });
+      }).finally(() => {
+        this.setAccountEventsLoading(loadingKey, false);
+      });
+    },
     shouldShowActionMenu(row) {
       if (!this.isAdmin) return false;
       return !!row
@@ -1581,7 +1733,9 @@ export default {
       }
       const loadingKey = this.buildOrderFlowLoadingKey(row);
       this.setOrderFlowLoading(loadingKey, true);
-      queryOrderFlowLogs({ transactionNo }).then((res) => {
+      queryOrderFlowLogs({
+        transactionNo
+      }).then((res) => {
         if (res.status === 200 && res.data.code === 0) {
           this.orderFlowLogTables = [];
           this.orderFlowTransactionNo = transactionNo;
@@ -1871,7 +2025,7 @@ export default {
       this.filterbox.filterDateRange = [...normalized];
       this.filterbox.filterDateRangeUtc = this.toUtcRange(normalized, this.timeZoneKey);
       this.filterbox.startTime = Number(this.filterbox.filterDateRangeUtc[0]) / 1000;
-      this.filterbox.endTime = Number(this.filterbox.filterDateRangeUtc[1]) / 1000 + 86399;
+      this.filterbox.endTime = Number(this.filterbox.filterDateRangeUtc[1]) / 1000;
       this.filterbox.filterDateRangeLast = [...normalized];
       this.filterbox.filterDateRangeUtcLast = [...this.filterbox.filterDateRangeUtc];
     },
@@ -1949,13 +2103,16 @@ export default {
         range = this.filterbox.filterDateRangeUtc
       }
       this.filterbox.startTime = Math.floor(Number(range[0]) / 1000)
-      this.filterbox.endTime = Math.floor(Number(range[1]) / 1000) + 86399
+      this.filterbox.endTime = Math.floor(Number(range[1]) / 1000)
     },
     reset(form) {
       this.$refs[form].resetFields();
       this.filterbox.filterDateRangeUtc = []
       this.filterbox.startTime = null
       this.filterbox.endTime = null
+      if (Number(localStorage.getItem('roleId')) === 2) {
+        this.filterbox.merchantUserId = localStorage.getItem('userId') || ''
+      }
     },
     applyCurrencyToStatics() {
       const icon = this.currencyIcon || '';
@@ -2031,9 +2188,10 @@ export default {
         })
       }
     });
-    let roleName = localStorage.getItem('roleName');
-    this.isAdmin = roleName === 'admin'
-    if (roleName &&  roleName !== 'admin') {
+    const roleId = Number(localStorage.getItem('roleId'));
+    const roleName = String(localStorage.getItem('roleName') || '').toLowerCase();
+    this.isAdmin = roleId === 1 || roleId === 5 || roleName === 'admin' || roleName === 'customerservice' || roleName === 'customer_service'
+    if (roleId === 2) {
       this.filterbox.merchantUserId = localStorage.getItem('userId');
       this.filterAvaiable = true
     }
@@ -2050,7 +2208,7 @@ export default {
       if (res.status === 200 && res.data.code === 0) {
          this.merchantOptions = JSON.parse(res.data.data).merchantInfoDtoList
          this.merchantOptions.forEach(merchantInfo => {
-            this.merchantMaps[merchantInfo.userId] = merchantInfo.accountName
+            this.merchantMaps[merchantInfo.userId] = merchantInfo.merchantName || merchantInfo.accountName
          })
 
       }
@@ -2213,6 +2371,79 @@ export default {
 
 .order-flow-log-table-failed :deep(.el-table__cell .cell) {
   color: #f56c6c !important;
+}
+
+.account-events-header {
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+:deep(.account-events-dialog .el-dialog) {
+  max-width: 96vw;
+}
+
+:deep(.account-events-dialog .el-dialog__header) {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+:deep(.account-events-dialog .el-dialog__body) {
+  padding: 16px 20px 12px;
+}
+
+.account-events-content {
+  width: 100%;
+}
+
+:deep(.account-events-table .el-table__header th),
+:deep(.account-events-table .el-table__body td) {
+  text-align: center !important;
+}
+
+:deep(.account-events-table .cell) {
+  text-align: center;
+}
+
+.google-confirm-form {
+  margin-top: 8px;
+}
+
+.confirm-row {
+  display: flex;
+  justify-content: center;
+}
+
+.confirm-input-item {
+  width: 310px;
+  margin: 0 auto;
+}
+
+.confirm-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  width: 110px;
+}
+
+.confirm-label.is-required::before {
+  content: "*";
+  color: #f56c6c;
+  margin-right: 4px;
+}
+
+.confirm-input-item--labeled :deep(.el-form-item__label) {
+  width: 110px;
+  justify-content: flex-end;
+}
+
+:deep(.google-confirm-dialog .el-dialog__body) {
+  padding-top: 12px;
+  padding-bottom: 8px;
+}
+
+:deep(.google-confirm-dialog .el-dialog__footer) {
+  padding-top: 18px;
+  padding-bottom: 14px;
 }
 </style>
 <style>

@@ -36,7 +36,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                       :end-placeholder="$t('common.endDate')"
                       picker-width="190px"
                   />
-                  <el-button style="width: 80px;display: flex;align-items: center;background-color: deepskyblue;color: black"><SvgIcon name="search" style="width: 20px;height: 20px"/>{{ $t('common.query') }}</el-button>
+                  <el-button style="width: 80px;display: flex;align-items: center;background-color: deepskyblue;color: #ffffff"><SvgIcon name="search" style="width: 20px;height: 20px"/>{{ $t('common.query') }}</el-button>
                 </el-form-item>
               </el-col>
             </el-row>

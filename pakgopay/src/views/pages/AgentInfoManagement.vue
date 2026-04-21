@@ -17,31 +17,6 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <el-row style="width: 100%;">
             <el-col :span="8">
               <div>
-                <el-form-item :label="$t('agentInfo.filter.agentName')" label-width="150px" prop="agentName">
-                  <el-select
-                    v-model="filterbox.agentName"
-                    filterable
-                    remote
-                    clearable
-                    :remote-method="handleAgentNameSearch"
-                    :loading="agentNameLoading"
-                    :placeholder="$t('agentInfo.filter.agentName')"
-                    popper-class="agent-name-select-dropdown"
-                    @visible-change="handleAgentNameDropdownVisible"
-                    style="width: 200px;"
-                  >
-                    <el-option
-                      v-for="item in agentNameOptions"
-                      :key="item.value"
-                      :label="item.label"
-                      :value="item.value"
-                    />
-                  </el-select>
-                </el-form-item>
-              </div>
-            </el-col>
-            <el-col :span="8">
-              <div>
                 <el-form-item :label="$t('agentInfo.filter.accountName')" label-width="150px" prop="accountName">
                   <el-select
                     v-model="filterbox.accountName"
@@ -67,6 +42,32 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             </el-col>
             <el-col :span="8">
               <div>
+                <el-form-item :label="$t('agentInfo.filter.agentName')" label-width="150px" prop="agentName">
+                  <el-select
+                    v-model="filterbox.agentName"
+                    :filterable="roleName !== 'agent'"
+                    :remote="roleName !== 'agent'"
+                    :clearable="roleName !== 'agent'"
+                    :disabled="roleName === 'agent'"
+                    :remote-method="handleAgentNameSearch"
+                    :loading="agentNameLoading"
+                    :placeholder="$t('agentInfo.filter.agentName')"
+                    popper-class="agent-name-select-dropdown"
+                    @visible-change="handleAgentNameDropdownVisible"
+                    style="width: 200px;"
+                  >
+                    <el-option
+                      v-for="item in agentNameOptions"
+                      :key="item.value"
+                      :label="item.label"
+                      :value="item.value"
+                    />
+                  </el-select>
+                </el-form-item>
+              </div>
+            </el-col>
+            <el-col :span="8">
+              <div>
                 <el-form-item :label="$t('agentInfo.filter.status')" label-width="150px" prop="status">
                   <el-select
                     style="width: 200px;"
@@ -76,21 +77,20 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                     <el-option :label="$t('common.disable')" :value="0">{{ $t('common.disable') }}</el-option>
                     <el-option :label="$t('common.enable')" :value="1">{{ $t('common.enable') }}</el-option>
                   </el-select>
-                  <div style="display: flex; flex-direction: row;">
-                    <el-button @click="reset('filterboxForm')" class="filterButton">
-                      <SvgIcon class="filterButtonSvg" name="reset"/>
-                      <div>{{ $t('common.reset') }}</div>
-                    </el-button>&nbsp;
-                    <el-button @click="search()"
-                               class="filterButton">
-                      <SvgIcon class="filterButtonSvg" name="search"/>
-                      <div>{{ $t('common.query') }}</div>
-                    </el-button>&nbsp;
-                  </div>
                 </el-form-item>
               </div>
             </el-col>
           </el-row>
+          <div class="toolbar-action-row">
+            <el-button @click="reset('filterboxForm')" class="filterButton">
+              <SvgIcon class="filterButtonSvg" name="reset"/>
+              <div>{{ $t('common.reset') }}</div>
+            </el-button>
+            <el-button @click="search()" class="filterButton">
+              <SvgIcon class="filterButtonSvg" name="search"/>
+              <div>{{ $t('common.query') }}</div>
+            </el-button>
+          </div>
         </el-form>
       </div>
     </el-collapse-item>
@@ -98,8 +98,8 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 
   <div class="reportInfo">
     <form class="main-views-form" style="height: 100%;overflow: visible;">
-      <div style="display: flex;flex-direction: row;justify-content: right;margin-left: 0">
-        <el-button @click="addFistLevelAgent" class="filterButton">
+      <div class="agent-add-action-row" style="display: flex;flex-direction: row;justify-content: right;margin-left: 0">
+        <el-button v-if="isAdmin" @click="addFistLevelAgent" class="filterButton">
           <SvgIcon class="filterButtonSvg" name="add"/>
           <div>{{ $t('agentInfo.action.addFirstLevel') }}</div>
         </el-button>
@@ -324,14 +324,14 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <el-col :span="8">
             <div class="el-form-line">
               <el-form-item :label="$t('agentInfo.form.contactName')" label-width="150px" prop="contactName">
-                <el-input v-model.number="agentInfo.contactName" style="width: 200px"></el-input>
+                <el-input v-model="agentInfo.contactName" style="width: 200px"></el-input>
               </el-form-item>
             </div>
           </el-col>
           <el-col :span="8">
             <div class="el-form-line">
               <el-form-item :label="$t('agentInfo.form.contactPhone')" label-width="150px" prop="contactPhone">
-                <el-input v-model.number="agentInfo.contactPhone" style="width: 200px"></el-input>
+                <el-input v-model="agentInfo.contactPhone" style="width: 200px"></el-input>
               </el-form-item>
             </div>
           </el-col>
@@ -404,10 +404,14 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
                 <el-select
                     v-model="agentInfo.channelIdList"
                     style="width: 200px" :placeholder="$t('agentInfo.placeholder.channelConfig')"
-                    :options="createType === 'firstLevel' ? channelOptions : agentInfo.parentChannelDtoList"
-                    :props="channelProps"
                     multiple
                 >
+                  <el-option
+                    v-for="item in getAgentChannelConfigOptions()"
+                    :key="`agent-channel-${item.channelId}`"
+                    :label="item.channelName"
+                    :value="item.channelId"
+                  />
                 </el-select>
               </el-form-item>
             </div>
@@ -633,21 +637,22 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
     <el-dialog
         :title="googleConfirmTitle"
         v-model="googleConfirmVisible"
-        class="dialog"
+        class="dialog agent-google-confirm-dialog"
         center
-        width="30%"
-        height="200px"
+        width="420px"
     >
-      <el-form ref="googleConfirmForm" :rules="googleConfirmRule" :model="googleConfirmData" style="height:100px;margin-top: 20px">
-        <el-row>
-          <el-col :span="24" style="display: flex;justify-content: center;align-items: center;">
-            <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode">
-              <el-input v-model="googleConfirmData.googleCode" style="width: 200px"/>
-            </el-form-item>
+      <el-form ref="googleConfirmForm" :rules="googleConfirmRule" :model="googleConfirmData" class="agent-google-confirm-form">
+        <el-row class="confirm-row">
+          <el-col :span="24" class="confirm-col">
+            <div class="confirm-item">
+              <el-form-item :label="$t('common.googleCode')" prop="googleCode" class="confirm-input-item confirm-input-item--labeled">
+                <el-input v-model="googleConfirmData.googleCode" style="width: 200px"/>
+              </el-form-item>
+            </div>
           </el-col>
         </el-row>
       </el-form>
-      <div slot="footer" class="dialog-footer" style="margin-right: 3%;height: 30px;">
+      <div slot="footer" class="dialog-footer agent-google-confirm-footer">
         <el-button @click="cancelGoogleConfirm('googleConfirmForm')">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitGoogleConfirm('googleConfirmForm')">{{ $t('common.confirm') }}</el-button>
       </div>
@@ -768,6 +773,8 @@ export default {
       activeTool: '1',
       createType: '',
       modifyType: '',
+      roleName: '',
+      currentAgentName: '',
       tablekey: 0,
       isAdmin: false,
       agentNameOptions: [],
@@ -1039,12 +1046,12 @@ export default {
   async mounted() {
     this.agentInfoTableData = this.agentInfoFormData
     this.totalCount = this.agentInfoTableData.length
-    const roleName = localStorage.getItem('roleName')
-    this.isAdmin = roleName === 'admin'
+    this.roleName = localStorage.getItem('roleName') || ''
+    this.isAdmin = this.roleName === 'admin'
     // get paymentInfos
     await getChannelInfo({pageSize: 1000}).then((res) => {
       if (res.status === 200 && res.data.code === 0) {
-        this.channelOptions = JSON.parse(res.data.data).channelDtoList
+        this.channelOptions = this.normalizeChannelOptionList(JSON.parse(res.data.data).channelDtoList)
       }
     })
 
@@ -1053,8 +1060,7 @@ export default {
   },
   methods: {
     async applyCurrentAgentDefaultFilter() {
-      const roleName = localStorage.getItem('roleName')
-      if (roleName !== 'agent') {
+      if (this.roleName !== 'agent') {
         return
       }
       const loginName = localStorage.getItem('userName') || ''
@@ -1071,6 +1077,7 @@ export default {
         if (res.status === 200 && res.data.code === 0) {
           const allData = JSON.parse(res.data.data)
           const currentAgentName = allData?.agentInfoDtoList?.[0]?.agentName || loginName
+          this.currentAgentName = currentAgentName
           this.filterbox.agentName = currentAgentName
           this.agentNameOptions = [{ value: currentAgentName, label: currentAgentName }]
           return
@@ -1078,6 +1085,7 @@ export default {
       } catch (e) {
         // fallback below
       }
+      this.currentAgentName = loginName
       this.filterbox.agentName = loginName
       this.agentNameOptions = [{ value: loginName, label: loginName }]
     },
@@ -1090,6 +1098,10 @@ export default {
     },
     buildRootSearchPayload() {
       const payload = { ...this.filterbox }
+      if (this.roleName === 'agent') {
+        const lockedAgentName = this.currentAgentName || this.filterbox.agentName || localStorage.getItem('userName') || '';
+        payload.agentName = lockedAgentName;
+      }
       const hasFilter = Boolean(
         payload.agentName ||
         payload.accountName ||
@@ -1164,6 +1176,7 @@ export default {
       clearDraft(AGENT_DRAFT_KEY);
     },
     handleAgentNameDropdownVisible(visible) {
+      if (this.roleName === 'agent') return;
       if (!visible) return;
       if (!this.agentNameOptions.length) {
         this.resetAgentNameOptions();
@@ -1172,6 +1185,7 @@ export default {
       this.attachAgentNameScroll();
     },
     handleAgentNameSearch(query) {
+      if (this.roleName === 'agent') return;
       this.agentNameQuery = query || '';
       this.resetAgentNameOptions();
       this.fetchAgentNameOptions(false);
@@ -1299,6 +1313,9 @@ export default {
     },
     exportAgent() {
       this.filterbox.columns = getAgentInfoTitle(this)
+      if (this.roleName === 'agent') {
+        this.filterbox.agentName = this.currentAgentName || this.filterbox.agentName || localStorage.getItem('userName') || '';
+      }
       let timeRange = null
       if (this.filterbox.filterDateRange) {
         timeRange = new String(this.filterbox.filterDateRange)
@@ -1384,6 +1401,11 @@ export default {
     },
     reset(form) {
       this.$refs[form].resetFields()
+      if (this.roleName === 'agent') {
+        const lockedAgentName = this.currentAgentName || localStorage.getItem('userName') || '';
+        this.filterbox.agentName = lockedAgentName;
+        this.agentNameOptions = lockedAgentName ? [{ value: lockedAgentName, label: lockedAgentName }] : [];
+      }
     },
     submit(form) {
       this.$refs[form].validate(valid => {
@@ -1510,8 +1532,43 @@ export default {
       this.pageSize = pageSize
       this.handleCurrentPageChange(1)
     },
+    getAgentChannelConfigOptions() {
+      const allOptions = this.normalizeChannelOptionList(this.channelOptions);
+      const parentOptions = this.normalizeChannelOptionList(this.agentInfo?.parentChannelDtoList);
+      if (this.createType === 'firstLevel') {
+        return allOptions;
+      }
+      return parentOptions.length ? parentOptions : allOptions;
+    },
+    resolveChannelName(channelId, fallbackName = '') {
+      const id = String(channelId ?? '').trim();
+      if (!id) return fallbackName || '-';
+      const match = (this.channelOptions || []).find(item => String(item?.channelId ?? '').trim() === id);
+      return match?.channelName || fallbackName || id;
+    },
+    normalizeChannelOptionList(list) {
+      if (!Array.isArray(list)) return [];
+      return list
+        .filter(item => item && item.channelId !== undefined && item.channelId !== null && String(item.channelId).trim() !== '')
+        .map(item => ({
+          channelId: String(item.channelId).trim(),
+          channelName: this.resolveChannelName(item.channelId, item.channelName)
+        }));
+    },
     editAgentInfo(val) {
-      this.agentInfo = val
+      const selectedIds = Array.isArray(val?.channelIdList) && val.channelIdList.length
+        ? val.channelIdList
+        : (Array.isArray(val?.channelDtoList) ? val.channelDtoList.map(item => item?.channelId).filter(Boolean) : []);
+      const normalizedParentChannelList = this.normalizeChannelOptionList(val?.parentChannelDtoList);
+      const normalizedSelectedIds = selectedIds
+        .map(item => String(item ?? '').trim())
+        .filter(Boolean);
+      this.agentInfo = {
+        ...buildEmptyAgentInfo(),
+        ...val,
+        channelIdList: normalizedSelectedIds,
+        parentChannelDtoList: normalizedParentChannelList
+      };
       this.parentFeeLimits = {
         collectionFixedFee: null,
         collectionRate: null,
@@ -1527,7 +1584,7 @@ export default {
       this.agentInfo = buildEmptyAgentInfo()
       this.agentInfo.parentId = val.userId
       this.agentInfo.topAgentId = val.topAgentId
-      this.agentInfo.parentChannelDtoList = val.channelDtoList
+      this.agentInfo.parentChannelDtoList = this.normalizeChannelOptionList(val.channelDtoList)
       this.agentInfo.level = val.level + 1
       this.parentFeeLimits = {
         collectionFixedFee: val.collectionFixedFee,
@@ -1572,6 +1629,22 @@ export default {
 <style scoped>
 @import "@/api/common.css";
 @import "@/assets/base.css";
+
+.main-toolbar {
+  overflow: visible;
+}
+
+.main-toolbar .main-toolform {
+  height: auto;
+}
+
+.main-toolbar .main-toolform .main-toolform-item {
+  height: auto;
+}
+
+.agent-add-action-row {
+  margin-bottom: 10px;
+}
 
 .dialog-footer {
   display: flex;
@@ -1630,11 +1703,12 @@ export default {
 }
 
 .agent-main-label{
-  width: 90px;
-  min-width: 90px;
+  width: 112px;
+  min-width: 112px;
   text-align: right;
   padding-right: 10px;
   color: #1f2937;
+  white-space: nowrap;
 }
 
 .agent-main-value{
@@ -1937,5 +2011,67 @@ export default {
   bottom: 6px;
   border-left: 1px dashed #cbd5e1;
   opacity: 0.8;
+}
+
+.confirm-row {
+  display: flex;
+  justify-content: center;
+}
+
+.confirm-col {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.confirm-item {
+  width: 320px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  column-gap: 10px;
+}
+
+.confirm-label {
+  width: 110px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: #606266;
+  white-space: nowrap;
+}
+
+.confirm-required {
+  color: #f56c6c;
+  margin-right: 4px;
+}
+
+.confirm-input-item {
+  margin-bottom: 0;
+}
+
+  .confirm-input-item :deep(.el-form-item__content) {
+    margin-left: 0;
+  }
+
+  .confirm-input-item--labeled {
+    width: 100%;
+  }
+
+  .confirm-input-item--labeled :deep(.el-form-item__label) {
+    width: 110px;
+    justify-content: flex-end;
+  }
+
+.agent-google-confirm-form {
+  margin-top: 20px;
+  min-height: 90px;
+}
+
+.agent-google-confirm-footer {
+  margin-top: 12px;
+  padding-bottom: 4px;
 }
 </style>

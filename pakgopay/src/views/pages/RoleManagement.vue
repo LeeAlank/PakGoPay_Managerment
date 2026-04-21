@@ -10,9 +10,9 @@ import {getTimeFromTimestamp} from "@/api/common.js";
  </div>
 
  <div class="main-views-container">
-   <div class="toolbar" style="width: 96%">
-     <el-row style="display: flex;justify-content: space-between;">
-       <el-form-item style="display: flex;justify-content: center;color: deepskyblue">
+   <div class="toolbar role-management-toolbar" style="width: 96%; margin-left: 1%;">
+     <el-row class="role-management-toolbar-row" style="display: flex;justify-content: flex-start;">
+       <el-form-item class="role-management-filter-item" label-width="120px">
          <template #label>
            <span>{{ $t('roleManagement.filter.roleName') }}</span>
          </template>
@@ -24,13 +24,13 @@ import {getTimeFromTimestamp} from "@/api/common.js";
            </template>
          </el-input>
        </el-form-item>
-       <el-form-item>
-         <el-button @click="createRole"><SvgIcon name="add"/>{{ $t('common.operate.add') }}</el-button>
-       </el-form-item>
      </el-row>
    </div>
 
    <div class="reportInfo">
+     <div class="role-management-table-actions">
+       <el-button @click="createRole"><SvgIcon name="add"/>{{ $t('common.operate.add') }}</el-button>
+     </div>
      <el-form>
        <el-table
            :key="tableKey"
@@ -49,21 +49,11 @@ import {getTimeFromTimestamp} from "@/api/common.js";
              {{row.roleId}}
            </div>
          </el-table-column>
-         <el-table-column
-             prop="remark"
-             :label="$t('roleManagement.column.roleFlag')"
-             v-slot="{row}"
-             align="center"
-         >
-           <div>
-             {{row.remark}}
-           </div>
-         </el-table-column>
-         <el-table-column
-             prop="roleName"
-             :label="$t('roleManagement.column.roleName')"
-             v-slot="{row}"
-             align="center"
+        <el-table-column
+            prop="roleName"
+            :label="$t('roleManagement.column.roleName')"
+            v-slot="{row}"
+            align="center"
          >
            <div>
              {{row.roleName}}
@@ -79,20 +69,30 @@ import {getTimeFromTimestamp} from "@/api/common.js";
              {{getTimeFromTimestamp(row.createTime)}}
            </div>
          </el-table-column>
-         <el-table-column
-             prop="updateTime"
-             :label="$t('roleManagement.column.updateTime')"
-             v-slot="{row}"
-             align="center"
-         >
-           <div>
-             {{row.updateTime}}
-           </div>
-         </el-table-column>
-         <el-table-column
-             :label="$t('common.operation')"
-             v-slot="{row}"
-             align="center"
+        <el-table-column
+            prop="updateTime"
+            :label="$t('roleManagement.column.updateTime')"
+            v-slot="{row}"
+            align="center"
+        >
+          <div>
+            {{getTimeFromTimestamp(row.updateTime)}}
+          </div>
+        </el-table-column>
+        <el-table-column
+            prop="remark"
+            :label="$t('roleManagement.column.roleFlag')"
+            v-slot="{row}"
+            align="center"
+        >
+          <div>
+            {{row.remark}}
+          </div>
+        </el-table-column>
+        <el-table-column
+            :label="$t('common.operation')"
+            v-slot="{row}"
+            align="center"
          >
            <div>
              <el-dropdown trigger="click">
@@ -213,32 +213,32 @@ import {getTimeFromTimestamp} from "@/api/common.js";
    <el-dialog
        :title="$t('roleManagement.dialog.googleVerify')"
        v-model="googleVerifyVisible"
-       class="dialog"
+       class="dialog role-google-confirm-dialog"
        center
-       width="30%"
-       style="min-width: 420px;"
-   
+       width="420px"
       align-center>
-     <el-form ref="googleVerifyForm" :model="googleVerifyForm" style="height:100px;margin-top: 20px">
-       <el-row>
-         <el-col :span="24" style="display: flex;justify-content: center;justify-items: center;align-items: center;">
-           <div>
-             <el-form-item :label="`${$t('common.googleCode')}:`" label-width="150px" prop="googleCode" required>
-               <el-input
-                 type="number"
-                 v-model.trim="googleVerifyForm.googleCode"
-                 style="width: 200px"
-                 :placeholder="$t('common.placeholder.googleCode')"
-               />
-             </el-form-item>
-           </div>
-         </el-col>
-       </el-row>
+     <el-form ref="googleVerifyForm" :model="googleVerifyForm" class="role-google-confirm-form">
+       <el-form-item
+           :label="`${$t('common.googleCode')}:`"
+           label-width="150px"
+           prop="googleCode"
+           class="role-google-confirm-item"
+           required
+       >
+         <el-input
+           type="number"
+           v-model.trim="googleVerifyForm.googleCode"
+           style="width: 200px"
+           :placeholder="$t('common.placeholder.googleCode')"
+         />
+       </el-form-item>
      </el-form>
-     <div slot="footer" class="dialog-footer" style="margin-right: 3%;display: flex;justify-content: flex-end;align-items: center;gap: 8px;">
-       <el-button @click="cancelGoogleVerify">{{ $t('common.cancel') }}</el-button>
-       <el-button type="primary" @click="submitGoogleVerify">{{ $t('common.confirm') }}</el-button>
-     </div>
+     <template #footer>
+       <div class="dialog-footer role-google-confirm-footer">
+         <el-button @click="cancelGoogleVerify">{{ $t('common.cancel') }}</el-button>
+         <el-button type="primary" @click="submitGoogleVerify">{{ $t('common.confirm') }}</el-button>
+       </div>
+     </template>
    </el-dialog>
 
    <el-dialog
@@ -293,7 +293,7 @@ import {
   getRoleInfoByRoleId,
   menu,
   modifyRoleInfo,
-  roleList
+  roleListPage
 } from "@/api/interface/backendInterface.js";
 import {nextTick, ref} from "vue";
 import {saveDraft, loadDraft, clearDraft} from "@/util/draft.js";
@@ -322,6 +322,7 @@ export default {
         googleCode: ''
       },
       pendingRoleInfo: null,
+      originalEditRoleInfo: null,
       dialogVisible3: false,
       dialogTitle3: '',
       roleInfoFormData: [],
@@ -420,16 +421,46 @@ export default {
     clearRoleDraft() {
       clearDraft(ROLE_DRAFT_KEY);
     },
+    normalizeRoleMenuList(menuList) {
+      return [...new Set((menuList || []).filter(Boolean).map(String))].sort();
+    },
+    hasEditRoleChanges() {
+      if (!this.originalEditRoleInfo) {
+        return true;
+      }
+      const currentMenuList = this.normalizeRoleMenuList(this.roleInfo.menuList);
+      const originalMenuList = this.normalizeRoleMenuList(this.originalEditRoleInfo.menuList);
+      return JSON.stringify(currentMenuList) !== JSON.stringify(originalMenuList);
+    },
     getRoleInfo() {
-      roleList(null).then(res => {
-        this.roleInfoTableData = JSON.parse(res.data.data);
+      roleListPage({
+        roleName: this.filterBox.roleName,
+        pageNo: this.currentPage,
+        pageSize: this.pageSize
+      }).then(res => {
+        if (res.status === 200 && res.data.code === 0) {
+          const data = JSON.parse(res.data.data)
+          this.roleInfoTableData = data.roles || []
+          this.totalCount = data.totalNumber || 0
+          this.currentPage = data.pageNo || this.currentPage
+          this.pageSize = data.pageSize || this.pageSize
+        }
       })
     },
 
     getRoleInfoByRoleName() {
-      roleList(this.filterBox.roleName).then(res => {
+      this.currentPage = 1
+      roleListPage({
+        roleName: this.filterBox.roleName,
+        pageNo: this.currentPage,
+        pageSize: this.pageSize
+      }).then(res => {
         if (res.status === 200) {
-          this.roleInfoTableData = JSON.parse(res.data.data);
+          const data = JSON.parse(res.data.data);
+          this.roleInfoTableData = data.roles || [];
+          this.totalCount = data.totalNumber || 0;
+          this.currentPage = data.pageNo || this.currentPage;
+          this.pageSize = data.pageSize || this.pageSize;
         } else if (res.status === 401) {
           this.$notify({
             title: this.$t('common.error'),
@@ -467,12 +498,18 @@ export default {
       this.roleInfo = {
         ...this.defaultRoleInfo,
         roleId: row.roleId,
-        roleName: row.roleName,
-        remark: row.remark
+        roleName: row.roleName
       }
       this.loadRoleDraft()
       await nextTick(() => {
         treeRef2.value.setCheckedKeys(this.menuList, true);
+        this.originalEditRoleInfo = {
+          roleName: row.roleName || '',
+          remark: '',
+          menuList: this.normalizeRoleMenuList(
+            treeRef2.value.getCheckedKeys(false, false).concat(treeRef2.value.getHalfCheckedKeys(false, false))
+          )
+        }
       })
     },
     deleteRoleInfo(row) {
@@ -498,10 +535,13 @@ export default {
       })
     },
     handleSizeChange(val) {
-
+      this.pageSize = val;
+      this.currentPage = 1;
+      this.getRoleInfo();
     },
     handleChange(val) {
-
+      this.currentPage = val;
+      this.getRoleInfo();
     },
     cancelDialog() {
       this.dialogVisible = false;
@@ -515,6 +555,7 @@ export default {
       this.dialogTitle2 = '';
       this.resetEditForm();
       this.clearRoleDraft();
+      this.originalEditRoleInfo = null;
       this.dialogMode = '';
     },
     cancelGoogleVerify() {
@@ -626,6 +667,15 @@ export default {
       const that = this
       this.$refs[formName].validate((valid) => {
         if (valid) {
+          if (!this.hasEditRoleChanges()) {
+            this.$notify({
+              title: this.$t('roleManagement.notice.warning'),
+              message: this.$t('roleManagement.message.noChange'),
+              type: 'warning',
+              position: 'bottom-right'
+            });
+            return false;
+          }
           this.pendingRoleInfo = Object.assign({}, that.roleInfo)
           this.dialogVisible2 = false
           this.dialogTitle2 = ''
@@ -667,7 +717,9 @@ export default {
           this.pendingRoleInfo = null
           this.resetEditForm()
           this.clearRoleDraft()
+          this.originalEditRoleInfo = null
           this.dialogMode = ''
+          this.getRoleInfo()
           this.$notify({
             title: this.$t('common.success'),
             message: this.$t('roleManagement.message.updateSuccess'),
@@ -751,6 +803,7 @@ export default {
     },
     resetEditForm() {
       Object.assign(this.roleInfo, this.defaultRoleInfo)
+      this.originalEditRoleInfo = null
       if (this.$refs.roleInfo) {
         this.$refs.roleInfo.resetFields()
       }
@@ -800,5 +853,80 @@ export default {
   padding-top: 10px;
   padding-bottom: 10px;
   z-index: 1;
+}
+
+:deep(.role-google-confirm-dialog .el-dialog__body) {
+  padding-top: 20px;
+  padding-bottom: 28px;
+}
+
+:deep(.role-google-confirm-dialog .el-dialog__footer) {
+  border-top: 1px solid #ebeef5;
+  padding-top: 22px;
+  padding-bottom: 18px;
+}
+
+.role-google-confirm-form {
+  margin-top: 8px;
+  padding-bottom: 20px;
+}
+
+.role-google-confirm-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-google-confirm-item {
+  width: 100%;
+  max-width: 350px;
+  margin: 0 auto;
+  margin-bottom: 0;
+}
+
+.role-google-confirm-item :deep(.el-form-item__label) {
+  justify-content: flex-end;
+}
+
+.role-google-confirm-item :deep(.el-form-item__content) {
+  justify-content: flex-start;
+}
+
+.role-management-toolbar-row {
+  width: 100%;
+  margin-left: 0;
+}
+
+.role-management-toolbar {
+  margin-top: 12px;
+}
+
+.role-management-table-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.role-management-filter-item {
+  margin-left: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+  display: flex;
+  align-items: center;
+}
+
+.role-management-filter-item :deep(.el-form-item__label) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+  line-height: 32px;
+}
+
+.role-management-filter-item :deep(.el-form-item__content) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
 </style>

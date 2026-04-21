@@ -36,3 +36,31 @@ npm run dev
 ```sh
 npm run build
 ```
+
+## Frontend Deploy + Cloudflare Auto Upload
+
+`deploy_pakgopaymanagement.sh` supports optional Cloudflare Pages publish.
+
+Recommended: use local env file (once)
+
+```sh
+cp .cf.env.example .cf.env
+# edit .cf.env with your real Cloudflare values
+bash deploy_pakgopaymanagement.sh
+```
+
+Or pass variables inline:
+
+```sh
+CF_UPLOAD=yes \
+CF_PAGES_PROJECT=your-pages-project \
+CF_ACCOUNT_ID=your-account-id \
+CF_API_TOKEN=your-api-token \
+bash deploy_pakgopaymanagement.sh
+```
+
+Optional cache purge:
+
+Set in `.cf.env` or inline:
+- `CF_PURGE_CACHE=yes`
+- `CF_ZONE_ID=your-zone-id`

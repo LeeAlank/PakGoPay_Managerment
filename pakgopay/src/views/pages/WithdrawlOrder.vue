@@ -121,7 +121,7 @@ import {getTimeFromTimestamp, getTodayStartTimestamp} from "@/api/common.js";
               v-slot="{row}"
               align="center"
           >
-            <div>{{row.id}}</div>
+            <div>{{ row.withdrawNo || row.serialNo || row.id }}</div>
           </el-table-column>
           <el-table-column
               prop="merchantAgentName"
@@ -226,6 +226,7 @@ import {getTimeFromTimestamp, getTodayStartTimestamp} from "@/api/common.js";
   <el-dialog
       v-model="approvalDialogVisible"
       :title="approvalDialogTitle"
+      class="withdrawl-order-google-dialog"
       align-center
       width="420px"
   >
@@ -233,10 +234,11 @@ import {getTimeFromTimestamp, getTodayStartTimestamp} from "@/api/common.js";
         ref="approvalFormRef"
         :model="approvalForm"
         :rules="approvalRules"
-        label-width="100px"
+        label-width="110px"
+        class="withdrawl-order-google-form"
     >
-      <el-form-item :label="$t('common.googleCode')" prop="googleCode">
-        <el-input v-model="approvalForm.googleCode" type="number" />
+      <el-form-item :label="$t('common.googleCode')" prop="googleCode" class="withdrawl-order-google-code-item">
+        <el-input v-model="approvalForm.googleCode" type="number" style="width: 200px" />
       </el-form-item>
       <el-form-item :label="$t('withdrawlOrder.form.remark')" prop="remark">
         <el-input
@@ -256,10 +258,11 @@ import {getTimeFromTimestamp, getTodayStartTimestamp} from "@/api/common.js";
 
 <script>
 import {
+  auditWithdrawOrder,
+  getWithdrawOrderPage,
   getAgentInfo,
   getAllCurrencyType,
-  getMerchantInfo,
-  getWithdrawStatementeOrder, modifyWithdrawStatementeOrder
+  getMerchantInfo
 } from "@/api/interface/backendInterface.js";
 import {loadingBody} from "@/api/common.js";
 import { getTimeZoneOffsetMinutes } from "@/util/timezoneOptions.js";
@@ -275,6 +278,14 @@ export default {
       tableKey: 0,
       activeTool: "1",
       filterbox: {
+        id: '',
+        withdrawNo: '',
+        userType: 1,
+        userId: '',
+        status: null,
+        requestIp: '',
+        pageNo: 1,
+        pageSize: 10,
         orderStatus: '',
         orderId: '',
         orderChannel: '',
@@ -319,7 +330,7 @@ export default {
         googleCode: '',
         remark: '',
         isAgree: true,
-        id: null,
+        withdrawNo: null,
         type: ''
       },
       approvalRules: {
@@ -361,6 +372,7 @@ export default {
       const orderNo = query.orderNo
       if (orderNo) {
         this.filterbox.id = String(orderNo)
+        this.filterbox.withdrawNo = String(orderNo)
       }
       const range = this.buildDayRangeFromTimestamp(query.timestamp)
       if (range) {
@@ -387,32 +399,42 @@ export default {
     getOrderStatusClass(status) {
       const map = {
         0: 'status-pending',
-        1: 'status-success',
-        2: 'status-fail'
+        1: 'status-fail',
+        2: 'status-success'
       };
       return map[status] || 'status-other';
     },
     reset(form) {
       this.$refs[form].resetFields();
-      this.filterbox.userType = 1
       this.filterbox.filterDateRangeUtc = []
       this.filterbox.startTime = null
       this.filterbox.endTime = null
+      const roleName = localStorage.getItem('roleName');
+      const userId = localStorage.getItem('userId') || '';
+      if (roleName === 'agent') {
+        this.filterbox.userType = 2;
+        this.filterbox.userId = userId;
+      } else if (roleName === 'merchant') {
+        this.filterbox.userType = 1;
+        this.filterbox.userId = userId;
+      } else {
+        this.filterbox.userType = 1;
+      }
     },
     search() {
-      this.filterbox.orderType = 2
+      const query = this.buildWithdrawOrderQuery()
       const range = (this.filterbox.filterDateRangeUtc && this.filterbox.filterDateRangeUtc.length === 2)
           ? this.filterbox.filterDateRangeUtc
           : this.filterbox.filterDateRange;
       if (range && range.length === 2) {
-        this.filterbox.startTime = Number(range[0]) / 1000;
-        this.filterbox.endTime = Number(range[1]) / 1000;
+        query.startTime = Number(range[0]) / 1000;
+        query.endTime = Number(range[1]) / 1000;
       }
       const loadingInstance = loadingBody(this, 'reportInfo-table1')
-      getWithdrawStatementeOrder(this.filterbox).then(res => {
+      getWithdrawOrderPage(query).then(res => {
         if (res.status === 200 && res.data.code === 0) {
           let allData = JSON.parse(res.data.data)
-          this.withdrawlOrderTableInfo = allData.accountStatementsDtoList
+          this.withdrawlOrderTableInfo = allData.withdrawOrderDtoList || []
           this.totalCount = allData.totalNumber
           this.pageSize = allData.pageSize
           this.currentPage = allData.pageNo
@@ -436,6 +458,18 @@ export default {
           position: 'bottom-right'
         })
       })
+    },
+    buildWithdrawOrderQuery() {
+      return {
+        withdrawNo: this.filterbox.withdrawNo || this.filterbox.id || undefined,
+        merchantAgentId: this.filterbox.userId || undefined,
+        userRole: this.filterbox.userType === 1 ? 2 : this.filterbox.userType === 2 ? 4 : undefined,
+        currency: this.filterbox.currency || undefined,
+        status: this.filterbox.status ?? undefined,
+        requestIp: this.filterbox.requestIp || undefined,
+        pageNo: this.filterbox.pageNo,
+        pageSize: this.filterbox.pageSize
+      };
     },
     handleDateRangeChange(val) {
       if (!val || val.length !== 2) {
@@ -479,8 +513,8 @@ export default {
     formatOrderStatus(status) {
       const statusMap = {
         0: this.$t('withdrawlOrder.status.pending'),
-        1: this.$t('withdrawlOrder.status.approved'),
-        2: this.$t('withdrawlOrder.status.rejected')
+        1: this.$t('withdrawlOrder.status.rejected'),
+        2: this.$t('withdrawlOrder.status.approved')
       };
       return statusMap[status] || status;
     },
@@ -496,8 +530,8 @@ export default {
     formatOrderUserName(row) {
       if (!row) return '-';
       if (row.name) return row.name;
-      if (row.userRole === 1 || row.userRole === '1') return this.merchantMaps[row.userId] || '-';
-      if (row.userRole === 2 || row.userRole === '2') return this.agentMaps[row.userId] || '-';
+      if (row.userRole === 2 || row.userRole === '2') return this.merchantMaps[row.userId] || '-';
+      if (row.userRole === 4 || row.userRole === '4') return this.agentMaps[row.userId] || '-';
       if (this.filterbox.userType === 1) return this.merchantMaps[row.userId] || '-';
       if (this.filterbox.userType === 2) return this.agentMaps[row.userId] || '-';
       return this.merchantMaps[row.userId] || this.agentMaps[row.userId] || '-';
@@ -513,7 +547,7 @@ export default {
         googleCode: '',
         remark: '',
         isAgree,
-        id: row.id,
+        withdrawNo: row?.withdrawNo || row?.serialNo || row?.id,
         type: isAgree ? 'approve' : 'reject'
       };
       this.approvalDialogVisible = true;
@@ -529,11 +563,12 @@ export default {
           return;
         }
         const info = {
-          isAgree: this.approvalForm.isAgree,
-          id: this.approvalForm.id,
-          type: this.approvalForm.type,
+          withdrawNo: this.approvalForm.withdrawNo,
+          status: this.approvalForm.isAgree ? 2 : 1,
+          failReason: this.approvalForm.isAgree ? '' : this.approvalForm.remark,
           googleCode: this.approvalForm.googleCode,
-          remark: this.approvalForm.remark
+          remark: this.approvalForm.remark,
+          type: this.approvalForm.type
         };
         this.submit(info);
       });
@@ -544,7 +579,7 @@ export default {
         googleCode: '',
         remark: '',
         isAgree: true,
-        id: null,
+        withdrawNo: null,
         type: ''
       };
       this.$nextTick(() => {
@@ -555,7 +590,7 @@ export default {
     },
     submit(info) {
       if (!this.isAdmin) return
-      modifyWithdrawStatementeOrder(info).then(res => {
+      auditWithdrawOrder(info).then(res => {
         if (res.status === 200 && res.data.code === 0) {
           this.$notify({
             title: this.$t('common.success'),
@@ -760,6 +795,30 @@ export default {
 
 :deep(.main-toolbar .main-toolform.withdrawl-order-toolform > .withdrawl-order-time-row > .withdrawl-order-time-placeholder) {
   display: block;
+}
+
+.withdrawl-order-google-form {
+  margin-top: 8px;
+}
+
+.withdrawl-order-google-code-item {
+  width: 310px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.withdrawl-order-google-code-item :deep(.el-form-item__label-wrap) {
+  flex: 0 0 auto;
+}
+
+.withdrawl-order-google-code-item :deep(.el-form-item__label) {
+  width: 110px;
+  justify-content: flex-end;
+}
+
+.withdrawl-order-google-code-item :deep(.el-form-item__content) {
+  flex: 0 0 200px;
+  max-width: 200px;
 }
 
 </style>

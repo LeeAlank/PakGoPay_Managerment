@@ -11,7 +11,6 @@
     font-weight: bold;
     /*background-color: white;*/
     padding-left: 10px;
-    border-radius: 10px;
     width: 96%;
    /* color: deepskyblue;*/
     height: 50px;
@@ -179,6 +178,12 @@
 
 .main-views-form {
     height: 100px;
+}
+
+/* Keep right-top action rows (usually add/create buttons) visually separated from tables */
+.main-views-form > div[style*="float: right"],
+.main-views-form > div[style*="justify-content: right"] {
+    margin-bottom: 8px;
 }
 
 .toolbarName{

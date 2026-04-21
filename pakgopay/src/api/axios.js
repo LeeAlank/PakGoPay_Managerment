@@ -46,6 +46,27 @@ const MUTATION_POST_URL_KEYWORDS = [
     "/config"
 ];
 
+function translate(key) {
+    return i18n?.global?.t ? i18n.global.t(key) : key;
+}
+
+function shouldMaskBackendMessage(code, message) {
+    const normalizedMessage = String(message || "").trim().toLowerCase();
+    if (!normalizedMessage) return false;
+    if (code === 1) return true;
+    return normalizedMessage === "server internal error";
+}
+
+function normalizeBusinessResponseMessage(data) {
+    if (!data || typeof data !== "object") {
+        return data;
+    }
+    if (shouldMaskBackendMessage(data.code, data.message)) {
+        data.message = translate('common.serverInternalError');
+    }
+    return data;
+}
+
 function isSubmitMethod(method) {
     const m = String(method || "").toLowerCase();
     return m === "post" || m === "put" || m === "patch" || m === "delete";
@@ -102,8 +123,7 @@ function buildRateLimitedData(url) {
 }
 
 function notifyRateLimitedOnce(message) {
-    const t = i18n?.global?.t ? i18n.global.t.bind(i18n.global) : (key) => key;
-    const content = message || t('common.rateLimitMessage');
+    const content = message || translate('common.rateLimitMessage');
     const now = Date.now();
     if (now - lastRateLimitNotifyAt < RATE_LIMIT_NOTIFY_COOLDOWN_MS) {
         return;
@@ -262,6 +282,7 @@ service.interceptors.request.use(config => {
 
 service.interceptors.response.use(response => {
     clearPendingSubmitByConfig(response?.config);
+    normalizeBusinessResponseMessage(response?.data);
     if (response?.status === 200 && (response?.data?.rateLimited === true || response?.data?.code === 429) && !response?.data?.rateLimitedNotified) {
         notifyRateLimitedOnce();
     }
@@ -271,6 +292,7 @@ service.interceptors.response.use(response => {
     return response;
 }, error => {
     clearPendingSubmitByConfig(error?.config);
+    normalizeBusinessResponseMessage(error?.response?.data);
     if (error?.isDuplicateSubmit === true) {
         return Promise.reject(error);
     }

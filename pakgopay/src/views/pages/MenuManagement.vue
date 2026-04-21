@@ -13,7 +13,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
   </div>
   <div clas="main-view-container" style="width: 96%;margin-left: 2%;height: 700px;margin-top: 5%;">
     <el-row style="float: right;margin-right: 1%;">
-      <el-button style="color: lightskyblue" @click="createMenu"><SvgIcon name="add"/>{{ $t('menuManagement.action.add') }}</el-button>
+      <el-button style="color: #ffffff" @click="createMenu"><SvgIcon name="add"/>{{ $t('menuManagement.action.add') }}</el-button>
     </el-row>
     <el-table
     :data="menuData"

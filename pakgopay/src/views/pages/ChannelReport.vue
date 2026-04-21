@@ -441,7 +441,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{row.orderQuantity === 0 ? '0.00' : ((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%</div>
+              <div>{{row.orderQuantity === 0 ? '0.00' : (Math.trunc((row.successQuantity / row.orderQuantity) * 10000) / 100).toFixed(2)}}%</div>
             </el-table-column>
             <el-table-column
                 prop="collectionChannelMerchantCommission"
@@ -523,7 +523,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{ row.orderQuantity === 0 ? '0.00' : ((row.successQuantity/row.orderQuantity)*100).toFixed(2)}}%</div>
+              <div>{{ row.orderQuantity === 0 ? '0.00' : (Math.trunc((row.successQuantity / row.orderQuantity) * 10000) / 100).toFixed(2)}}%</div>
             </el-table-column>
             <el-table-column
                 prop="merchantFee"
@@ -591,7 +591,7 @@ export default {
 }
 
 .toolbarName{
-  color: black;
+  color: #667eea;
 }*/
 
 </style>

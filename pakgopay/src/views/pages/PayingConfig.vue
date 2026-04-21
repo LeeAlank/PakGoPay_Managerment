@@ -5,7 +5,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
 
 <template>
   <div class="main-views-container">
-    <div class="main-title" style="width:95%;margin-left:0; border-radius: 0;margin-right: 0;padding-left:20px;padding-top:20px;">
+    <div class="main-title" style="width:95%;margin-left:0; border-radius: 0;margin-right: 0;padding-left:20px;padding-top:8px;">
       {{ $t('payingConfig.title') }}
     </div>
 
@@ -69,8 +69,8 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
       </el-form>
     </div>
     <div style="background-color: white; display: flex;justify-content: space-between;align-items: center;width: 96%;border-top: solid 2px gray;height: 30%;">
-      <el-button style="margin-left: 30%;width: 100px;height: auto;color: dodgerblue" @click="reset">{{ $t('common.reset') }}</el-button>
-      <el-button style="margin-right: 30%;width: 100px;height: auto;color: dodgerblue">{{ $t('common.submit') }}</el-button>
+      <el-button style="margin-left: 30%;width: 100px;height: auto;color: #ffffff" @click="reset">{{ $t('common.reset') }}</el-button>
+      <el-button style="margin-right: 30%;width: 100px;height: auto;color: #ffffff">{{ $t('common.submit') }}</el-button>
     </div>
   </div>
 </template>

@@ -70,6 +70,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           :label="$t('accountManagement.column.status')"
           v-slot="{row}"
           align="center"
+          width="82"
       >
         <div>
           <el-tag :type="row.status === 1 ? 'success' : 'danger'">
@@ -81,6 +82,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           :label="$t('accountManagement.column.googleToken')"
           v-slot="{row}"
           align="center"
+          width="92"
       >
         <div>
           <el-tag :type="row.isBind ? 'success' : 'danger'">
@@ -89,11 +91,30 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
         </div>
       </el-table-column>
       <el-table-column
-          width="100"
+          :label="$t('accountManagement.column.createdBy')"
+          v-slot="{row}"
+          align="center"
+          width="120"
+      >
+        <div>
+          {{ row.createdBy || '-' }}
+        </div>
+      </el-table-column>
+      <el-table-column
+          :label="$t('accountManagement.column.createTime')"
+          v-slot="{row}"
+          align="center"
+          width="160"
+      >
+        <div>
+          {{ row.createTimeText || '-' }}
+        </div>
+      </el-table-column>
+      <el-table-column
+          width="86"
           :label="$t('common.operation')"
           align="center"
           v-slot="{row}"
-          fixed="right"
       >
         <el-dropdown trigger="click">
           <SvgIcon name="more" width="30" height="30" />
@@ -135,7 +156,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
           <el-col :span="8">
             <div class="el-form-line">
               <el-form-item :label="$t('accountManagement.form.userName')" label-width="150px" prop="loginName">
-                <el-input auto-complete="new-password" type="text" v-model.trim="createUserInfo.loginName" style="width: 200px"></el-input>
+                <el-input :disabled="dialogMode === 'edit'" auto-complete="new-password" type="text" v-model.trim="createUserInfo.loginName" style="width: 200px"></el-input>
               </el-form-item>
             </div>
           </el-col>
@@ -159,6 +180,7 @@ import SvgIcon from "@/components/SvgIcon/index.vue";
             <div class="el-form-line">
               <el-form-item :label="$t('accountManagement.form.role')" label-width="150px" prop="roleId">
                 <el-select
+                  :disabled="dialogMode === 'edit'"
                   v-model.trim="createUserInfo.roleId"
                   :placeholder="$t('accountManagement.placeholder.role')"
                   filterable
@@ -447,7 +469,13 @@ export default {
 
   data() {
     const validatePass = (rule, value, callback) => {
+      const isEdit = this.dialogMode === 'edit';
+      const hasPasswordInput = !!(this.createUserInfo.password || this.createUserInfo.confirmPassword);
       if (value === '' || value === undefined) {
+        if (isEdit && !hasPasswordInput) {
+          callback();
+          return;
+        }
         callback(new Error(this.$t('accountManagement.validation.passwordRequired')))
       } else {
         if (this.createUserInfo.confirmPassword !== '' && this.createUserInfo.confirmPassword !== 'undefined') {
@@ -458,7 +486,13 @@ export default {
     };
 
     const validatePass2 = (rule, value, callback) => {
+      const isEdit = this.dialogMode === 'edit';
+      const hasPasswordInput = !!(this.createUserInfo.password || this.createUserInfo.confirmPassword);
       if (value === '' || value === undefined) {
+        if (isEdit && !hasPasswordInput) {
+          callback();
+          return;
+        }
         callback(new Error(this.$t('accountManagement.validation.confirmPasswordRequired')))
       } else if (value !== this.createUserInfo.password) {
         callback(new Error(this.$t('accountManagement.validation.passwordMismatch')))
@@ -533,11 +567,9 @@ export default {
           { required: true, message: this.$t('accountManagement.validation.userNameRequired'), trigger: 'blur' }
         ],
         password: [
-          { required: true, message: this.$t('accountManagement.validation.passwordRequired'), trigger: 'blur' },
           { validator: validatePass, trigger: 'blur' }
         ],
         confirmPassword: [
-          { required: true, message: this.$t('accountManagement.validation.confirmPasswordRequired'), trigger: 'blur' },
           { validator: validatePass2, trigger: 'blur' }
         ],
         roleId: [
@@ -622,7 +654,8 @@ export default {
       this.dialogTitle = this.$t('accountManagement.dialog.editTitle')
       this.dialogMode = 'edit'
       this.loadAccountDraft()
-      this.createUserInfo.confirmPassword = this.createUserInfo.password || ''
+      this.createUserInfo.password = ''
+      this.createUserInfo.confirmPassword = ''
     },
     deleteUser(row) {
       this.dialogVisible2 = true;
@@ -892,10 +925,17 @@ export default {
         return Promise.resolve();
       }
       this.submitUserLoading = true
-      this.createUserInfo.operatorId = localStorage.getItem("userId")
       const submitMode = this.dialogMode
+      const payload = Object.assign({}, this.createUserInfo, {
+        operatorId: localStorage.getItem("userId")
+      })
+      const hasPasswordInput = !!(payload.password || payload.confirmPassword)
+      if (submitMode === 'edit' && !hasPasswordInput) {
+        delete payload.password
+        delete payload.confirmPassword
+      }
       const requestFunc = submitMode === 'edit' ? editLoginUser : addNewLoginUser
-      return requestFunc(this.createUserInfo).then(response => {
+      return requestFunc(payload).then(response => {
         if (response.status !== 200) {
           this.$notify({
             title: this.$t('common.failed'),

@@ -89,6 +89,35 @@ export default {
     }
   },
   methods: {
+    async applyCurrentMerchantDefaultFilter() {
+      const roleName = localStorage.getItem('roleName')
+      if (roleName !== 'merchant') {
+        return
+      }
+      const loginName = localStorage.getItem('userName') || ''
+      if (!loginName) {
+        return
+      }
+      try {
+        const res = await getMerchantInfo({
+          accountName: loginName,
+          pageNo: 1,
+          pageSize: 1,
+          isNeedCardData: false
+        })
+        if (res.status === 200 && res.data.code === 0) {
+          const allData = JSON.parse(res.data.data)
+          const currentMerchantName = allData?.merchantInfoDtoList?.[0]?.merchantName || loginName
+          this.filterbox.merchantName = currentMerchantName
+          this.merchantOptions = [{ value: currentMerchantName, label: currentMerchantName }]
+          return
+        }
+      } catch (e) {
+        // fallback below
+      }
+      this.filterbox.merchantName = loginName
+      this.merchantOptions = [{ value: loginName, label: loginName }]
+    },
     handleCurrencyChange(tab) {
       if (tab && tab.paneName !== undefined) {
         this.filterbox.currency = tab.paneName
@@ -360,6 +389,9 @@ export default {
     reset(form) {
       this.$refs[form].resetFields();
       this.filterbox.currency = this.currency
+      if (this.roleName === 'merchant') {
+        this.applyCurrentMerchantDefaultFilter()
+      }
       //filterDateRange.value = '';
     },
     handleTabClick(tab) {
@@ -378,9 +410,7 @@ export default {
   },
   async mounted() {
     this.roleName = localStorage.getItem('roleName') || '';
-    if (this.roleName === 'merchant') {
-      this.filterbox.merchantName = localStorage.getItem('userName') || '';
-    }
+    await this.applyCurrentMerchantDefaultFilter()
     await getAllCurrencyType().then(res => {
       if (res.status === 200 && res.data.code === 0) {
         this.currencyOptions = JSON.parse(res.data.data).currencyTypeDTOList
@@ -590,7 +620,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ row.orderQuantity === 0 ? '0.00' : ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%
+                {{ row.orderQuantity === 0 ? '0.00' : (Math.trunc((row.successQuantity / row.orderQuantity) * 10000) / 100).toFixed(2) }}%
               </div>
             </el-table-column>
             <el-table-column
@@ -723,7 +753,7 @@ export default {
                 align="center"
             >
               <div>
-                {{ row.orderQuantity === 0 ? '0.00' : ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%
+                {{ row.orderQuantity === 0 ? '0.00' : (Math.trunc((row.successQuantity / row.orderQuantity) * 10000) / 100).toFixed(2) }}%
               </div>
             </el-table-column>
             <el-table-column
@@ -993,7 +1023,7 @@ export default {
 
 
 .toolbarName {
-  color: black;
+  color: #667eea;
 }
 
 .currency-tabs {

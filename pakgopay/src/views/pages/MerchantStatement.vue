@@ -63,9 +63,15 @@ import {getTimeFromTimestamp} from "@/api/common.js";
                         class="merchant-statement-filter-input"
                         clearable
                     >
-                      <el-option :label="$t('merchantStatement.transactionType.recharge')" :value="1"></el-option>
-                      <el-option :label="$t('merchantStatement.transactionType.withdraw')" :value="2"></el-option>
-                      <el-option :label="$t('merchantStatement.transactionType.manualReconcile')" :value="3"></el-option>
+                      <el-option :label="$t('merchantStatement.transactionType.collectionCredit')" :value="11"></el-option>
+                      <el-option :label="$t('merchantStatement.transactionType.payoutFreeze')" :value="21"></el-option>
+                      <el-option :label="$t('merchantStatement.transactionType.payoutUnfreeze')" :value="22"></el-option>
+                      <el-option :label="$t('merchantStatement.transactionType.payoutConfirmDebit')" :value="23"></el-option>
+                      <el-option :label="$t('merchantStatement.transactionType.withdrawFreeze')" :value="31"></el-option>
+                      <el-option :label="$t('merchantStatement.transactionType.withdrawUnfreeze')" :value="32"></el-option>
+                      <el-option :label="$t('merchantStatement.transactionType.withdrawConfirmDebit')" :value="33"></el-option>
+                      <el-option :label="$t('merchantStatement.transactionType.manualAdd')" :value="41"></el-option>
+                      <el-option :label="$t('merchantStatement.transactionType.manualSubtract')" :value="42"></el-option>
                     </el-select>
                   </el-form-item>
                 </el-col>
@@ -103,9 +109,7 @@ import {getTimeFromTimestamp} from "@/api/common.js";
             width="200px"
             align="center"
         >
-          <div>
-            {{row.id}}
-          </div>
+          <div>{{ row.serialNo || row.id }}</div>
         </el-table-column>
         <el-table-column
             prop="商户名称"
@@ -264,7 +268,7 @@ export default {
       merchantAccountOptions: [],
       merchantAccountProps: {
         value: 'userId',
-        label: 'accountName'
+        label: 'merchantName'
       },
       filterForm: {
 
@@ -287,16 +291,19 @@ export default {
   },
   methods: {
     transactionTypeLabel(type) {
-      if (type === 1 || type === '1') {
-        return this.$t('merchantStatement.transactionType.recharge')
+      const typeMap = {
+        11: 'collectionCredit',
+        21: 'payoutFreeze',
+        22: 'payoutUnfreeze',
+        23: 'payoutConfirmDebit',
+        31: 'withdrawFreeze',
+        32: 'withdrawUnfreeze',
+        33: 'withdrawConfirmDebit',
+        41: 'manualAdd',
+        42: 'manualSubtract'
       }
-      if (type === 2 || type === '2') {
-        return this.$t('merchantStatement.transactionType.withdraw')
-      }
-      if (type === 3 || type === '3') {
-        return this.$t('merchantStatement.transactionType.manualReconcile')
-      }
-      return '-'
+      const key = typeMap[String(type)]
+      return key ? this.$t(`merchantStatement.transactionType.${key}`) : '-'
     },
     statusLabel(status) {
       if (status === 0 || status === '0') {
@@ -307,6 +314,9 @@ export default {
       }
       if (status === 2 || status === '2') {
         return this.$t('merchantStatement.status.failed')
+      }
+      if (status === 3 || status === '3') {
+        return this.$t('merchantStatement.status.processing')
       }
       return '-'
     },
@@ -333,6 +343,9 @@ export default {
       this.$refs[form].resetFields();
       this.filterbox.startTime = null
       this.filterbox.endTime = null
+      if (this.roleName === 'merchant') {
+        this.filterbox.merchantAgentId = localStorage.getItem('userId') || ''
+      }
     },
     async search() {
       /*this.filterForm.orderNO = this.filterbox.orderNO;
@@ -351,7 +364,7 @@ export default {
         this.filterbox.startTime = getTodayStartTimestamp()
         this.filterbox.endTime = getTodayStartTimestamp() + 86399
       }
-      this.filterbox.userRole = 1
+      this.filterbox.userRole = 2
       await getWithdrawStatementeOrder(this.filterbox).then(response => {
         this.merchantStatementsFormData = [];
         let result = JSON.parse(response.data.data);
@@ -370,6 +383,7 @@ export default {
       this.filterbox.merchantAgentId = currentUserId
       this.merchantAccountOptions = [{
         userId: currentUserId,
+        merchantName: currentUserName,
         accountName: currentUserName
       }]
       this.search()
@@ -388,6 +402,9 @@ export default {
 <style scoped>
 @import "@/assets/base.css";
 .main-toolform-line {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
   margin-right: 0;
 }
 

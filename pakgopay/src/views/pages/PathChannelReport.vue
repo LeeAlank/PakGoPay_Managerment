@@ -289,7 +289,7 @@ export default {
   <el-collapse v-model="activeTool">
     <el-collapse-item name="1">
       <template #title>
-        <span class="toolbarName">
+        <span class="toolbarName" style="color: #667eea;">
           {{ $t('common.toolbar') }}
         </span>
       </template>
@@ -454,7 +454,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{ row.orderQuantity === 0 ? '0.00' : ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%</div>
+              <div>{{ row.orderQuantity === 0 ? '0.00' : (Math.trunc((row.successQuantity / row.orderQuantity) * 10000) / 100).toFixed(2) }}%</div>
             </el-table-column>
             <el-table-column
                 prop="orderBalance"
@@ -544,7 +544,7 @@ export default {
                 align="center"
                 v-slot="{row}"
             >
-              <div>{{ row.orderQuantity === 0 ? '0.00' : ((row.successQuantity / row.orderQuantity) * 100).toFixed(2) }}%</div>
+              <div>{{ row.orderQuantity === 0 ? '0.00' : (Math.trunc((row.successQuantity / row.orderQuantity) * 10000) / 100).toFixed(2) }}%</div>
             </el-table-column>
             <el-table-column
                 prop="orderBalance"
@@ -609,4 +609,5 @@ export default {
 .path-channel-report-filter-col .el-form-item{
   width: 350px;
 }
+
 </style>

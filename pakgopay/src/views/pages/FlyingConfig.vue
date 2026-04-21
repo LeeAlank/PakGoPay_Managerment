@@ -1,6 +1,6 @@
 <template>
   <div class="main-views-container">
-    <div class="main-title" style="width:95%;margin-left:0; border-radius: 0;margin-right: 0;padding-left:20px;padding-top:20px;">
+    <div class="main-title" style="width:95%;margin-left:0; border-radius: 0;margin-right: 0;padding-left:20px;padding-top:8px;">
       {{ $t('flyingConfig.title') }}
     </div>
     <div class="main-views-form flying-config-form">
@@ -24,6 +24,14 @@
         <div class="el-form-line">
           <el-form-item>
             <template #label>
+              <span class="flying-config-label">{{ $t('flyingConfig.telegram.alertChatId') }}</span>
+            </template>
+            <el-input v-model="form.alertChatId" :placeholder="$t('flyingConfig.telegram.alertChatIdPlaceholder')" style="width: 300px;" />
+          </el-form-item>
+        </div>
+        <div class="el-form-line">
+          <el-form-item>
+            <template #label>
               <span class="flying-config-label">{{ $t('flyingConfig.telegram.enabled') }}</span>
             </template>
             <el-switch v-model="form.enabled" :active-value="1" :inactive-value="0" />
@@ -32,23 +40,21 @@
       </el-form>
     </div>
     <div class="flying-config-actions">
-      <el-button style="margin-left: 30%;width: 100px;height: auto;color: dodgerblue" @click="load" :loading="loading">
+      <el-button style="margin-left: 30%;width: 100px;height: auto;color: #ffffff" @click="load" :loading="loading">
         {{ $t('flyingConfig.action.reload') }}
       </el-button>
-      <el-button style="margin-right: 30%;width: 100px;height: auto;color: dodgerblue" @click="openGoogleDialog" :loading="saving">
+      <el-button style="margin-right: 30%;width: 100px;height: auto;color: #ffffff" @click="openGoogleDialog" :loading="saving">
         {{ $t('flyingConfig.action.save') }}
       </el-button>
     </div>
     <el-dialog
       v-model="googleDialogVisible"
       :title="$t('common.googleCode')"
-      class="dialog"
+      class="dialog google-confirm-dialog"
       center
-      width="30%"
-      height="200px"
-    
+      width="420px"
       align-center>
-      <el-form ref="googleFormRef" :rules="googleRule" :model="googleForm" style="height:100px;margin-top: 20px">
+      <el-form ref="googleFormRef" :rules="googleRule" :model="googleForm" class="google-confirm-form">
         <el-row>
           <el-col :span="24" style="display: flex;justify-content: center;align-items: center;">
             <el-form-item :label="$t('common.googleCode')" label-width="150px" prop="googleCode">
@@ -75,6 +81,7 @@ export default {
       form: {
         token: "",
         webhookSecret: "",
+        alertChatId: "",
         enabled: 1
       },
       googleDialogVisible: false,
@@ -98,6 +105,7 @@ export default {
           const data = res.data.data ? JSON.parse(res.data.data) : {};
           this.form.token = data.token || "";
           this.form.webhookSecret = data.webhookSecret || "";
+          this.form.alertChatId = data.alertChatId || "";
           this.form.enabled = data.enabled === undefined || data.enabled === null || data.enabled === "" ? 1 : Number(data.enabled);
         } else {
           this.$notify({
@@ -208,5 +216,10 @@ export default {
   width: 96%;
   border-top: solid 2px gray;
   height: 30%;
+}
+
+.google-confirm-form {
+  min-height: 100px;
+  margin-top: 20px;
 }
 </style>
